@@ -1,0 +1,10 @@
+name: ab-negative-training
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pandas
+  - pip
+  - pip:
+      - dash==2.3.1
+      - nptyping
