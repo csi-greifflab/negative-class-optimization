@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
+import uuid
 from typing import Optional, List
+import numpy as np
 import pandas as pd
+
+
 import config
 
 
@@ -93,3 +97,34 @@ def build_global_dataset(dataset_path: Path):
 
     df_global = pd.concat(dfs, axis=0)
     return df_global
+
+
+def build_random_dataset(
+    num_seq: int, 
+    cdr3_len_distr: dict = config.GLOBAL_CDR3_LEN_DISTR,
+    alphabet: list = config.AMINOACID_ALPHABET,
+    seed=config.SEED,
+    ) -> pd.DataFrame:
+    
+    np.random.seed(seed)
+    cdr3_records = []
+    for _ in range(num_seq):
+        random_size = np.random.choice(
+            list(cdr3_len_distr.keys()),
+            size=1,
+            p=list(cdr3_len_distr.values())
+        )
+        random_sequence = "".join(
+            np.random.choice(
+                alphabet,
+                size=random_size
+            )
+        )
+        cdr3_records.append({
+            "CDR3": random_sequence,
+            "UID": "random_" + str(uuid.uuid4())[:8]
+        })
+    df = pd.DataFrame.from_records(cdr3_records)
+    df = df.drop_duplicates(["UID"])
+    df["Antigen"] = "random"
+    return df
