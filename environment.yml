@@ -8,3 +8,4 @@ dependencies:
   - pip:
       - dash==2.3.1
       - nptyping
+      - immuneML==2.2.2

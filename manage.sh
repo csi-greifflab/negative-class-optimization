@@ -6,7 +6,8 @@ echo "Requested command $COMMAND"
 
 if [[ $COMMAND == "update_env" ]]; then
     echo "Running update_env"
-    conda env create --force --file environment.yml
+    # conda env create --force --file environment.yml
+    conda env update --file environment.yml --prune
 else
     echo "Command $COMMAND not detected."
 fi
