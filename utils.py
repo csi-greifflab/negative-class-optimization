@@ -92,7 +92,7 @@ def build_global_dataset(dataset_path: Path):
     for antigen in antigens:
         ag_data = AntigenData(antigen, Path(dataset_path))
         df_component = ag_data.df_c
-        df_component["antigen"] = ag_data.antigen
+        df_component["Antigen"] = ag_data.antigen
         dfs.append(ag_data.df_c)
 
     df_global = pd.concat(dfs, axis=0)

@@ -1,7 +1,11 @@
 # import abc
 from enum import Enum
+from pathlib import Path
 from typing import Optional, List
 import pandas as pd
+from tinydb import TinyDB, Query
+import utils
+import config
 
 
 class BindingDatasetsType(Enum):
@@ -35,9 +39,16 @@ class BaseBindingDataset:
         ))
 
 
-class RandomBindingDataset:
-    pass
-    # raise NotImplementedError
+class RandomBindingDataset(BaseBindingDataset):
+
+    def __init__(self, name: str, num_seq: int):
+
+        dstype = BindingDatasetsType.RANDOM
+        df = utils.build_random_dataset(num_seq)
+        df["Dataset"] = name
+
+        assert df["Antigen"].unique()[0] == "random"
+        super().__init__(name, dstype, df)
 
 
 class PositiveBindingDataset(BaseBindingDataset):
@@ -47,17 +58,18 @@ class PositiveBindingDataset(BaseBindingDataset):
         name: str,
         df: pd.DataFrame,
         antigen: str) -> None:
+        
+        self.antigen = antigen
 
         dstype = BindingDatasetsType.POSITIVE
-        self.super().__init__(name, dstype, df)
+        df_ = df.copy()
+        df_["Dataset"] = name
+        super().__init__(name, dstype, df_)
 
-        self.antigen = antigen
-        
-        if not self.validate_df():
+        if not self.validate_positive_dataset():
             raise ValueError("Failed to init PositiveBindingDataset")
 
-
-    def validate_df(self):
+    def validate_positive_dataset(self):
         return self.df["Antigen"].unique()[0] == self.antigen
 
 
@@ -79,12 +91,15 @@ class NegativeBindingDataset(BaseBindingDataset):
         self.positive_datasets = positive_datasets
         self.random_datasets = random_datasets
         df = pd.concat(map(lambda ds: ds.df, positive_datasets + random_datasets), axis=0)
+        df = df[BaseBindingDataset.DF_VALIDATION_COLS + ["Dataset"]]
 
         dstype = BindingDatasetsType.NEGATIVE
-        self.super().__init__(name, dstype, df)
+        super().__init__(name, dstype, df)
 
 
 class CompleteBindingDataset(BaseBindingDataset):
+
+    DB_PATH = config.COMPLETE_DATASETS_DB_PATH
 
     def __init__(
         self,
@@ -96,6 +111,25 @@ class CompleteBindingDataset(BaseBindingDataset):
         self.positive_dataset = positive_dataset
         self.negative_dataset = negative_dataset
 
+
+        df_pos = positive_dataset.df.copy()
+        df_pos["binder"] = True
+        df_neg = negative_dataset.df.copy()
+        df_neg["binder"] = False
+        df = pd.concat([df_pos, df_neg], axis=0)
+
         dstype = BindingDatasetsType.COMPLETE
-        df = pd.concat([positive_dataset.df, negative_dataset.df], axis=0)
-        self.super().__init__(name, dstype, df)
+        super().__init__(name, dstype, df)
+    
+    def save_df(self, fp: Path) -> None:
+        self.df.to_csv(fp, sep='\t')
+    
+    def record_dataset(self, fp, metadata: dict) -> None:
+        self.save_df(fp)
+        
+        db = TinyDB(config.COMPLETE_DATASETS_DB_PATH)
+        record = {
+            "filepath": fp,
+            **metadata,
+        }
+        db.insert(record)
