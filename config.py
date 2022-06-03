@@ -1,7 +1,10 @@
 from pathlib import Path
 
+DATA_BASE_PATH = Path("data")
 DATA_SLACK_1 = Path("data/slack_1")
 DATA_SLACK_1_GLOBAL = Path("data/globals/slack_1_global.tsv")
+
+IMMUNE_ML_BASE_PATH = Path("immuneML")
 
 GLOBAL_DATASETS_DIR = Path("data/globals")
 GLOBAL_CDR3_LEN_DISTR = {
@@ -37,8 +40,7 @@ GLOBAL_CDR3_LEN_DISTR = {
     34: 1.4285714285714286e-06,
 }
 
-COMPLETE_DATASETS_DB_PATH = "data/datasets_DB/complete_datasets_db.json"
+# COMPLETE_DATASETS_DB_PATH = "data/datasets_DB/complete_datasets_db.json"
 
 AMINOACID_ALPHABET = list("ACDEFGHIKLMNPQRSTVWY")
-
 SEED = 42

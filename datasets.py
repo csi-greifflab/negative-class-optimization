@@ -1,9 +1,12 @@
 # import abc
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Optional, List
+import warnings
 import pandas as pd
-from tinydb import TinyDB, Query
+import numpy as np
+# from tinydb import TinyDB, Query
 import utils
 import config
 
@@ -99,7 +102,7 @@ class NegativeBindingDataset(BaseBindingDataset):
 
 class CompleteBindingDataset(BaseBindingDataset):
 
-    DB_PATH = config.COMPLETE_DATASETS_DB_PATH
+    # DB_PATH = config.COMPLETE_DATASETS_DB_PATH
 
     def __init__(
         self,
@@ -124,12 +127,63 @@ class CompleteBindingDataset(BaseBindingDataset):
     def save_df(self, fp: Path) -> None:
         self.df.to_csv(fp, sep='\t')
     
-    def record_dataset(self, fp, metadata: dict) -> None:
-        self.save_df(fp)
+    # def record_dataset(self, fp, metadata: dict) -> None:
+    #     self.save_df(fp)
         
-        db = TinyDB(config.COMPLETE_DATASETS_DB_PATH)
-        record = {
-            "filepath": fp,
-            **metadata,
-        }
-        db.insert(record)
+    #     db = TinyDB(config.COMPLETE_DATASETS_DB_PATH)
+    #     record = {
+    #         "filepath": fp,
+    #         **metadata,
+    #     }
+    #     db.insert(record)
+
+
+def generate_pairwise_dataset(
+    df_global: pd.DataFrame,
+    ag1: str,
+    ag2: str,
+    N: Optional[int] = None,
+    base_data_path: Path = config.DATA_BASE_PATH,
+    seed = config.SEED,
+    read_if_exists = True,
+    ):
+
+    if N:
+        filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}_{N}.tsv"
+    else:
+        filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
+
+    if read_if_exists and filepath.exists():
+        df = pd.read_csv(filepath, sep='\t')
+        return df
+
+    df_ag1 = df_global.loc[df_global["Antigen"] == ag1].copy()
+    df_ag2 = df_global.loc[df_global["Antigen"] == ag2].copy()
+
+    if N:
+        np.random.seed(seed)
+        df_ag1 = df_ag1.sample(N // 2)
+        df_ag2 = df_ag2.sample(N // 2)
+
+    df_ag1["binder"] = True
+    df_ag2["binder"] = False
+
+    df = pd.concat([df_ag1, df_ag2], axis=0)
+
+    cdr3_len_counts = df["CDR3"].str.len().value_counts()
+    small_lengths = cdr3_len_counts.loc[cdr3_len_counts < 25].index.to_list()
+    small_len_mask = df["CDR3"].str.len().isin(small_lengths)
+    warnings.warn(f"Removing rare CDR3 lengths: {sum(small_len_mask)} rows from {df.shape}")
+    df = df.loc[~small_len_mask]
+
+    df.to_csv(filepath, sep='\t')
+
+    return df
+
+
+# @dataclass(frozen=True)
+class BuildCmd:
+    pass
+
+class DatasetBuilder:
+    pass
