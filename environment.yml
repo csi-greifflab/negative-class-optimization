@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.8
   - pandas
+  - seaborn
   - pip
   - pip:
       - dash==2.3.1

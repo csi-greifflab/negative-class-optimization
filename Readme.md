@@ -12,3 +12,9 @@ I received data by slack, which I call `slack_1` for now.
 
 - 01_Explore: explores `slack_1` data structure.
 - 02_Datasetgenerator: developing dataset generators.
+
+## Agenda
+
+(move to Docs)
+
+1. Tried immuneML with large .yml specification, failed again on splitting X. Decided to do kmer frequency.

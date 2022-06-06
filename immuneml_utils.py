@@ -133,22 +133,23 @@ class ImmuneMLSpecBuilder:
         return specification
 
     @staticmethod
-    def _build_instructions(datasets) -> dict:
+    def _build_instructions(datasets, add_explore = False) -> dict:
         
         dataset_names: list[str] = list(datasets.keys())
 
         explore_instructs = {}
-        for name in dataset_names:
-            explore_instructs[f"explore_{name}_instruction"] = {
-                "type": "ExploratoryAnalysis",
-                "analyses": {
-                        "raw_overview": {
-                            "dataset": name,
-                            "report": "dataset_simple_dataset_overview",
-                        },
-                },
-                "number_of_processes": NUM_PROCESSES,
-            }
+        if add_explore:
+            for name in dataset_names:
+                explore_instructs[f"explore_{name}_instruction"] = {
+                    "type": "ExploratoryAnalysis",
+                    "analyses": {
+                            "raw_overview": {
+                                "dataset": name,
+                                "report": "dataset_simple_dataset_overview",
+                            },
+                    },
+                    "number_of_processes": NUM_PROCESSES,
+                }
 
         fit_instructs = {}
         for name in dataset_names:
@@ -156,7 +157,7 @@ class ImmuneMLSpecBuilder:
                 "type": "TrainMLModel",
                 "settings": [
                     {
-                        "encoding": "onehot_encoding",
+                        "encoding": "kmerfreq_encoding",
                         "ml_method": "randomforest_default_model",
                     },
                 ],

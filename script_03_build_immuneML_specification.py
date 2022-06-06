@@ -27,7 +27,7 @@ if __name__ == "__main__":
             "format": "Generic",
             "params": {
                 "path": dataset_path,
-                "is_repertoire": "false",
+                "is_repertoire": False,
                 "region_type": "FULL_SEQUENCE",
                 "column_mapping": {
                     "CDR3": "sequence_aas",

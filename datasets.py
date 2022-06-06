@@ -173,7 +173,10 @@ def generate_pairwise_dataset(
     cdr3_len_counts = df["CDR3"].str.len().value_counts()
     small_lengths = cdr3_len_counts.loc[cdr3_len_counts < 25].index.to_list()
     small_len_mask = df["CDR3"].str.len().isin(small_lengths)
-    warnings.warn(f"Removing rare CDR3 lengths: {sum(small_len_mask)} rows from {df.shape}")
+    warnings.warn(
+        "Removal of sequences with len<25 is not enough!"
+        f"\nRemoving rare CDR3 lengths: {sum(small_len_mask)} rows from {df.shape}"
+    )
     df = df.loc[~small_len_mask]
 
     df.to_csv(filepath, sep='\t')
