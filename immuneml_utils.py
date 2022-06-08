@@ -113,7 +113,7 @@ class ImmuneMLSpecBuilder:
         self,
         datasets: dict,
     ):
-        self.specs = ImmuneMLSpecBuilder._build_specification(datasets)
+        self.spec = ImmuneMLSpecBuilder._build_specification(datasets)
 
     @staticmethod
     def _build_specification(datasets) -> dict:
