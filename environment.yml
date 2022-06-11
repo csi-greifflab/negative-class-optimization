@@ -9,5 +9,5 @@ dependencies:
   - pip:
       - dash==2.3.1
       - nptyping
-      - immuneML==2.2.2
+      # - immuneML==2.2.2  # install local version atm
       - docopt
