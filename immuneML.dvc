@@ -1,0 +1,5 @@
+outs:
+- md5: f7c2e8df73163411397ec962890f8a46.dir
+  size: 117287129827
+  nfiles: 3972
+  path: immuneML
