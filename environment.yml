@@ -7,7 +7,8 @@ dependencies:
   - seaborn
   - pip
   - pip:
+      - dvc[gdrive]
       - dash==2.3.1
       - nptyping
-      # - immuneML==2.2.2  # install local version atm
+      - immuneML==2.2.2
       - docopt

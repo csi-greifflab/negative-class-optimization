@@ -1,20 +1,24 @@
-# Negative dataset impact on training binding classifiers
+# Negative dataset optimization
 
-We build datasets in which the negative dataset has varied features in order to optimally design negative datasets for training antigen binder vs non-binder classifiers.
+We use this repository for the `NegativeDatasetOptimization` project.
 
-Various schematics can be found at in a [diagrams file](https://drive.google.com/file/d/1sr1f8ryaj_rKazp8bE1wPwX3m7x11kie/view?usp=sharing).
+Please follow this readme to setup everything.
 
-## Data
+## Setup
 
-I received data by slack, which I call `slack_1` for now.
+Once you've cloned the repository, run:
+
+```
+bash manage.sh install_env
+conda activate ab-negative-training
+
+```
+
+## Data and models
+
+We use [DVC](https://dvc.org/doc/start/data-management) to sync data and models across the team.
 
 ## Notebooks
 
 - 01_Explore: explores `slack_1` data structure.
 - 02_Datasetgenerator: developing dataset generators.
-
-## Agenda
-
-(move to Docs)
-
-1. Tried immuneML with large .yml specification, failed again on splitting X. Decided to do kmer frequency.
