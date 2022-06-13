@@ -7,8 +7,9 @@ import warnings
 import pandas as pd
 import numpy as np
 # from tinydb import TinyDB, Query
-import utils
-import config
+
+import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.config as config
 
 
 class BindingDatasetsType(Enum):

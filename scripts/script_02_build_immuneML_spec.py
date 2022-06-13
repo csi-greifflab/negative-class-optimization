@@ -7,8 +7,8 @@ import yaml
 import logging
 from docopt import docopt
 
-import config
-import immuneml_utils
+import NegativeClassOptimization.config as config
+import NegativeClassOptimization.immuneml_utils as immune_utils
 
 logging.basicConfig(level=logging.DEBUG)
 

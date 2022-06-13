@@ -7,7 +7,7 @@ import warnings
 import yaml
 import uuid
 
-import config
+import NegativeClassOptimization.config as config
 
 
 NUM_PROCESSES = 12

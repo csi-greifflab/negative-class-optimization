@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-import config
+import NegativeClassOptimization.config as config
 
 
 def summarize_data_files(path: Path) -> pd.DataFrame:

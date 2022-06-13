@@ -1,5 +1,5 @@
 """
-Build all the pairwise datasets.
+Build datasets.
 """
 
 from pathlib import Path
@@ -8,9 +8,9 @@ from docopt import docopt
 import logging
 import pandas as pd
 
-import utils
-import config
-import datasets
+import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.config as config
+import NegativeClassOptimization.datasets as datasets
 
 
 dataset_path: Path = config.DATA_SLACK_1

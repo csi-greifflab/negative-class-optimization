@@ -1,12 +1,16 @@
 from pathlib import Path
 
-DATA_BASE_PATH = Path("data")
-DATA_SLACK_1 = Path("data/slack_1")
-DATA_SLACK_1_GLOBAL = Path("data/globals/slack_1_global.tsv")
 
-IMMUNE_ML_BASE_PATH = Path("immuneML")
+# ugly
+src_config_filepath = Path(__file__)  # assumes specific local install
+adjust_filepaths = lambda p: (src_config_filepath / "../../../.." / p).resolve()
 
-GLOBAL_DATASETS_DIR = Path("data/globals")
+DATA_BASE_PATH = adjust_filepaths(Path("data"))
+DATA_SLACK_1 = adjust_filepaths(Path("data/slack_1"))
+DATA_SLACK_1_GLOBAL = adjust_filepaths(Path("data/globals/slack_1_global.tsv"))
+IMMUNE_ML_BASE_PATH = adjust_filepaths(Path("immuneML"))
+GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
+
 GLOBAL_CDR3_LEN_DISTR = {
     15: 0.17861142857142856,
     14: 0.1782842857142857,
@@ -39,8 +43,6 @@ GLOBAL_CDR3_LEN_DISTR = {
     37: 2.8571428571428573e-06,
     34: 1.4285714285714286e-06,
 }
-
-# COMPLETE_DATASETS_DB_PATH = "data/datasets_DB/complete_datasets_db.json"
 
 AMINOACID_ALPHABET = list("ACDEFGHIKLMNPQRSTVWY")
 SEED = 42

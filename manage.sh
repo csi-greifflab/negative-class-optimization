@@ -7,7 +7,11 @@ echo "Requested command $COMMAND"
 if [[ $COMMAND == "update_env" ]]; then
     echo "Running update_env"
     conda env update --file environment.yml --prune
+    echo "Installing local NegativeClassOptimization in [--editable] mode"
+    conda activate ab-negative-training
+    pip install -e src/NegativeClassOptimization
     # echo "Installing local immuneML in [--editable] mode"
+    # conda activate ab-negative-training
     # pip install -e immuneML/immuneML
 elif [[ $COMMAND == "install_env" ]]; then
     echo "Running install_env"
