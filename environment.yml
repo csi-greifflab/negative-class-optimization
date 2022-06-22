@@ -5,6 +5,7 @@ dependencies:
   - python=3.8
   - pandas
   - seaborn
+  - more-itertools
   - pip
   - pip:
       - dvc[gdrive]
@@ -12,3 +13,4 @@ dependencies:
       - nptyping
       - immuneML==2.2.2
       - docopt
+      - upsetplot

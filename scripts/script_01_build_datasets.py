@@ -7,6 +7,8 @@ from itertools import combinations
 from docopt import docopt
 import logging
 import pandas as pd
+import sys
+sys.path.append('/nfs/scistore08/kondrgrp/aminnega/negative-class-optimization/src/NegativeClassOptimization')
 
 import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
