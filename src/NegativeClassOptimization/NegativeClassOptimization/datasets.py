@@ -7,6 +7,9 @@ import warnings
 import pandas as pd
 import numpy as np
 # from tinydb import TinyDB, Query
+import sys
+sys.path.append('/nfs/scistore08/kondrgrp/aminnega/negative-class-optimization/src/NegativeClassOptimization')
+
 
 import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
@@ -166,9 +169,13 @@ def generate_pairwise_dataset(
     base_data_path: Path = config.DATA_BASE_PATH,
     seed = config.SEED,
     read_if_exists = True,
+    Slide=True,
+    save_datasets=True
     ):
 
-    if N:
+    if Slide:
+        filepath = base_data_path / "pairwise_wo_dupl" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
+    elif N:
         filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}_{N}.tsv"
     else:
         filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
@@ -179,6 +186,17 @@ def generate_pairwise_dataset(
 
     df_ag1 = df_global.loc[df_global["Antigen"] == ag1].copy()
     df_ag2 = df_global.loc[df_global["Antigen"] == ag2].copy()
+    
+    if Slide:
+        df_ag1.drop_duplicates(subset='Slide', keep="last", inplace=True)
+        df_ag2.drop_duplicates(subset='Slide', keep="last", inplace=True)
+        inters = set(df_ag1.Slide)&set(df_ag2.Slide)
+        df_ag2 = df_ag2[df_ag2['Slide'].isin(inters) == False]
+        df_ag1 = df_ag1[df_ag1['Slide'].isin(inters) == False]
+    else:
+        inters = set(df_ag1.CDR3)&set(df_ag2.CDR3)
+        df_ag2 = df_ag2[df_ag2['CDR3'].isin(inters) == False]
+        df_ag1 = df_ag1[df_ag1['CDR3'].isin(inters) == False]   
 
     if N:
         np.random.seed(seed)
@@ -190,9 +208,10 @@ def generate_pairwise_dataset(
 
     df = pd.concat([df_ag1, df_ag2], axis=0)
 
-    df = trim_short_CDR3(df)
-
-    df.to_csv(filepath, sep='\t')
+    #df = trim_short_CDR3(df)
+    df = df.sample(frac=1, random_state=config.SEED)
+    if save_datasets:
+        df.to_csv(filepath, sep='\t')
 
     return df
 

@@ -5,10 +5,13 @@ dependencies:
   - python=3.8
   - pandas
   - seaborn
+  - more-itertools
   - pip
+  - jupyterlab
   - pip:
       - dvc[gdrive]
       - dash==2.3.1
       - nptyping
       - immuneML==2.2.2
       - docopt
+      - upsetplot
