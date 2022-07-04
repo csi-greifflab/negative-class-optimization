@@ -6,7 +6,6 @@ Generate yaml specification file for running immuneML analyses.
 import warnings
 import yaml
 import uuid
-
 import NegativeClassOptimization.config as config
 
 
@@ -31,6 +30,7 @@ DEFAULT_MODELS = {
     "logistic_default_model": "LogisticRegression",
     "svm_default_model": "SVM",
     "randomforest_default_model": "RandomForestClassifier",
+    "knn_default_model": "KNN"
 }
 
 
@@ -111,13 +111,13 @@ class ImmuneMLSpecBuilder:
 
     def __init__(
         self,
-        datasets: dict,
+        datasets: dict, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore
     ):
-        self.spec = ImmuneMLSpecBuilder._build_specification(datasets)
+        self.spec = ImmuneMLSpecBuilder._build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore)
 
     @staticmethod
-    def _build_specification(datasets) -> dict:
-        instructions = ImmuneMLSpecBuilder._build_instructions(datasets)
+    def _build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore) -> dict:
+        instructions = ImmuneMLSpecBuilder._build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore)
         specification = {
             "definitions": {
                 "datasets": datasets,
@@ -133,7 +133,7 @@ class ImmuneMLSpecBuilder:
         return specification
 
     @staticmethod
-    def _build_instructions(datasets, add_explore = False) -> dict:
+    def _build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore) -> dict:
         
         dataset_names: list[str] = list(datasets.keys())
 
@@ -155,10 +155,14 @@ class ImmuneMLSpecBuilder:
         for name in dataset_names:
             fit_instructs[f"fit_{name}_instruction"] = {
                 "type": "TrainMLModel",
+                "labels": [
+                    {"binder": {"positive_class": True}}
+                ],
+                "dataset": name,
                 "settings": [
                     {
-                        "encoding": "kmerfreq_encoding",
-                        "ml_method": "randomforest_default_model",
+                        "encoding": encoding,
+                        "ml_method": ml_model,
                     },
                 ],
                 "assessment": {
@@ -168,25 +172,25 @@ class ImmuneMLSpecBuilder:
                     "reports": {
                         "models": MODEL_REPORTS_LIST,
                     },
-                },
-                # "selection": {
-                #     "split_strategy": "k_fold",
-                #     "split_count": 5,
-                #     "reports": {
-                #         "models": MODEL_REPORTS
-                #     },
-                # },
-                "labels": [
-                    {"binder": {"positive_class": True}}
-                ],
-                "dataset": name,
+                }}
+            
+            if selection:
+                fit_instructs[f"fit_{name}_instruction"]["selection"] = {
+                     "split_strategy": "k_fold",
+                     "split_count": k_fold,
+                     "reports": {
+                        "models": MODEL_REPORTS_LIST
+                     },
+                }
+            
+            fit_instructs[f"fit_{name}_instruction"].update({
                 "strategy": "GridSearch",
                 "metrics": METRICS_LIST,
                 "reports": TRAINING_REPORTS_LIST,
                 "number_of_processes": NUM_PROCESSES,
-                "optimization_metric": "balanced_accuracy",
-                "refit_optimal_model": False,
-            }
+                "optimization_metric": metric,
+                "refit_optimal_model": refit_best,
+            })
 
         instructs = {
             **explore_instructs,

@@ -8,19 +8,16 @@ import logging
 from docopt import docopt
 
 import NegativeClassOptimization.config as config
-import NegativeClassOptimization.immuneml_utils as immune_utils
+import NegativeClassOptimization.immuneml_utils as immuneml_utils
 
 logging.basicConfig(level=logging.DEBUG)
 
 docopt_doc = """Build immuneML specifications.
-
 Usage:
     script_02_build_immuneML_spec.py pairwise
     script_02_build_immuneML_spec.py 1_vs_all    
-
 Options:
     -h --help   Show help.
-
 """
 
 
@@ -70,7 +67,7 @@ if __name__ == "__main__":
         spec_fp = "immuneML/1_vs_all_analysis_1.yml"
         datasets_paths = list(Path("./data/1_vs_all").glob("*.tsv"))
     
-    specification = basic_spec_from_dataset_paths(datasets_paths)
+    #specification = basic_spec_from_dataset_paths(datasets_paths)
     with open(spec_fp, 'w+') as f:
         yaml.dump(
             specification,
