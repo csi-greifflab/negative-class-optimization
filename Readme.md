@@ -12,10 +12,12 @@ Once you've cloned the repository, run:
 bash manage.sh install_env
 conda activate ab-negative-training
 bash manage.sh update_env  # updates and installs local packages
-dvc pull  # fetches the data
+dvc pull  # fetches all the data
 ```
 
 This will setup the environment and required data. In particular, this will fetch the `data` directory, with all required data, as well as `immuneML` directory, where immuneML yaml specifications, logs, as well as output files are stored.
+
+The `dvc pull` will fetch all the data, and at times this can be a lot. Often one will want to work with just a single file, one can achieve that with `dvc get` (not `dvc import`, to implement read-only mode, since we don't want changes to standard files). For convenience `./manage.sh get_700k` fetches the 700k dataset.
 
 To add a new library dependence, please add it manually in the `environment.yml` file and run `bash manage.sh update_env`.
 

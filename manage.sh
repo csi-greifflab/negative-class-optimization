@@ -16,6 +16,10 @@ if [[ $COMMAND == "update_env" ]]; then
 elif [[ $COMMAND == "install_env" ]]; then
     echo "Running install_env"
     conda env create --force --file environment.yml
+elif [[ $COMMAND == "get_700k" ]]; then
+    echo "Fetching the 700k dataset with DVC."
+    mkdir -p data/globals
+    dvc get --out data/globals/slack_1_global.tsv . data/globals/slack_1_global.tsv
 else
     echo "Command $COMMAND not detected."
 fi

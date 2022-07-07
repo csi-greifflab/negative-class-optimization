@@ -1,13 +1,20 @@
 name: ab-negative-training
 channels:
   - defaults
+  - conda-forge
+  - pytorch
 dependencies:
   - python=3.8
   - pandas
   - seaborn
   - more-itertools
-  - pip
   - jupyterlab
+  - umap-learn
+  - pytorch 
+  - torchvision 
+  - torchaudio 
+  - cudatoolkit=10.2
+  - pip
   - pip:
       - dvc[gdrive]==2.10.2
       - dash==2.3.1
@@ -15,3 +22,4 @@ dependencies:
       - immuneML==2.2.2
       - docopt
       - upsetplot
+      - scikit-learn
