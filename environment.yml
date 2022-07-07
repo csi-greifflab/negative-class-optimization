@@ -9,7 +9,7 @@ dependencies:
   - pip
   - jupyterlab
   - pip:
-      - dvc[gdrive]
+      - dvc[gdrive]==2.10.2
       - dash==2.3.1
       - nptyping
       - immuneML==2.2.2
