@@ -25,7 +25,7 @@ run_compairr_overlaps() {
         ${COMPAIRR_FILE_2}
 }
 
-COMPAIRR_DATA_PATH="../data/CompAIRR"
+COMPAIRR_DATA_PATH="data/CompAIRR"
 COMPAIRR_FILE_1="AIRR_1.tsv"
 COMPAIRR_FILE_2="AIRR_2.tsv"
 

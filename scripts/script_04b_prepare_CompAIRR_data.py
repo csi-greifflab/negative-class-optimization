@@ -10,7 +10,7 @@ import NegativeClassOptimization.config as config
 
 TEST = False
 TEST_PARAMS = {
-    "TEST_DATA_DIR": "../data/CompAIRR/test",
+    "TEST_DATA_DIR": "data/CompAIRR/test",
     "SAMPLE_SIZE": 1000,
     "AG1": "1ADQ",
     "AG2": "3VRL",
@@ -46,8 +46,10 @@ if __name__ == "__main__":
     df = pd.read_csv(config.DATA_SLACK_1_GLOBAL, sep='\t')
     
     if not TEST:
-        dir_path = Path("../data/CompAIRR")
-        dir_path.mkdir(exist_ok=True)
+        dir_path = Path("data/CompAIRR")
+
+        if not dir_path.exists():
+            dir_path.mkdir(exist_ok=True)
 
         df.drop_duplicates(["Antigen", "Slide"], inplace=True)
 
