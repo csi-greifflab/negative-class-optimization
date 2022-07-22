@@ -49,6 +49,7 @@ def basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, se
                     "region_type": "FULL_SEQUENCE",
                     "column_mapping": {
                         "Slide": "sequence_aas",
+                        "ID_slide_Variant": "sequence_id"
                     },
                     "metadata_column_mapping": {
                         "UID": "UID",
