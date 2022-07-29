@@ -53,13 +53,11 @@ if __name__ == "__main__":
 
         df.drop_duplicates(["Antigen", "Slide"], inplace=True)
 
-        df_1 = convert_internal_to_AIRR_format(df)
-        df_2 = df_1.copy()
+        df = convert_internal_to_AIRR_format(df)
+        df.to_csv(dir_path / "AIRR.tsv", sep='\t', index=False)
 
-        # df_1["repertoire_id"] = df_1["repertoire_id"].str + "_1"
-        # df_2["repertoire_id"] = df_2["repertoire_id"].str + "_2"
-        df_1.to_csv(dir_path / "AIRR_1.tsv", sep='\t', index=False)
-        df_2.to_csv(dir_path / "AIRR_2.tsv", sep='\t', index=False)
+        df["repertoire_id"] = "global"
+        df.to_csv(dir_path / "AIRR_global_repertoire.tsv", sep='\t', index=False)
         
     else:
         test_data_dir = Path(TEST_PARAMS["TEST_DATA_DIR"])
