@@ -13,6 +13,7 @@ dependencies:
   - pytorch 
   - torchvision 
   - torchaudio 
+  - captum
   - cudatoolkit=10.2
   - pip
   - pip:
@@ -23,3 +24,4 @@ dependencies:
       - docopt
       - upsetplot
       - scikit-learn
+      - joypy
