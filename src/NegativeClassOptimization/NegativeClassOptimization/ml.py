@@ -35,7 +35,7 @@ class PairwiseDataset(Dataset):
         )
 
 
-def remove_duplicates_for_pairwise(df: pd.DataFrame, pos_ag: str) -> pd.DataFrame:
+def remove_duplicates_for_pairwise(df: pd.DataFrame, ag_pos: str) -> pd.DataFrame:
     """An important step in preparing data for SN10 training and evaluation. 
     Most importantly - appropriately removes duplicates.
 
