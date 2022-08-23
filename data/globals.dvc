@@ -1,0 +1,5 @@
+outs:
+- md5: b6d343f58822dbefaa555c2eb44fef5e.dir
+  size: 64556814
+  nfiles: 1
+  path: globals

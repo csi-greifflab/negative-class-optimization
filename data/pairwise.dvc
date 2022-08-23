@@ -1,0 +1,5 @@
+outs:
+- md5: da7c61692d4195028d653c05fb5a7461.dir
+  size: 658459991
+  nfiles: 45
+  path: pairwise
