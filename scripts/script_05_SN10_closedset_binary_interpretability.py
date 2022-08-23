@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 from typing import List
+import yaml
 
 import pandas as pd
 import numpy as np
@@ -25,12 +26,18 @@ from NegativeClassOptimization.ml import (
 )
 
 
-## Parameters
-ag_pos = "3VRL"
-ag_neg = "1ADQ"
-learning_rate = 0.01
-epochs = 5
+## Get parameters
+with open(config.PARAMS_PATH, "r") as fh:
+    params = yaml.safe_load(fh)
+    
+ag_pos = params["05_SN10_closedset_binary_interpretability"]["ag_pos"]
+ag_neg = params["05_SN10_closedset_binary_interpretability"]["ag_neg"]
+learning_rate = params["05_SN10_closedset_binary_interpretability"]["learning_rate"]
+epochs = params["05_SN10_closedset_binary_interpretability"]["epochs"]
 
+
+OUT_DIR = Path("data/SN10_closedset_binary_interpretability")
+OUT_DIR.mkdir(exist_ok=True)
 
 df = pd.read_csv(config.DATA_SLACK_1_GLOBAL, sep='\t')
 df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
@@ -40,9 +47,9 @@ df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
     test_data,
     train_loader,
     test_loader) = preprocess_data_for_pytorch_binary(
-    df,
-    [ag_pos],
-    scale_onehot=True
+        df,
+        [ag_pos],
+        scale_onehot=True
 )
 
 
@@ -83,36 +90,40 @@ df_ext = pd.DataFrame(
         for aa in config.AMINOACID_ALPHABET
     )
 )
+df_ext.to_csv(OUT_DIR / f"attributions_{ag_pos}_vs_{ag_neg}.tsv", sep='\t')
 
 
 test_antigens = []
 for i in DataLoader(test_data, batch_size=1):
     y_i = i[1].reshape(-1)
     if y_i == 0:
-        test_antigens.append("1ADQ")
+        test_antigens.append(ag_neg)
     elif y_i == 1:
-        test_antigens.append("3VRL")
+        test_antigens.append(ag_pos)
     else:
         raise RuntimeError()
 df_attr["Antigen"] = test_antigens
+df_attr.to_csv(OUT_DIR / f"aggregated_attributions_{ag_pos}_vs_{ag_neg}.tsv", sep='\t')
 
 
-g = joypy.joyplot(
-    df_attr.loc[df_attr["Antigen"] == "3VRL"].iloc[:, :-1],
+fig1, axs1 = joypy.joyplot(
+    df_attr.loc[df_attr["Antigen"] == ag_pos].iloc[:, :-1],
     figsize=(7, 7),
     title=(
-        "[3VRL, + test cases] Integrated gradients-based attribution of prediction"
+        f"[{ag_pos}, + test cases] Integrated gradients-based attribution of prediction"
         " (x-axis)\nfor Slide amino-acid position (y-axis)\n"
-        "based on SN10 network for (3VRL vs 1ADQ) classification"
+        f"based on SN10 network for ({ag_pos} vs {ag_neg}) classification"
     )
 )
+fig1.savefig(OUT_DIR / f"aggregated_attributions_{ag_pos}.png")
 
-g = joypy.joyplot(
-    df_attr.loc[df_attr["Antigen"] == "1ADQ"].iloc[:, :-1],
+fig2, axs2 = joypy.joyplot(
+    df_attr.loc[df_attr["Antigen"] == ag_neg].iloc[:, :-1],
     figsize=(7, 7),
     title=(
-        "[1ADQ, - test cases] Integrated gradients-based attribution of prediction"
+        f"[{ag_neg}, - test cases] Integrated gradients-based attribution of prediction"
         " (x-axis)\nfor Slide amino-acid position (y-axis)\n"
-        "based on SN10 network for (3VRL vs 1ADQ) classification"
+        f"based on SN10 network for ({ag_pos} vs {ag_neg}) classification"
     )
 )
+fig2.savefig(OUT_DIR / f"aggregated_attributions_{ag_neg}.png")

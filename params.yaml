@@ -1,0 +1,5 @@
+05_SN10_closedset_binary_interpretability:
+  ag_pos: "3VRL"
+  ag_neg: "1ADQ"
+  learning_rate: 0.01
+  epochs: 5

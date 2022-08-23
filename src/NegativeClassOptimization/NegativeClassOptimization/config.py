@@ -14,6 +14,7 @@ DATA_SLACK_1 = adjust_filepaths(Path("data/slack_1"))
 DATA_SLACK_1_GLOBAL = adjust_filepaths(Path("data/globals/slack_1_global.tsv"))
 IMMUNE_ML_BASE_PATH = adjust_filepaths(Path("immuneML"))
 GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
+PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
                     'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
