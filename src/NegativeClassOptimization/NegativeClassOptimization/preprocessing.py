@@ -1,7 +1,7 @@
 from typing import List
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
 import NegativeClassOptimization.config as config
 
 
@@ -39,8 +39,8 @@ def onehot_encode(
 
 def onehot_encode_df(
     df, 
-    encoder = get_one_hot_aa_encoder(),
-    scale = True) -> np.array:
+    encoder = get_one_hot_aa_encoder()
+    )-> np.array:
     """Encode a dataframe with `Slide` as onehot
 
     Args:
@@ -49,21 +49,24 @@ def onehot_encode_df(
         scale (bool): scale column-wise?
 
     Returns:
-        np.array: _description_
+        np.array
     """      
     df = df.copy()
     df["Slide_onehot"] = df["Slide"].apply(lambda s: onehot_encode(s, encoder=encoder))
-    if scale:
-        slide_onehot_array = np.stack(df["Slide_onehot"], axis=0)
-        scaled_slide_onehot_array = StandardScaler().fit_transform(slide_onehot_array)
-        df["Slide_onehot"] = scaled_slide_onehot_array
     return df
 
 
+def get_antigen_label_encoder() -> LabelEncoder:
+    label_encoder = LabelEncoder()
+    label_encoder.fit(config.ANTIGENS_CLOSEDSET)
+    return label_encoder
+
+
 def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.DataFrame:
-    """An important step in preparing data training and evaluation. 
-    Most importantly - appropriately removes duplicates. This function handles
-    this for the binary problems (NDB1, NDBK, NDM1, NDMK).
+    """Remove `Slide` duplicates for datasets for binary classifiers.
+    An important step in preparing data training and evaluation. 
+    This function handles this for the binary problems: NDB1, NDBK, NDM1,
+    NDMK).
 
     Args:
         df (pd.DataFrame): typical dataframe used in the project
@@ -89,4 +92,18 @@ def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.Data
     )
     df = pd.DataFrame(data=df, columns=["binds_a_pos_ag"])
     df = df.reset_index()
+    return df
+
+
+def remove_duplicates_for_multiclass(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove all Slides that are duplicated. A temporary solution for
+    dealing with duplicates in `Slide`.
+
+    Args:
+        df (pd.DataFrame)
+
+    Returns:
+        pd.DataFrame
+    """    
+    df = df.loc[~df["Slide"].duplicated(keep=False)].copy()
     return df
