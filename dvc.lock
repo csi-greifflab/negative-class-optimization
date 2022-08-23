@@ -1,0 +1,33 @@
+schema: '2.0'
+stages:
+  04a_prepare_CompAIRR_data:
+    cmd: python scripts/script_04a_prepare_CompAIRR_data.py
+    deps:
+    - path: data/globals/slack_1_global.tsv
+      md5: 8877beb902b485ded2b9f9e9b2072a1c
+      size: 64556814
+    - path: scripts/script_04a_prepare_CompAIRR_data.py
+      md5: b10be52ae9da67b5568de9ac6eda2ad8
+      size: 2071
+    outs:
+    - path: data/CompAIRR/prepared_data
+      md5: 03999812dcfa281fa0e5513f55b6fb7e.dir
+      size: 32121580
+      nfiles: 2
+  04b_CompAIRR:
+    cmd: bash scripts/script_04b_CompAIRR.sh
+    deps:
+    - path: data/CompAIRR/prepared_data/AIRR.tsv
+      md5: f4ca9d118dea546b4410a57a9a727aca
+      size: 15600307
+    - path: data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
+      md5: 79c52242b128289f7aff2c14ff77a99d
+      size: 16521273
+    - path: scripts/script_04b_CompAIRR.sh
+      md5: 65e8da1f62d5621fee8e038e6b79fa21
+      size: 2213
+    outs:
+    - path: data/CompAIRR/results
+      md5: bc367d3c844a841c25d09c72838fa528.dir
+      size: 3451219404
+      nfiles: 21

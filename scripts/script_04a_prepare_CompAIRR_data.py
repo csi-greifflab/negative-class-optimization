@@ -46,7 +46,7 @@ if __name__ == "__main__":
     df = pd.read_csv(config.DATA_SLACK_1_GLOBAL, sep='\t')
     
     if not TEST:
-        dir_path = Path("data/CompAIRR")
+        dir_path = Path("data/CompAIRR/prepared_data")
 
         if not dir_path.exists():
             dir_path.mkdir(exist_ok=True)

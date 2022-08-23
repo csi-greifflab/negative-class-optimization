@@ -1,7 +1,16 @@
-# stages:
-#   compairr_overlap:
-#     cmd: python scripts/script_04b_prepare_CompAIRR_data.py && bash scripts/script_04_CompAIRR.sh
-#     deps:
-#       - data/globals/slack_1_global.tsv
-#     outs:
-#       - data/CompAIRR
+stages:
+  04a_prepare_CompAIRR_data:
+    cmd: python scripts/script_04a_prepare_CompAIRR_data.py
+    deps:
+    - data/globals/slack_1_global.tsv
+    - scripts/script_04a_prepare_CompAIRR_data.py
+    outs:
+    - data/CompAIRR/prepared_data
+  04b_CompAIRR:
+    cmd: bash scripts/script_04b_CompAIRR.sh
+    deps:
+    - data/CompAIRR/prepared_data/AIRR.tsv
+    - data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
+    - scripts/script_04b_CompAIRR.sh
+    outs:
+    - data/CompAIRR/results

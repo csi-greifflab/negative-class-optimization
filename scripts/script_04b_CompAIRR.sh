@@ -18,9 +18,9 @@ run_compairr_overlaps() {
         --threads 12 \
         --matrix \
         --differences ${DIFFERENCES} \
-        --log overlaps_d${DIFFERENCES}.log \
-        --output overlaps_d${DIFFERENCES}_output.tsv \
-        --pairs overlaps_d${DIFFERENCES}_pairs.tsv \
+        --log results/overlaps_d${DIFFERENCES}.log \
+        --output results/overlaps_d${DIFFERENCES}_output.tsv \
+        --pairs results/overlaps_d${DIFFERENCES}_pairs.tsv \
         ${COMPAIRR_FILE} ${COMPAIRR_FILE}
 }
 
@@ -31,8 +31,8 @@ run_compairr_clustering_per_antigen() {
         --threads 12 \
         --cluster \
         --differences ${DIFFERENCES} \
-        --log clustering_per_antigen_d${DIFFERENCES}.log \
-        --output clustering_per_antigen_d${DIFFERENCES}_output.tsv \
+        --log results/clustering_per_antigen_d${DIFFERENCES}.log \
+        --output results/clustering_per_antigen_d${DIFFERENCES}_output.tsv \
         ${COMPAIRR_FILE}
 }
 
@@ -43,17 +43,19 @@ run_compairr_clustering_all_antigens() {
         --threads 12 \
         --cluster \
         --differences ${DIFFERENCES} \
-        --log clustering_d${DIFFERENCES}.log \
-        --output clustering_d${DIFFERENCES}_output.tsv \
+        --log results/clustering_d${DIFFERENCES}.log \
+        --output results/clustering_d${DIFFERENCES}_output.tsv \
         ${COMPAIRR_GLOBAL_REPERTOIRE}
 }
 
 COMPAIRR_DATA_PATH="data/CompAIRR"
-COMPAIRR_FILE="AIRR.tsv"
-COMPAIRR_GLOBAL_REPERTOIRE="AIRR_global_repertoire.tsv"
+COMPAIRR_FILE="prepared_data/AIRR.tsv"
+COMPAIRR_GLOBAL_REPERTOIRE="prepared_data/AIRR_global_repertoire.tsv"
 
 # Main
 docker pull torognes/compairr
+
+mkdir ${COMPAIRR_DATA_PATH}/results
 
 DIFFERENCES=0
 run_compairr_overlaps
