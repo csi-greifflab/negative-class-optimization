@@ -3,7 +3,11 @@ from pathlib import Path
 
 # ugly
 src_config_filepath = Path(__file__)  # assumes specific local install
-adjust_filepaths = lambda p: (src_config_filepath / "../../../.." / p).resolve()
+
+
+def adjust_filepaths(p): return (
+    src_config_filepath / "../../../.." / p).resolve()
+
 
 DATA_BASE_PATH = adjust_filepaths(Path("data"))
 DATA_SLACK_1 = adjust_filepaths(Path("data/slack_1"))
@@ -11,7 +15,23 @@ DATA_SLACK_1_GLOBAL = adjust_filepaths(Path("data/globals/slack_1_global.tsv"))
 IMMUNE_ML_BASE_PATH = adjust_filepaths(Path("immuneML"))
 GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
 
-SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M', 'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
+SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
+                    'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
+
+ANTIGENS = [
+    '3VRL',
+    '1NSN',
+    '3RAJ',
+    '5E94',
+    '1H0D',
+    '1WEJ',
+    '1ADQ',
+    '1FBI',
+    '2YPV',
+    '1OB1'
+]
+ANTIGENS_CLOSEDSET = ['1FBI', '1NSN', '1OB1', '1WEJ', '3VRL', '5E94']
+ANTIGENS_OPENSET = ['1ADQ', '1H0D', '2YPV', '3RAJ']
 
 GLOBAL_CDR3_LEN_DISTR = {
     15: 0.17861142857142856,

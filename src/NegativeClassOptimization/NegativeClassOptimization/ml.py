@@ -5,7 +5,7 @@ Includes models, datasets and data loaders.
 
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,8 @@ import NegativeClassOptimization.preprocessing as preprocessing
 
 class PairwiseDataset(Dataset):
     """Pytorch dataset for modelling 2 antigen binder binary classifiers.
-    """    
+    """
+
     def __init__(self, df):
         self.df = df
 
@@ -30,53 +31,24 @@ class PairwiseDataset(Dataset):
 
     def __getitem__(self, idx):
         return (
-            torch.tensor(self.df.loc[idx, "X"]).reshape((1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "X"]).reshape(
+                (1, -1)).type(torch.float),
             torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.float),
         )
 
 
-def remove_duplicates_for_pairwise(df: pd.DataFrame, ag_pos: str) -> pd.DataFrame:
-    """An important step in preparing data for SN10 training and evaluation. 
-    Most importantly - appropriately removes duplicates.
-
-    Args:
-        df (pd.DataFrame): typical dataframe used in the project
-        pos_ag (str): the antigen assuming the positive dataset role
-
-    Returns:
-        pd.DataFrame: df with new columns suitable for modelling.
-    """
-    
-    def infer_antigen_from_duplicate_list(antigens: List[str], pos_antigen: str):
-        assert len(antigens) <= 2, ">2 antigens not supported yet."
-        if len(antigens) == 1:
-            return antigens[0]
-        else:
-            if pos_antigen in antigens:
-                return pos_antigen
-            else:
-                return list(set(antigens) - set([pos_antigen]))[0]
-
-    df = df.groupby("Slide").apply(
-        lambda df_: infer_antigen_from_duplicate_list(df_["Antigen"].unique().tolist(), pos_antigen=ag_pos)
-    )
-    df = pd.DataFrame(data=df, columns=["Antigen"])
-    df = df.reset_index()
-    return df
-
-
-def preprocess_data_for_pytorch_pairwise(
+def preprocess_data_for_pytorch_binary(
     df,
-    ag_pos,
-    batch_size = 64,
-    train_frac = 0.8
+    ag_pos: List[str],
+    batch_size=64,
+    train_frac=0.8
 ):
 
-    df = remove_duplicates_for_pairwise(df, ag_pos)
-    preprocessing.onehot_encode_df(df)
+    df = preprocessing.remove_duplicates_for_binary(df, ag_pos)
+    df = preprocessing.onehot_encode_df(df)
 
     df["X"] = df["Slide_onehot"]
-    df["y"] = np.where(df["Antigen"] == ag_pos, 1, 0)
+    df["y"] = df["binds_a_pos_ag"]
 
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle
 
@@ -95,7 +67,8 @@ def preprocess_data_for_pytorch_pairwise(
 
 class SN10(nn.Module):
     """The simple neural network 10 (SN10) model from `Absolut!`.
-    """    
+    """
+
     def __init__(self):
         super(SN10, self).__init__()
         self.flatten = nn.Flatten()
@@ -120,7 +93,7 @@ def train_loop(loader, model, loss_fn, optimizer):
         model (nn.Model)
         loss_fn (Callable)
         optimizer
-    """    
+    """
     size = len(loader.dataset)
     for batch, (X, y) in enumerate(loader):
         y_pred = model(X)
@@ -142,7 +115,7 @@ def test_loop(loader, model, loss_fn):
         loader (DataLoader)
         model (nn.Model)
         loss_fn (Callable)
-    """    
+    """
     size = len(loader.dataset)
     num_batches = len(loader)
     test_loss, correct = 0, 0
@@ -151,11 +124,13 @@ def test_loop(loader, model, loss_fn):
         for X, y in loader:
             y_pred = model(X)
             test_loss += loss_fn(y_pred, y).item()
-            correct += (torch.round(y_pred) == y).type(torch.float).sum().item()
-    
+            correct += (torch.round(y_pred) ==
+                        y).type(torch.float).sum().item()
+
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
 def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> List[Tuple[np.array, float]]:
@@ -166,7 +141,7 @@ def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> 
         model (nn.Module)
 
     Returns: list of tuples containing attributions and approximation errors (for integration).
-    """    
+    """
     ig = IntegratedGradients(model)
 
     inputs = tuple(map(

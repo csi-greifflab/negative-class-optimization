@@ -1,4 +1,5 @@
 from typing import List
+import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 import NegativeClassOptimization.config as config
@@ -50,10 +51,42 @@ def onehot_encode_df(
     Returns:
         np.array: _description_
     """      
+    df = df.copy()
     df["Slide_onehot"] = df["Slide"].apply(lambda s: onehot_encode(s, encoder=encoder))
-    slide_onehot_array = np.stack(df["Slide_onehot"], axis=0)
     if scale:
+        slide_onehot_array = np.stack(df["Slide_onehot"], axis=0)
         scaled_slide_onehot_array = StandardScaler().fit_transform(slide_onehot_array)
-        return scaled_slide_onehot_array
-    else:
-        return slide_onehot_array
+        df["Slide_onehot"] = scaled_slide_onehot_array
+    return df
+
+
+def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.DataFrame:
+    """An important step in preparing data training and evaluation. 
+    Most importantly - appropriately removes duplicates. This function handles
+    this for the binary problems (NDB1, NDBK, NDM1, NDMK).
+
+    Args:
+        df (pd.DataFrame): typical dataframe used in the project
+        pos_ag (str): the antigen assuming the positive dataset role
+
+    Returns:
+        pd.DataFrame: df with 2 columns suitable for modelling: `Slide` and `binds_a_pos_ag`.
+    """
+
+    def infer_antigen_from_duplicate_list(
+        antigens: List[str], 
+        pos_antigens: List[str],
+        ):
+        for pos_ag in pos_antigens:
+            if pos_ag in antigens:
+                return 1    
+        return 0
+
+    df = df.groupby("Slide").apply(
+        lambda df_: infer_antigen_from_duplicate_list(
+            df_["Antigen"].unique().tolist(), pos_antigens=ag_pos
+        )
+    )
+    df = pd.DataFrame(data=df, columns=["binds_a_pos_ag"])
+    df = df.reset_index()
+    return df
