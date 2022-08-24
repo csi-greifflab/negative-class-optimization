@@ -26,3 +26,13 @@ stages:
     - 05_SN10_closedset_binary_interpretability.learning_rate
     outs:
     - data/SN10_closedset_binary_interpretability/
+  05b_all_SN10_closedset_binary_interpretability:
+    cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
+    deps:
+    - data/globals/slack_1_global.tsv
+    - scripts/script_05b_all_SN10_closedset_binary_interpretability.py
+    params:
+    - 05_SN10_closedset_binary_interpretability.epochs
+    - 05_SN10_closedset_binary_interpretability.learning_rate
+    outs:
+    - data/SN10_closedset_binary_interpretability_all

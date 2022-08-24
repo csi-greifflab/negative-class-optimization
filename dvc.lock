@@ -38,8 +38,8 @@ stages:
       md5: 8877beb902b485ded2b9f9e9b2072a1c
       size: 64556814
     - path: scripts/script_05_SN10_closedset_binary_interpretability.py
-      md5: dc4c927892b1737c6e877e0dacb0b31a
-      size: 3661
+      md5: dca7b605e5e88b600473da01ff041358
+      size: 5400
     params:
       params.yaml:
         05_SN10_closedset_binary_interpretability.ag_neg: 1ADQ

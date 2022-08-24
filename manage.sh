@@ -20,6 +20,10 @@ elif [[ $COMMAND == "get_700k" ]]; then
     echo "Fetching the 700k dataset with DVC."
     mkdir -p data/globals
     dvc get --out data/globals/slack_1_global.tsv . data/globals/slack_1_global.tsv
+elif [[ $COMMAND == "update_dvc_pipelines" ]]; then
+    echo "Updating and reproducing dvc pipelines."
+    dvc repro
+    dvc commit
 else
     echo "Command $COMMAND not detected."
 fi
