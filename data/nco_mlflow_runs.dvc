@@ -1,5 +1,5 @@
 outs:
-- md5: 70b7da3535dccb921006d577f067aacd.dir
-  size: 52267
-  nfiles: 291
+- md5: f777d47d61a39385cf2c632b0734165f.dir
+  size: 37538
+  nfiles: 13
   path: nco_mlflow_runs
