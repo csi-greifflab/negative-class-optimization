@@ -38,8 +38,8 @@ stages:
       md5: 8877beb902b485ded2b9f9e9b2072a1c
       size: 64556814
     - path: scripts/script_05_SN10_closedset_binary_interpretability.py
-      md5: dca7b605e5e88b600473da01ff041358
-      size: 5400
+      md5: 8fe5b60d7de7259288e24391d9818170
+      size: 5428
     params:
       params.yaml:
         05_SN10_closedset_binary_interpretability.ag_neg: 1ADQ
@@ -48,6 +48,24 @@ stages:
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
     outs:
     - path: data/SN10_closedset_binary_interpretability/
-      md5: 9860dad01f06eee9f32b3b1525fe47c8.dir
-      size: 84074003
+      md5: 8ab2931fa5b2cf737813d1b388e419de.dir
+      size: 84075517
       nfiles: 4
+  05b_all_SN10_closedset_binary_interpretability:
+    cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
+    deps:
+    - path: data/globals/slack_1_global.tsv
+      md5: 8877beb902b485ded2b9f9e9b2072a1c
+      size: 64556814
+    - path: scripts/script_05b_all_SN10_closedset_binary_interpretability.py
+      md5: bc6ab9ce78b7550cf2179a2cc262af8e
+      size: 2124
+    params:
+      params.yaml:
+        05_SN10_closedset_binary_interpretability.epochs: 5
+        05_SN10_closedset_binary_interpretability.learning_rate: 0.01
+    outs:
+    - path: data/SN10_closedset_binary_interpretability_all
+      md5: df3b481ab06861e4d5a3967bcfa1de90.dir
+      size: 4093474680
+      nfiles: 135

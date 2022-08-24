@@ -3,3 +3,7 @@
   ag_neg: "1ADQ"
   learning_rate: 0.01
   epochs: 5
+05b_all_SN10_closedset_binary_interpretability:
+  num_processes: 12
+  learning_rate: 0.01
+  epochs: 5

@@ -94,6 +94,7 @@ def run_attribution_workflow(
         ag_neg,
         attributions_savepath,
         agg_attributions_savepath,
+        attributions_ag_pos_fig_path,
         attributions_ag_neg_fig_path,
         test_data, model
     ):
@@ -154,7 +155,7 @@ def run_attribution_workflow(
             f"based on SN10 network for ({ag_pos} vs {ag_neg}) classification"
         )
     )
-    fig1.savefig()
+    fig1.savefig(attributions_ag_pos_fig_path)
 
     fig2, axs2 = joypy.joyplot(
         df_attr.loc[df_attr["Antigen"] == ag_neg].iloc[:, :-1],
@@ -185,6 +186,7 @@ if __name__ == "__main__":
         ag_neg,
         attributions_savepath,
         agg_attributions_savepath,
+        attributions_ag_pos_fig_path,
         attributions_ag_neg_fig_path,
         test_data,
         model
