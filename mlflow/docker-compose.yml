@@ -1,0 +1,24 @@
+version: '3.3'
+
+services:
+
+    nco_mlflow:
+        restart: always
+        build: ./mlflow-build
+        image: mlflow_server
+        container_name: nco_mlflow_server
+        ports:
+            - "5000:5000"
+        networks:
+            - nco_mlflow_net
+        volumes:
+          - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs:/home/mlflow
+        command: >
+          mlflow server 
+          --host 0.0.0.0 
+          --backend-store-uri ./backend_store
+          --registry-store-uri sqlite:////home/mlflow/registry_store.db
+
+networks:
+    nco_mlflow_net:
+        driver: bridge

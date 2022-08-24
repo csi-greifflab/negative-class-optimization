@@ -26,3 +26,4 @@ dependencies:
       - scikit-learn
       - joypy
       - networkx==2.6.3
+      - mlflow
