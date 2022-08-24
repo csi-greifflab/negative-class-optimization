@@ -32,6 +32,7 @@ if __name__ == "__main__":
     for (ag_pos, ag_neg) in tqdm.tqdm(combinations(antigens, 2)):
 
         out_dir_i = out_dir / f"{ag_pos}_vs_{ag_neg}"
+        out_dir_i.mkdir(exist_ok=True)
 
         attributions_savepath = out_dir_i / f"attributions_{ag_pos}_vs_{ag_neg}.tsv"
         agg_attributions_savepath = out_dir_i / \
