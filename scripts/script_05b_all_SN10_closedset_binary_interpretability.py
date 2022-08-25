@@ -38,50 +38,52 @@ def run_main(
         data_path=data_path,
     ):
 
-    ag_pos, ag_neg = ag_pair
-
-    out_dir_i = out_dir / f"{ag_pos}_vs_{ag_neg}"
-    out_dir_i.mkdir(exist_ok=True)
-
-    attributions_savepath = out_dir_i / \
-        f"attributions_{ag_pos}_vs_{ag_neg}.tsv"
-    agg_attributions_savepath = out_dir_i / \
-        f"aggregated_attributions_{ag_pos}_vs_{ag_neg}.tsv"
-    attributions_ag_pos_fig_path = out_dir_i / \
-        f"aggregated_attributions_{ag_pos}.png"
-    attributions_ag_neg_fig_path = out_dir_i / \
-        f"aggregated_attributions_{ag_neg}.png"
-
-    test_data, model, online_metrics = process_data_and_train_model(
-        ag_pos,
-        ag_neg,
-        learning_rate,
-        epochs,
-        data_path
-    )
-
-    run_attribution_workflow(
-        ag_pos,
-        ag_neg,
-        attributions_savepath,
-        agg_attributions_savepath,
-        attributions_ag_pos_fig_path,
-        attributions_ag_neg_fig_path,
-        test_data,
-        model
-    )
-
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
         description=f"{ag_pos} vs {ag_neg}"
         ):
-        
+
+        ag_pos, ag_neg = ag_pair
+
+        out_dir_i = out_dir / f"{ag_pos}_vs_{ag_neg}"
+        out_dir_i.mkdir(exist_ok=True)
+
+
+        train_data, test_data, model, online_metrics = process_data_and_train_model(
+            ag_pos,
+            ag_neg,
+            learning_rate,
+            epochs,
+            data_path
+        )
+
+        attributions_savepath = out_dir_i / \
+            f"attributions_{ag_pos}_vs_{ag_neg}.tsv"
+        agg_attributions_savepath = out_dir_i / \
+            f"aggregated_attributions_{ag_pos}_vs_{ag_neg}.tsv"
+        attributions_ag_pos_fig_path = out_dir_i / \
+            f"aggregated_attributions_{ag_pos}.png"
+        attributions_ag_neg_fig_path = out_dir_i / \
+            f"aggregated_attributions_{ag_neg}.png"
+        run_attribution_workflow(
+            ag_pos,
+            ag_neg,
+            attributions_savepath,
+            agg_attributions_savepath,
+            attributions_ag_pos_fig_path,
+            attributions_ag_neg_fig_path,
+            test_data,
+            model
+        )
+
         mlflow.log_params({
             "ag_pos": ag_pos,
             "ag_neg": ag_neg,
             "learning_rate": learning_rate,
             "epochs": epochs,
+            "train_data_nrows": train_data.df.shape[0],
+            "train_data_pos_ratio": train_data.df.y.sum() / train_data.df.shape[0]
         })
 
         for i, epoch_record in enumerate(online_metrics):

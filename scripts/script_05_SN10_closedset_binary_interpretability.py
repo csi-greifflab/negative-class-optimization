@@ -91,7 +91,7 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
             "test_metrics": test_metrics,
         })
 
-    return test_data, model, online_metrics
+    return train_data, test_data, model, online_metrics
 
 
 def run_attribution_workflow(
