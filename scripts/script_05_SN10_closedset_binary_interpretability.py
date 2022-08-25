@@ -178,7 +178,7 @@ if __name__ == "__main__":
 
     out_dir.mkdir(exist_ok=True)
 
-    test_data, model, online_metrics = process_data_and_train_model(
+    train_data, test_data, model, online_metrics = process_data_and_train_model(
         ag_pos,
         ag_neg,
         learning_rate,

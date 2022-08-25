@@ -38,17 +38,16 @@ def run_main(
         data_path=data_path,
     ):
 
+    ag_pos, ag_neg = ag_pair
+
+    out_dir_i = out_dir / f"{ag_pos}_vs_{ag_neg}"
+    out_dir_i.mkdir(exist_ok=True)
+    
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
         description=f"{ag_pos} vs {ag_neg}"
         ):
-
-        ag_pos, ag_neg = ag_pair
-
-        out_dir_i = out_dir / f"{ag_pos}_vs_{ag_neg}"
-        out_dir_i.mkdir(exist_ok=True)
-
 
         train_data, test_data, model, online_metrics = process_data_and_train_model(
             ag_pos,
