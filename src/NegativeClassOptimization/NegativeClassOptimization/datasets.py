@@ -7,6 +7,10 @@ import warnings
 import pandas as pd
 import numpy as np
 # from tinydb import TinyDB, Query
+
+import torch
+from torch.utils.data import Dataset
+
 import sys
 sys.path.append('/nfs/scistore08/kondrgrp/aminnega/negative-class-optimization/src/NegativeClassOptimization')
 
@@ -103,3 +107,39 @@ def generate_1_vs_all_dataset(
     df.to_csv(filepath, sep='\t')
     
     return df
+
+
+class BinaryDataset(Dataset):
+    """Pytorch dataset for modelling antigen binding binary classifiers.
+    """
+
+    def __init__(self, df):
+        self.df = df
+
+    def __len__(self):
+        return self.df.shape[0]
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.df.loc[idx, "X"]).reshape(
+                (1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.float),
+        )
+
+
+class MulticlassDataset(Dataset):
+    """Pytorch dataset for modelling antigen binding multiclass classifiers.
+    """
+
+    def __init__(self, df):
+        self.df = df
+
+    def __len__(self):
+        return self.df.shape[0]
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.df.loc[idx, "X"]).reshape(
+                (1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.uint8),
+        )    
