@@ -201,6 +201,7 @@ def train_loop(loader, model, loss_fn, optimizer):
         loss_fn (Callable)
         optimizer
     """
+    losses = []
     size = len(loader.dataset)
     for batch, (X, y) in enumerate(loader):
         y_pred = model(X)
@@ -212,7 +213,9 @@ def train_loop(loader, model, loss_fn, optimizer):
 
         if batch % 100 == 0:
             loss, current = loss.item(), batch * len(X)
+            losses.append(loss)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+    return losses
 
 
 def test_loop(loader, model, loss_fn):
@@ -237,7 +240,9 @@ def test_loop(loader, model, loss_fn):
     test_loss /= num_batches
     correct /= size
     print(
-        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+    return {"test_loss": test_loss, "accuracy": 100*correct}
 
 
 def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> List[Tuple[np.array, float]]:

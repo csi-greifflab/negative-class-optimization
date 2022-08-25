@@ -38,8 +38,8 @@ stages:
       md5: 8877beb902b485ded2b9f9e9b2072a1c
       size: 64556814
     - path: scripts/script_05_SN10_closedset_binary_interpretability.py
-      md5: 98aa9ae4def58f721cfb10b3dae95287
-      size: 5504
+      md5: d3e87c0031d54d2a74dc2f8851093c89
+      size: 5705
     params:
       params.yaml:
         05_SN10_closedset_binary_interpretability.ag_neg: 1ADQ
@@ -48,8 +48,8 @@ stages:
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
     outs:
     - path: data/SN10_closedset_binary_interpretability/
-      md5: 06e4df0bbc5a62579a62773494975a37.dir
-      size: 84059853
+      md5: 129139795e1c46fb70d732d68fe1a834.dir
+      size: 84347178
       nfiles: 4
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
@@ -58,14 +58,14 @@ stages:
       md5: 8877beb902b485ded2b9f9e9b2072a1c
       size: 64556814
     - path: scripts/script_05b_all_SN10_closedset_binary_interpretability.py
-      md5: bfeaf9f80b5535ada3246323ab7dace2
-      size: 2162
+      md5: 85e26f51e8dab568da8dbfee47452840
+      size: 3258
     params:
       params.yaml:
         05_SN10_closedset_binary_interpretability.epochs: 5
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
     outs:
     - path: data/SN10_closedset_binary_interpretability_all
-      md5: d11f69f1a2881f1a3223327fc27aaac1.dir
-      size: 4100840668
+      md5: a6d236410ee3820c40d494ecf9cd0409.dir
+      size: 4095483084
       nfiles: 180

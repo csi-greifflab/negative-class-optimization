@@ -81,12 +81,17 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
     loss_fn = nn.BCELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
+    online_metrics = []
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_loader, model, loss_fn, optimizer)
-        test_loop(test_loader, model, loss_fn)
+        losses = train_loop(train_loader, model, loss_fn, optimizer)
+        test_metrics = test_loop(test_loader, model, loss_fn)
+        online_metrics.append({
+            "train_losses": losses,
+            "test_metrics": test_metrics,
+        })
 
-    return test_data, model
+    return test_data, model, online_metrics
 
 
 def run_attribution_workflow(
@@ -173,7 +178,7 @@ if __name__ == "__main__":
 
     out_dir.mkdir(exist_ok=True)
 
-    test_data, model = process_data_and_train_model(
+    test_data, model, online_metrics = process_data_and_train_model(
         ag_pos,
         ag_neg,
         learning_rate,

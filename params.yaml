@@ -4,6 +4,8 @@
   learning_rate: 0.01
   epochs: 5
 05b_all_SN10_closedset_binary_interpretability:
+  experiment_id: 1
+  run_name: "first_run"
   num_processes: 12
   learning_rate: 0.01
   epochs: 5
