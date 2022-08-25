@@ -37,8 +37,7 @@ ag_neg = "1NSN"
 
 
 def run_main(
-    ag_pos, 
-    ag_neg, 
+    ag_pair, 
     experiment_id=experiment_id, 
     run_name=run_name, 
     epochs=epochs, 
@@ -47,6 +46,7 @@ def run_main(
     out_path=out_path
     ):
     
+    ag_pos, ag_neg = ag_pair
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
@@ -55,8 +55,8 @@ def run_main(
         mlflow.log_params({
             "epochs": 5,
             "learning_rate": 0.01,
-            "ag_pos": "1FBI",
-            "ag_neg": "1NSN",
+            "ag_pos": ag_pos,
+            "ag_neg": ag_neg,
         })
 
         out_path_i = out_path / f"{ag_pos}_vs_{ag_neg}"
