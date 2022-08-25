@@ -17,9 +17,13 @@ from torch.utils.data import DataLoader
 from captum.attr import IntegratedGradients
 
 import NegativeClassOptimization.config as config
-import NegativeClassOptimization.preprocessing as preprocessing
+from NegativeClassOptimization.datasets import (
+    BinaryDataset
+)
+from NegativeClassOptimization.preprocessing import (
+    preprocess_data_for_pytorch_binary
+)
 from NegativeClassOptimization.ml import (
-    BinaryDataset, preprocess_data_for_pytorch_binary,
     SN10,
     train_loop, test_loop,
     compute_integratedgradients_attribution
