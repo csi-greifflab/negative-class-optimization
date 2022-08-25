@@ -10,8 +10,9 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelEncoder
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
 
 import torch
 from torch import nn
@@ -104,11 +105,26 @@ def test_loop(loader, model, loss_fn):
         "test_loss": test_loss,
         "accuracy": 100*correct
     }
-    return loop_metrics
+
+    x_test, y_test = list(
+        DataLoader(loader.dataset, batch_size=len(loader.dataset))
+        )[0]
+    closed_metrics = compute_metrics_closed_testset(model, x_test, y_test)
+
+    return {
+        **loop_metrics,
+        **closed_metrics,
+    }
 
 
 def openset_loop(open_loader, test_loader, model):
-    open_metrics = None
+    x_open, y = list(
+        DataLoader(open_loader.dataset, batch_size=len(open_loader.dataset))
+        )[0]
+    x_test, y_test = list(
+        DataLoader(test_loader.dataset, batch_size=len(test_loader.dataset))
+        )[0]
+    open_metrics = compute_metrics_open_testset(model, x_open, x_test)
     return open_metrics
 
 
@@ -139,3 +155,136 @@ def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> 
         )
         records.append((attributions, approximation_error))
     return records
+
+
+def train_for_ndb1(epochs, learning_rate, train_loader, test_loader, open_loader, model):
+    """Train model for the NDB1 problem formalization.
+
+    Args:
+        epochs (_type_): _description_
+        learning_rate (_type_): _description_
+        train_loader (_type_): _description_
+        test_loader (_type_): _description_
+        open_loader (_type_): _description_
+        model (_type_): _description_
+
+    Returns:
+        List[dict]: metrics per epoch.
+    """    
+    loss_fn = nn.BCELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+    online_metrics_per_epoch = []
+    for t in range(epochs):
+        print(f"Epoch {t+1}\n-------------------------------")
+        losses = train_loop(train_loader, model, loss_fn, optimizer)
+        # 2 lines below replace with evaluate_on_closed_and_open_testsets
+        test_metrics = test_loop(test_loader, model, loss_fn)
+        open_metrics = openset_loop(open_loader, test_loader, model)
+        online_metrics_per_epoch.append({
+            "train_losses": losses,
+            "test_metrics": test_metrics,
+            "open_metrics": open_metrics,
+        })
+    return online_metrics_per_epoch
+
+
+def compute_metrics_closed_testset(model, x_test, y_test):
+    """Compute metrics for the closed test set.
+
+    Args:
+        model (torch.nn): implements forward_logits.
+        x_test (torch.tensor): closed set input examples.
+        y_test (torch.tensor): closed set output examples.
+
+    Returns:
+        dict: recorded relevant metrics.
+    """
+    assert hasattr(model, "forward_logits")
+
+    y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
+    y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
+    y_test_true = y_test.detach().numpy().reshape(-1)
+    roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
+    recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
+    precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
+    f1_closed = metrics.f1_score(y_true=y_test_true, y_pred=y_test_pred)
+    metrics_closed = {
+        "y_test_logits": y_test_logits,
+        "y_test_pred": y_test_pred,
+        "y_test_true": y_test_true,
+        "roc_auc_closed": roc_auc_closed,
+        "recall_closed": recall_closed,
+        "precision_closed": precision_closed,
+        "f1_closed": f1_closed,
+    }
+    return metrics_closed
+
+
+def compute_metrics_open_testset(model, x_open, x_test):
+    """Compute metrics for the open test set.
+
+    Args:
+        model (torch.nn): implements forward_logits.
+        x_open (torch.tensor): open set input examples.
+        x_test (torch.tensor): closed set input examples.
+
+    Returns:
+        dict: recorded metrics.
+    """
+    assert hasattr(model, "forward_logits")
+    
+    open_abs_logits = abs(model.forward_logits(x_open)).detach().numpy().reshape(-1)
+    closed_abs_logits = abs(model.forward_logits(x_test).detach().numpy()).reshape(-1)
+    df_tmp = pd.DataFrame(data=open_abs_logits, columns=["logits"])
+    df_tmp = pd.concat(
+        (
+            pd.DataFrame(data={"abs_logits": open_abs_logits, "test_type": "open"}),
+            pd.DataFrame(data={"abs_logits": closed_abs_logits, "test_type": "closed"})
+        ),
+        axis=0
+    ).reset_index(drop=True)
+    y_open_abs_logits = df_tmp["abs_logits"]
+    df_tmp["y"] = np.where(df_tmp["test_type"] == "open", 0, 1)
+    y_open_true = df_tmp["y"]
+    del df_tmp
+    roc_auc_open = metrics.roc_auc_score(y_true=y_open_true, y_score=y_open_abs_logits)
+    metrics_open = {
+        "y_open_abs_logits": y_open_abs_logits,
+        "y_open_true": y_open_true,
+        "roc_auc_open": roc_auc_open,
+    }
+    return metrics_open
+
+
+def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
+    """Compute evaluation metrics for the closed set and open set
+    scenarios.
+
+    Args:
+        open_loader (DataLoader): loads the open set testing dataset 
+        which includes closed set and open set examples. Evaluated as
+        a binary classification problem.
+
+        test_loader (DataLoader): loads the typical closed set test data.
+        
+        model (torch.nn): the model to be evaluated. Must implement 
+        forward_logits(x).
+    """
+    assert hasattr(model, "forward_logits")
+
+    x, y = list(
+        DataLoader(open_loader.dataset, batch_size=len(open_loader.dataset))
+        )[0]
+    x_test, y_test = list(
+        DataLoader(test_loader.dataset, batch_size=len(test_loader.dataset))
+        )[0]
+
+    metrics_open = compute_metrics_open_testset(model, x, x_test)
+    metrics_closed = compute_metrics_closed_testset(model, x_test, y_test)
+
+    eval_metrics = {
+        "open": metrics_open,
+        "closed": metrics_closed,
+    }
+    return eval_metrics
