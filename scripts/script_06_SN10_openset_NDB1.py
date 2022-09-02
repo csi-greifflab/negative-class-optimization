@@ -53,8 +53,8 @@ def run_main(
         description=f"{ag_pos} vs {ag_neg}"
         ):
         mlflow.log_params({
-            "epochs": 5,
-            "learning_rate": 0.01,
+            "epochs": epochs,
+            "learning_rate": learning_rate,
             "ag_pos": ag_pos,
             "ag_neg": ag_neg,
         })
