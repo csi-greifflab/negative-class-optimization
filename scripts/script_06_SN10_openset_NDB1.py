@@ -6,6 +6,7 @@ import mlflow
 import NegativeClassOptimization.config as config
 import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.visualisations as vis
 import pandas as pd
 import torch
@@ -54,7 +55,7 @@ def run_main(
         out_path_i.mkdir(exist_ok=True)
 
         ## ETL
-        df = pd.read_csv(data_path, sep='\t')
+        df = utils.load_global_dataframe(data_path)
         df_closed = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
         df_open = df.loc[df["Antigen"].isin(config.ANTIGENS_OPENSET)].copy()
         df_open = df_open.drop_duplicates(["Slide"], keep="first")

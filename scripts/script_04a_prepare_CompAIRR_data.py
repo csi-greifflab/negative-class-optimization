@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 
 
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     
     np.random.seed(config.SEED)
 
-    df = pd.read_csv(config.DATA_SLACK_1_GLOBAL, sep='\t')
+    df = utils.load_global_dataframe()
     
     if not TEST:
         dir_path = Path("data/CompAIRR/prepared_data")

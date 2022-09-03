@@ -16,6 +16,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from captum.attr import IntegratedGradients
 
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 from NegativeClassOptimization.datasets import (
     BinaryDataset
@@ -64,7 +65,7 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
     Returns:
         _type_
     """    
-    df = pd.read_csv(data_path, sep='\t')
+    df = utils.load_global_dataframe(data_path)
     df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
 
     (

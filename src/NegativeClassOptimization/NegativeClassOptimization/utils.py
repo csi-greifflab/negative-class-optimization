@@ -157,3 +157,7 @@ def build_random_dataset(
     df = df.drop_duplicates(["UID"])
     df["Antigen"] = "random"
     return df
+
+
+def load_global_dataframe(path = config.DATA_SLACK_1_GLOBAL):
+    return pd.read_csv(path, sep='\t', dtype={"Antigen": str}).iloc[:, 1:]

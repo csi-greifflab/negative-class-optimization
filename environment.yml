@@ -27,3 +27,4 @@ dependencies:
       - joypy
       - networkx==2.6.3
       - mlflow
+      - pyfarmhash
