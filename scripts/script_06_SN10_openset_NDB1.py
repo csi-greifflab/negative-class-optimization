@@ -18,10 +18,7 @@ out_path = Path("data/SN10_openset_NDB1")
 
 
 ## PARAMETERS
-with open(config.PARAMS_PATH, "r") as fh:
-    params = yaml.safe_load(fh)
-
-params_06 = params["06_SN10_openset_NDB1"]
+params_06 = config.PARAMS["06_SN10_openset_NDB1"]
 
 experiment_id = params_06["experiment_id"]
 run_name = params_06["run_name"]

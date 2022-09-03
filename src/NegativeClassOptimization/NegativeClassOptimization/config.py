@@ -1,3 +1,4 @@
+import yaml
 from pathlib import Path
 
 
@@ -9,6 +10,12 @@ def adjust_filepaths(p): return (
     src_config_filepath / "../../../.." / p).resolve()
 
 
+def read_yaml(path: Path) -> dict:
+    with open(path, "r") as fh:
+        return yaml.safe_load(fh)
+
+
+# TODO: add filepaths as part of yaml or other config
 DATA_BASE_PATH = adjust_filepaths(Path("data"))
 DATA_SLACK_1 = adjust_filepaths(Path("data/slack_1"))
 DATA_SLACK_1_GLOBAL = adjust_filepaths(Path("data/globals/slack_1_global.tsv"))
@@ -71,3 +78,5 @@ AMINOACID_ALPHABET = list("ACDEFGHIKLMNPQRSTVWY")
 SEED = 42
 
 MLFLOW_TRACKING_URI = "http://0.0.0.0:5000"
+
+PARAMS: dict = read_yaml(PARAMS_PATH)
