@@ -69,3 +69,19 @@ stages:
       md5: a27617b9e279d389b66169afd79f8cad.dir
       size: 4095854682
       nfiles: 180
+  06_SN10_openset_NDB1:
+    cmd: python scripts/script_06_SN10_openset_NDB1.py
+    deps:
+    - path: data/globals/slack_1_global.tsv
+      md5: 8877beb902b485ded2b9f9e9b2072a1c
+      size: 64556814
+    - path: scripts/script_06_SN10_openset_NDB1.py
+      md5: e87a0263aab8a73efd3a64e491d0ac1e
+      size: 4485
+    params:
+      params.yaml:
+        06_SN10_openset_NDB1.epochs: 30
+        06_SN10_openset_NDB1.experiment_id: 2
+        06_SN10_openset_NDB1.learning_rate: 0.01
+        06_SN10_openset_NDB1.num_processes: 20
+        06_SN10_openset_NDB1.run_name: DEV

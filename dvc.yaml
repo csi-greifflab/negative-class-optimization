@@ -42,5 +42,9 @@ stages:
       - data/globals/slack_1_global.tsv
       - scripts/script_06_SN10_openset_NDB1.py
     params:
-      - 06_s
+      - 06_SN10_openset_NDB1.experiment_id
+      - 06_SN10_openset_NDB1.run_name
+      - 06_SN10_openset_NDB1.num_processes
+      - 06_SN10_openset_NDB1.epochs
+      - 06_SN10_openset_NDB1.learning_rate
     # outs:  # are logged with mlflow
