@@ -50,7 +50,7 @@ if __name__ == "__main__":
         logging.info("Building pairwise datasets")
         for ag1, ag2 in combinations(antigens, 2):
             logging.info(f"Building pairwise dataset: {ag1} vs {ag2}")
-            datasets.generate_pairwise_dataset(
+            datasets.generate_pairwise_dataframe(
                 df_global,
                 ag1 = ag1,
                 ag2 = ag2,
