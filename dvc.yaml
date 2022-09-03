@@ -2,7 +2,7 @@ stages:
   04a_prepare_CompAIRR_data:
     cmd: python scripts/script_04a_prepare_CompAIRR_data.py
     deps:
-    - data/globals/slack_1_global.tsv
+    - data/slack_1/global/slack_1_global.tsv
     - scripts/script_04a_prepare_CompAIRR_data.py
     outs:
     - data/CompAIRR/prepared_data
@@ -17,7 +17,7 @@ stages:
   05_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05_SN10_closedset_binary_interpretability.py
     deps:
-    - data/globals/slack_1_global.tsv
+    - data/slack_1/global/slack_1_global.tsv
     - scripts/script_05_SN10_closedset_binary_interpretability.py
     params:
     - 05_SN10_closedset_binary_interpretability.ag_neg
@@ -29,7 +29,7 @@ stages:
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     deps:
-    - data/globals/slack_1_global.tsv
+    - data/slack_1/global/slack_1_global.tsv
     - scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     params:
     - 05_SN10_closedset_binary_interpretability.epochs
@@ -39,7 +39,7 @@ stages:
   06_SN10_openset_NDB1:
     cmd: python scripts/script_06_SN10_openset_NDB1.py
     deps:
-      - data/globals/slack_1_global.tsv
+      - data/slack_1/global/slack_1_global.tsv
       - scripts/script_06_SN10_openset_NDB1.py
     params:
       - 06_SN10_openset_NDB1.experiment_id
