@@ -119,76 +119,83 @@ def remove_duplicates_for_multiclass(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def preprocess_data_for_pytorch_binary(
-    df,
+    df_train_val,
+    df_test_closed,
     ag_pos: List[str],
     batch_size = 64,
-    train_frac = 0.8,
     scale_onehot = True,
-    df_openset = None,
+    df_test_open = None,
 ):
     """Get train, test and openset pytorch Datasets and DataLoaders.
 
     Args:
-        df (pd.DataFrame): dataframe in typical global format.
+        df_train_val (pd.DataFrame): dataframe in typical global format.
         ag_pos (List[str]): list of antigens labeled as positive.
         batch_size (int, optional): Defaults to 64.
         train_frac (float, optional): Defaults to 0.8.
         scale_onehot
-        df_openset
+        df_test_closed
+        df_test_open
 
     Returns:
         tuple: (train_data, test_data, train_loader, test_loader).
     """
 
-    if not scale_onehot:
-        raise NotImplementedError("Bug expected.")
+    # TODO: check references and test.
 
-    has_openset = df_openset is not None
+    if not scale_onehot:
+        raise NotImplementedError()
+
+    has_openset = df_test_open is not None
     if has_openset:
-        if df_openset["Slide"].isin(df["Slide"]).sum() != 0:
+        if df_test_open["Slide"].isin(df_train_val["Slide"]).sum() != 0:
             raise ValueError(
-                "There are slides in the open set from the closed set."
+                "There are slides in the test open set from the train_val set."
             )
 
-    df = remove_duplicates_for_binary(df, ag_pos)
-    df = onehot_encode_df(df)
+    has_closedset = df_test_closed is not None
+    if has_closedset:
+        if df_test_closed["Slide"].isin(df_train_val["Slide"]).sum() != 0:
+            raise ValueError(
+                "There are slides in the test closed set from the train_val set."
+            )
 
-    df = df.sample(frac=1).reset_index(drop=True)  # shuffle
+    df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
+    df_train_val = onehot_encode_df(df_train_val)
 
-    split_idx = int(df.shape[0] * train_frac)
-    df_train = df.loc[:split_idx].copy().reset_index(drop=True)
-    df_test = df.loc[split_idx:].copy().reset_index(drop=True)
+    df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
+    df_test_closed = onehot_encode_df(df_test_closed)
 
     if scale_onehot:
 
         arr_from_series = lambda s: np.stack(s, axis=0)
 
-        train_onehot_stack = arr_from_series(df_train["Slide_onehot"])
-        test_onehot_stack = arr_from_series(df_test["Slide_onehot"])
+        train_onehot_stack = arr_from_series(df_train_val["Slide_onehot"])
+        test_onehot_stack = arr_from_series(df_test_closed["Slide_onehot"])
         scaler = StandardScaler()
         scaler.fit(train_onehot_stack)
-        df_train["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
-        df_test["Slide_onehot"] = scaler.transform(test_onehot_stack).tolist()
+        df_train_val["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
+        df_test_closed["Slide_onehot"] = scaler.transform(test_onehot_stack).tolist()
 
-    df_train["X"] = df_train["Slide_onehot"]
-    df_train["y"] = df_train["binds_a_pos_ag"]
-    df_test["X"] = df_test["Slide_onehot"]
-    df_test["y"] = df_test["binds_a_pos_ag"]
+    df_train_val["X"] = df_train_val["Slide_onehot"]
+    df_train_val["y"] = df_train_val["binds_a_pos_ag"]
+    df_test_closed["X"] = df_test_closed["Slide_onehot"]
+    df_test_closed["y"] = df_test_closed["binds_a_pos_ag"]
 
-    train_data = datasets.BinaryDataset(df_train)
-    test_data = datasets.BinaryDataset(df_test)
+    train_data = datasets.BinaryDataset(df_train_val)
+    test_data = datasets.BinaryDataset(df_test_closed)
 
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     if has_openset:
-        df_openset = onehot_encode_df(df_openset)
+        df_test_open = onehot_encode_df(df_test_open)
         if scale_onehot:
-            openset_onehot_stack = arr_from_series(df_openset["Slide_onehot"])
-            df_openset["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
-        df_openset["X"] = df_openset["Slide_onehot"]
-        df_openset["y"] = 0
-        openset_data = datasets.BinaryDataset(df_openset)
+            openset_onehot_stack = arr_from_series(df_test_open["Slide_onehot"])
+            df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
+        df_test_open["X"] = df_test_open["Slide_onehot"]
+        df_test_open["y"] = 0
+        openset_data = datasets.BinaryDataset(df_test_open)
         openset_loader = DataLoader(openset_data, batch_size=batch_size, shuffle=False)
         return (train_data, test_data, openset_data, train_loader, test_loader, openset_loader)
     else:
@@ -212,6 +219,8 @@ def preprocess_data_for_pytorch_multiclass(
     Returns:
         tuple: (train_data, test_data, train_loader, test_loader).
     """
+
+    raise NotImplementedError("Not evaluated.")
 
     df = remove_duplicates_for_multiclass(df)
     df = onehot_encode_df(df)

@@ -54,14 +54,15 @@ def run_main(
         out_path_i = out_path / f"{ag_pos}_vs_{ag_neg}"
         out_path_i.mkdir(exist_ok=True)
 
-        ## ETL
-        df = utils.load_global_dataframe(data_path)
-        df_closed = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
-        df_open = df.loc[df["Antigen"].isin(config.ANTIGENS_OPENSET)].copy()
-        df_open = df_open.drop_duplicates(["Slide"], keep="first")
-        df_open = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])]
-        df_open = df_open.reset_index(drop=True)
-        
+        # Fetch data
+        processed_dfs: dict = utils.load_processed_dataframes()
+        df_train_val = processed_dfs["train_val"]
+        df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])]
+        df_test_closed = processed_dfs["test_closed_exclusive"]
+        df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, ag_neg])]
+        df_test_open = processed_dfs["test_open_exclusive"]
+        df_test_open = df_test_open.drop_duplicates(["Slide"], keep="first").reset_index(drop=True)
+
         (   
             _,
             _,
@@ -70,10 +71,11 @@ def run_main(
             test_loader,
             open_loader,
             ) = preprocessing.preprocess_data_for_pytorch_binary(
-                df_closed,
-                [ag_pos],
+                df_train_val=df_train_val,
+                df_test_closed=df_test_closed,
+                ag_pos=[ag_pos],
                 scale_onehot=True,
-                df_openset=df_open,
+                df_test_open=df_test_open,
         )
 
         mlflow.log_params({

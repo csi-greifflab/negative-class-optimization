@@ -65,8 +65,14 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
     Returns:
         _type_
     """    
-    df = utils.load_global_dataframe(data_path)
-    df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+    # df = utils.load_global_dataframe(data_path)
+    # df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+
+    processed_dfs = utils.load_processed_dataframes()
+    df_train_val = processed_dfs["train_val"]
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])].copy()
+    df_test_closed = processed_dfs["test_closed_exclusive"]
+    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, ag_neg])].copy()
 
     (
         train_data,
@@ -74,8 +80,9 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
         train_loader,
         test_loader,
         ) = preprocess_data_for_pytorch_binary(
-            df,
-            [ag_pos],
+            df_train_val=df_train_val,
+            df_test_closed=df_test_closed,
+            ag_pos=[ag_pos],
             scale_onehot=True
     )
 
