@@ -71,7 +71,8 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
         train_data,
         test_data,
         train_loader,
-        test_loader) = preprocess_data_for_pytorch_binary(
+        test_loader,
+        ) = preprocess_data_for_pytorch_binary(
             df,
             [ag_pos],
             scale_onehot=True

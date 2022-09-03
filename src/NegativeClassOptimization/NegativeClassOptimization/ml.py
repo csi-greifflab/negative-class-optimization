@@ -37,12 +37,16 @@ class SN10(nn.Module):
         )
         self.sigmoid = nn.Sigmoid()
 
-    def forward_logits(self, x):
+    def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
 
-    def forward(self, x, return_logits = False):
+    def forward(
+        self, 
+        x: torch.Tensor, 
+        return_logits = False
+        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         logits = self.forward_logits(x)
         expits = self.sigmoid(logits)
         if return_logits:

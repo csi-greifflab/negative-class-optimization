@@ -1,3 +1,8 @@
+"""
+# TODO: Trim many unnecessary functions. They were useful initially to validate
+and check the initial dataset files.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 import uuid
@@ -10,22 +15,34 @@ import NegativeClassOptimization.config as config
 
 
 def summarize_data_files(path: Path) -> pd.DataFrame:
+    """Function to summarize the data files obtained in
+    the `Slack` format. This is the file structure of the
+    data that we first received from Slack.
+
+    Args:
+        path (Path): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
     filepaths = path.glob("*")
     records = []
     for filepath in filepaths:
         fname = filepath.name
-        
-        if fname.split("_")[0] != "outputFeaturesFile":
-            antigen = fname.split("_")[0]
-        else:
-            antigen = None
-        
         ftype = fname.split(".")[-1]
         
         if ftype == "csv":
             datatype = "corpus"
         elif ftype == "txt":
             datatype = "features"
+        else:
+            continue
+        
+        if fname.split("_")[0] != "outputFeaturesFile":
+            antigen = fname.split("_")[0]
+        else:
+            antigen = None
+        
 
         records.append({
             "filepath": filepath,
@@ -85,7 +102,10 @@ def antigens_from_dataset_path(dataset_path: Path) -> List[str]:
     )
 
 
-def build_global_dataset(dataset_path: Path):
+def build_global_dataset(
+    dataset_path: Path,
+    remove_ag_slide_duplicates = True,
+    ):
     antigens: List[str] = antigens_from_dataset_path(dataset_path)
 
     dfs = []
@@ -96,6 +116,15 @@ def build_global_dataset(dataset_path: Path):
         dfs.append(ag_data.df_c)
 
     df_global = pd.concat(dfs, axis=0)
+
+    # Remove duplicated Slide that bind the same Antigen
+    if remove_ag_slide_duplicates:
+        df_global = df_global.groupby("Antigen").apply(
+            lambda df_: df_
+            .sort_values(["Slide", "Energy"], ascending=True)
+            .drop_duplicates("Slide", keep="first")
+            ).reset_index(drop=True)
+
     return df_global
 
 

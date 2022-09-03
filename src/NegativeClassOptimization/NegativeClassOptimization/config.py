@@ -18,9 +18,12 @@ def read_yaml(path: Path) -> dict:
 # TODO: add filepaths as part of yaml or other config
 DATA_BASE_PATH = adjust_filepaths(Path("data"))
 DATA_SLACK_1 = adjust_filepaths(Path("data/slack_1"))
-DATA_SLACK_1_GLOBAL = adjust_filepaths(Path("data/globals/slack_1_global.tsv"))
-IMMUNE_ML_BASE_PATH = adjust_filepaths(Path("immuneML"))
-GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
+DATA_SLACK_1_RAW_DIR = DATA_SLACK_1 / "raw"
+DATA_SLACK_1_GLOBAL = DATA_SLACK_1 / "global/slack_1_global.tsv"
+DATA_SLACK_1_GLOBAL_SLIDE_AGG = DATA_SLACK_1 / "global/slack_1_global_slide_agg.tsv"
+DATA_SLACK_1_PROCESSED_DIR = DATA_SLACK_1 / "processed"
+# IMMUNE_ML_BASE_PATH = adjust_filepaths(Path("immuneML"))
+# GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
 PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
