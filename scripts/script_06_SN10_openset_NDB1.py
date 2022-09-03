@@ -1,24 +1,15 @@
-from pathlib import Path
-import json
-from itertools import combinations
 import multiprocessing
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from sklearn import metrics
-
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from itertools import combinations
+from pathlib import Path
 
 import mlflow
-
 import NegativeClassOptimization.config as config
-import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.ml as ml
+import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.visualisations as vis
+import pandas as pd
+import torch
+import yaml
 
 
 ## CONSTANTS
@@ -27,13 +18,16 @@ out_path = Path("data/SN10_openset_NDB1")
 
 
 ## PARAMETERS
-experiment_id = 2
-run_name = "DEV"
-num_processes = 20
-epochs = 30
-learning_rate = 0.01
-ag_pos = "1FBI"
-ag_neg = "1NSN"
+with open(config.PARAMS_PATH, "r") as fh:
+    params = yaml.safe_load(fh)
+
+params_06 = params["06_SN10_openset_NDB1"]
+
+experiment_id = params_06["experiment_id"]
+run_name = params_06["run_name"]
+num_processes = params_06["num_processes"]
+epochs = params_06["epochs"]
+learning_rate = params_06["learning_rate"]
 
 
 def run_main(

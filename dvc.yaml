@@ -36,3 +36,11 @@ stages:
     - 05_SN10_closedset_binary_interpretability.learning_rate
     outs:
     - data/SN10_closedset_binary_interpretability_all
+  06_SN10_openset_NDB1:
+    cmd: python scripts/script_06_SN10_openset_NDB1.py
+    deps:
+      - data/globals/slack_1_global.tsv
+      - scripts/script_06_SN10_openset_NDB1.py
+    params:
+      - 06_s
+    # outs:  # are logged with mlflow

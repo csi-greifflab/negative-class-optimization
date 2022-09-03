@@ -9,3 +9,9 @@
   num_processes: 20
   learning_rate: 0.01
   epochs: 20
+06_SN10_openset_NDB1:
+  experiment_id: 2
+  run_name: "DEV"
+  num_processes: 20
+  epochs: 30
+  learning_rate: 0.01
