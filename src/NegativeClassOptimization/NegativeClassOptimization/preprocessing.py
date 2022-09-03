@@ -1,8 +1,13 @@
-from typing import List
-import pandas as pd
+"""
+Preprocessing and transforms.
+"""
+from typing import List, Tuple
+
+import farmhash
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
-from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from torch.utils.data import DataLoader, Dataset
 
 import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
@@ -238,3 +243,36 @@ def preprocess_data_for_pytorch_multiclass(
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     return (train_data, test_data, train_loader, test_loader)
+
+
+def openset_datasplit_from_global_stable(
+    df_global: pd.DataFrame, 
+    openset_antigens: List[str] = config.ANTIGENS_OPENSET
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """From a global dataset get a train_val, an exclusive closed test
+    and an exclusive open test dataset.
+
+    Args:
+        df_global (pd.DataFrame)
+        openset_antigens (List[str], optional): Defaults to config.ANTIGENS_OPENSET.
+
+    Returns:
+        df_train_val, df_test_closed_exclusive, df_test_open_exclusive
+    """
+    mask_ = df_global["Antigen"].isin(openset_antigens)
+    df_closed = df_global.loc[~mask_].copy()
+    df_open = df_global.loc[mask_].copy()
+    df_test_open_exclusive = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])].copy()
+        
+    df_closed["Slide_farmhash_mod_10"] = list(map(
+            lambda slide: farmhash.hash64(slide) % 10,
+            df_closed["Slide"]
+        ))
+    test_mask = df_closed["Slide_farmhash_mod_10"] == 9
+    df_train_val = df_closed.loc[~test_mask].copy()
+    df_test_closed_exclusive = df_closed.loc[test_mask].copy()
+    df_test_closed_exclusive = df_test_closed_exclusive.loc[
+            ~df_test_closed_exclusive["Slide"]
+            .isin(df_train_val["Slide"])
+        ]
+    return df_train_val, df_test_closed_exclusive, df_test_open_exclusive

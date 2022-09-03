@@ -2,6 +2,7 @@
 Build datasets.
 """
 
+import json
 from pathlib import Path
 from itertools import combinations
 from docopt import docopt
@@ -11,6 +12,7 @@ import pandas as pd
 import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
+import NegativeClassOptimization.preprocessing as preprocessing
 
 
 dataset_path: Path = config.DATA_SLACK_1_RAW_DIR
@@ -30,6 +32,7 @@ Options:
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 if __name__ == "__main__":
 
     arguments = docopt(docopt_doc, version='Naval Fate 2.0')
@@ -46,7 +49,6 @@ if __name__ == "__main__":
             sep='\t', 
             dtype={"Antigen": str})
     
-    print(df_global.Antigen.unique())
     antigens = sorted(df_global["Antigen"].unique().tolist())
 
     if arguments["pairwise"]:
@@ -59,23 +61,32 @@ if __name__ == "__main__":
                 ag2 = ag2,
                 read_if_exists = False
             )
+
     elif arguments["1_vs_all"]:     
         logging.info("Building 1_vs_all datasets")   
         for ag in antigens:
             logging.info(f"Building 1_vs_all dataset: {ag}")
             datasets.generate_1_vs_all_dataset(df_global, ag)
+
     elif arguments["processed"]:
         logging.info("Building openset_exclusive dataset")
         
         out_dir = Path(config.DATA_SLACK_1_PROCESSED_DIR)
         out_dir.mkdir(exist_ok=True)
         
-        mask_ = df_global["Antigen"].isin(config.ANTIGENS_OPENSET)
-        df_closed = df_global.loc[~mask_].copy()
-        df_open = df_global.loc[mask_].copy()
-        df_test_open_exclusive = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])].copy()
-        
-        df_train_val_closed = None
-        df_test_closed_exclusive = None
+        df_train_val, df_test_closed_exclusive, df_test_open_exclusive = (
+            preprocessing.openset_datasplit_from_global_stable(df_global)
+        )
+
+        df_train_val.to_csv(out_dir / "df_train_val.tsv", sep='\t')
+        df_test_closed_exclusive.to_csv(out_dir / "df_test_closed_exclusive.tsv", sep='\t')
         df_test_open_exclusive.to_csv(out_dir / "df_test_open_exclusive.tsv", sep='\t')
+
+        meta = {
+            "df_train_val__shape": df_train_val.shape,
+            "df_test_closed_exclusive__shape": df_test_closed_exclusive.shape,
+            "df_test_open_exclusive__shape": df_test_open_exclusive.shape,
+        }
+        with open(out_dir / "build_metadata.json", "w+") as fh:
+            json.dump(meta, fh)
 
