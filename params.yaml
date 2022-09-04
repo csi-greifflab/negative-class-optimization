@@ -1,17 +1,17 @@
 05_SN10_closedset_binary_interpretability:
   ag_pos: "3VRL"
-  ag_neg: "1ADQ"
+  ag_neg: "1WEJ"
   learning_rate: 0.01
   epochs: 5
 05b_all_SN10_closedset_binary_interpretability:
   experiment_id: 1
-  run_name: "run_2"
+  run_name: "run_4"
   num_processes: 20
   learning_rate: 0.01
-  epochs: 20
+  epochs: 2
 06_SN10_openset_NDB1:
   experiment_id: 2
-  run_name: "DEV"
+  run_name: "DEV_3"
   num_processes: 20
-  epochs: 30
+  epochs: 2
   learning_rate: 0.01

@@ -1,45 +1,59 @@
 stages:
+  01a_build_global_dataset:
+    cmd: python scripts/script_01_build_datasets.py global
+    deps:
+      - data/slack_1/raw
+      - scripts/script_01_build_datasets.py
+    outs:
+      - data/slack_1/global/slack_1_global.tsv
+  01b_build_processed_datasets:
+    cmd: python scripts/script_01_build_datasets.py processed
+    deps:
+      - data/slack_1/global/slack_1_global.tsv
+      - scripts/script_01_build_datasets.py
+    outs:
+      - data/slack_1/processed
   04a_prepare_CompAIRR_data:
     cmd: python scripts/script_04a_prepare_CompAIRR_data.py
     deps:
-    - data/slack_1/global/slack_1_global.tsv
-    - scripts/script_04a_prepare_CompAIRR_data.py
+      - data/slack_1/processed
+      - scripts/script_04a_prepare_CompAIRR_data.py
     outs:
-    - data/CompAIRR/prepared_data
+      - data/CompAIRR/prepared_data
   04b_CompAIRR:
     cmd: bash scripts/script_04b_CompAIRR.sh
     deps:
-    - data/CompAIRR/prepared_data/AIRR.tsv
-    - data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
-    - scripts/script_04b_CompAIRR.sh
+      - data/CompAIRR/prepared_data/AIRR.tsv
+      - data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
+      - scripts/script_04b_CompAIRR.sh
     outs:
-    - data/CompAIRR/results
+      - data/CompAIRR/results
   05_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05_SN10_closedset_binary_interpretability.py
     deps:
-    - data/slack_1/global/slack_1_global.tsv
-    - scripts/script_05_SN10_closedset_binary_interpretability.py
+      - data/slack_1/processed
+      - scripts/script_05_SN10_closedset_binary_interpretability.py
     params:
-    - 05_SN10_closedset_binary_interpretability.ag_neg
-    - 05_SN10_closedset_binary_interpretability.ag_pos
-    - 05_SN10_closedset_binary_interpretability.epochs
-    - 05_SN10_closedset_binary_interpretability.learning_rate
+      - 05_SN10_closedset_binary_interpretability.ag_neg
+      - 05_SN10_closedset_binary_interpretability.ag_pos
+      - 05_SN10_closedset_binary_interpretability.epochs
+      - 05_SN10_closedset_binary_interpretability.learning_rate
     outs:
-    - data/SN10_closedset_binary_interpretability/
+      - data/SN10_closedset_binary_interpretability/
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     deps:
-    - data/slack_1/global/slack_1_global.tsv
-    - scripts/script_05b_all_SN10_closedset_binary_interpretability.py
+      - data/slack_1/processed
+      - scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     params:
-    - 05_SN10_closedset_binary_interpretability.epochs
-    - 05_SN10_closedset_binary_interpretability.learning_rate
+      - 05_SN10_closedset_binary_interpretability.epochs
+      - 05_SN10_closedset_binary_interpretability.learning_rate
     outs:
-    - data/SN10_closedset_binary_interpretability_all
+      - data/SN10_closedset_binary_interpretability_all
   06_SN10_openset_NDB1:
     cmd: python scripts/script_06_SN10_openset_NDB1.py
     deps:
-      - data/slack_1/global/slack_1_global.tsv
+      - data/slack_1/processed
       - scripts/script_06_SN10_openset_NDB1.py
     params:
       - 06_SN10_openset_NDB1.experiment_id

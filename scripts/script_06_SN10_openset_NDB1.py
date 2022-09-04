@@ -35,7 +35,7 @@ def run_main(
     epochs=epochs, 
     learning_rate=learning_rate, 
     data_path=data_path, 
-    out_path=out_path
+    # out_path=out_path
     ):
     
     ag_pos, ag_neg = ag_pair
@@ -51,8 +51,8 @@ def run_main(
             "ag_neg": ag_neg,
         })
 
-        out_path_i = out_path / f"{ag_pos}_vs_{ag_neg}"
-        out_path_i.mkdir(exist_ok=True)
+        # out_path_i = out_path / f"{ag_pos}_vs_{ag_neg}"
+        # out_path_i.mkdir(exist_ok=True)
 
         # Fetch data
         processed_dfs: dict = utils.load_processed_dataframes()
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     ag_pairs = []
-    for (ag_pos, ag_neg) in combinations(config.ANTIGENS, 2):
+    for (ag_pos, ag_neg) in combinations(config.ANTIGENS_CLOSEDSET, 2):
         ag_pairs.append((ag_pos, ag_neg))
 
     with multiprocessing.Pool(processes=num_processes) as pool:
