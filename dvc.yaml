@@ -50,6 +50,7 @@ stages:
       - 05_SN10_closedset_binary_interpretability.learning_rate
     outs:
       - data/SN10_closedset_binary_interpretability_all
+        #  - data/nco_mlflow_runs
   06_SN10_openset_NDB1:
     cmd: python scripts/script_06_SN10_openset_NDB1.py
     deps:
@@ -61,4 +62,5 @@ stages:
       - 06_SN10_openset_NDB1.num_processes
       - 06_SN10_openset_NDB1.epochs
       - 06_SN10_openset_NDB1.learning_rate
-    # outs:  # are logged with mlflow
+        # outs:
+            # - data/nco_mlflow_runs

@@ -2,16 +2,16 @@
   ag_pos: "3VRL"
   ag_neg: "1WEJ"
   learning_rate: 0.01
-  epochs: 5
+  epochs: 30
 05b_all_SN10_closedset_binary_interpretability:
   experiment_id: 1
-  run_name: "run_4"
+  run_name: "run_5"
   num_processes: 20
   learning_rate: 0.01
-  epochs: 2
+  epochs: 30
 06_SN10_openset_NDB1:
   experiment_id: 2
-  run_name: "DEV_3"
+  run_name: "run_1"
   num_processes: 20
-  epochs: 2
+  epochs: 50
   learning_rate: 0.01
