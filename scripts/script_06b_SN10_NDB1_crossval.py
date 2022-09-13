@@ -6,6 +6,7 @@ import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.visualisations as vis
+import numpy as np
 import pandas as pd
 import torch
 import optuna
@@ -76,12 +77,23 @@ def run_main_06b(
             nested=True,
             ):
             
+            mlflow.log_params({
+                "epochs": epochs_val,
+                "learning_rate": learning_rate,
+                "batch_size": batch_size,
+                "momentum": momentum,
+                "weight_decay": weight_decay,
+                "ag_pos": ag_pos,
+                "ag_neg": ag_neg,
+            })
+            
             test_loader, open_loader, train_loader, val_loader = construct_loaders_06b(
                 farmhash_mod_10_val_mask, 
                 ag_pos, 
                 ag_neg,
                 train_batch_size=batch_size
                 )
+
 
             mlflow.log_params({
                 "N_train": len(train_loader.dataset),
@@ -127,12 +139,22 @@ def run_main_06b(
             eval_metrics = ml.evaluate_on_closed_and_open_testsets(
                 open_loader, test_loader, model
                 )
+    
+            mlflow.log_dict(
+                {
+                    **{k1: v1.tolist() if type(v1) == np.ndarray else v1 for k1, v1 in eval_metrics["closed"].items()},
+                    **{k2: v2.tolist() if type(v2) == np.ndarray else v2 for k2, v2 in eval_metrics["open"].items()},
+                }, 
+                "eval_metrics.json"
+            )
             mlflow.log_metrics(
                 {
-                    "roc_auc_closed": eval_metrics["closed"]["roc_auc_closed"],
-                    "recall_closed": eval_metrics["closed"]["recall_closed"],
-                    "precision_closed": eval_metrics["closed"]["precision_closed"],
-                    "f1_closed": eval_metrics["closed"]["f1_closed"], 
+                    "test_acc": eval_metrics["closed"]["acc_closed"],
+                    "closed_roc_auc": eval_metrics["closed"]["roc_auc_closed"],
+                    "closed_recall": eval_metrics["closed"]["recall_closed"],
+                    "closed_precision": eval_metrics["closed"]["precision_closed"],
+                    "closed_f1": eval_metrics["closed"]["f1_closed"],
+
                 }
             )
 
@@ -176,21 +198,23 @@ def run_main_06b(
             momentum=study.best_params["momentum"],
             weight_decay=study.best_params["weight_decay"],
             batch_size=study.best_params["batch_size"],
-            save_model=True
+            save_model=True,
+            sample=1000,
         )
 
 
 def construct_loaders_06b(farmhash_mod_10_val_mask, ag_pos, ag_neg, train_batch_size=64):
     processed_dfs: dict = utils.load_processed_dataframes(sample=1000)
-    train_val_loader, test_loader, open_loader = construct_loaders_06(
+    _train_val_loader, test_loader, open_loader = construct_loaders_06(
         processed_dfs,
         ag_pos,
         ag_neg,
         batch_size=64  # doesn't matter here
         )
     
-    raise NotImplementedError("Improper construction.")
-    df_train_val: pd.DataFrame = train_val_loader.dataset.df
+    df_train_val = processed_dfs["train_val"]
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])].copy()
+    
     df_train_val["Slide_farmhash_mod_10"] = list(map(
         preprocessing.farmhash_mod_10,
         df_train_val["Slide"]
@@ -212,7 +236,7 @@ def construct_loaders_06b(farmhash_mod_10_val_mask, ag_pos, ag_neg, train_batch_
             df_test_open=None,
     )
     
-    return test_loader,open_loader,train_loader,val_loader
+    return test_loader, open_loader, train_loader, val_loader
 
 
 if __name__ == "__main__":

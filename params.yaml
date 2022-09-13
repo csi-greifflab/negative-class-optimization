@@ -17,12 +17,12 @@
   learning_rate: 0.01
 script_06b_SN10_NDB1_crossval:
   experiment_id: 3
-  run_name: "dev"
+  run_name: "run_1"
   num_processes: 20
-  epochs_val: 3
-  epochs_train: 4
+  epochs_val: 25
+  epochs_train: 50
   learning_rate_range: [0.001, 1]
   batch_sizes: [128, 256, 512, 1024]
   momentum_range: [0.8, 0.99]
   weight_decays: [0, 0.00001, 0.0001, 0.001]
-  n_trials: 3
+  n_trials: 30

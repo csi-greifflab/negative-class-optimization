@@ -179,7 +179,7 @@ def construct_optimizer(
         optimizer = torch.optim.Adam(
             model.parameters(), 
             lr=learning_rate,
-            momentum=momentum,
+            betas=(momentum, 0.999),  # beta1 ~ momentum
             weight_decay=weight_decay,
             )
     else:
@@ -252,6 +252,7 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
     y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
     y_test_true = y_test.detach().numpy().reshape(-1)
+    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
     roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
     recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
     precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
@@ -260,6 +261,7 @@ def compute_metrics_closed_testset(model, x_test, y_test):
         "y_test_logits": y_test_logits,
         "y_test_pred": y_test_pred,
         "y_test_true": y_test_true,
+        "acc_closed": acc_closed,
         "roc_auc_closed": roc_auc_closed,
         "recall_closed": recall_closed,
         "precision_closed": precision_closed,
@@ -291,9 +293,9 @@ def compute_metrics_open_testset(model, x_open, x_test):
         ),
         axis=0
     ).reset_index(drop=True)
-    y_open_abs_logits = df_tmp["abs_logits"]
+    y_open_abs_logits = df_tmp["abs_logits"].values
     df_tmp["y"] = np.where(df_tmp["test_type"] == "open", 0, 1)
-    y_open_true = df_tmp["y"]
+    y_open_true = df_tmp["y"].values
     del df_tmp
     roc_auc_open = metrics.roc_auc_score(y_true=y_open_true, y_score=y_open_abs_logits)
     metrics_open = {

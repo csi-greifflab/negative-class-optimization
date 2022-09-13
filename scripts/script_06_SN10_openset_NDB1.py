@@ -51,16 +51,22 @@ def run_main_06(
     weight_decay = 0,
     batch_size = 64,
     save_model = False,
+    sample = None,
     ):
 
     mlflow.log_params({
             "epochs": epochs,
             "learning_rate": learning_rate,
+            "optimizer_type": optimizer_type,
+            "momentum": momentum,
+            "weight_decay": weight_decay,
+            "batch_size": batch_size,
             "ag_pos": ag_pos,
             "ag_neg": ag_neg,
         })
 
-    processed_dfs: dict = utils.load_processed_dataframes()
+    
+    processed_dfs: dict = utils.load_processed_dataframes(sample=sample)
     train_loader, test_loader, open_loader = construct_loaders_06(
         processed_dfs, 
         ag_pos, 
@@ -104,6 +110,7 @@ def run_main_06(
             )
 
     eval_metrics = ml.evaluate_on_closed_and_open_testsets(open_loader, test_loader, model)
+    # TODO: log eval_metrics
 
     metadata={
             "ag_pos": ag_pos,
@@ -122,7 +129,7 @@ def run_main_06(
     mlflow.log_figure(fig_roc, "fig_roc.png")
 
     if save_model:
-        mlflow.pytorch.log_model(model)
+        mlflow.pytorch.log_model(model, "pytorch_model")
 
     return model
 
