@@ -15,7 +15,7 @@
   num_processes: 20
   epochs: 50
   learning_rate: 0.01
-script_06b_SN10_NDB1_crossval:
+06b_SN10_NDB1_crossval:
   experiment_id: 3
   run_name: "run_1"
   num_processes: 20

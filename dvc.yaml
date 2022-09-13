@@ -62,5 +62,23 @@ stages:
       - 06_SN10_openset_NDB1.num_processes
       - 06_SN10_openset_NDB1.epochs
       - 06_SN10_openset_NDB1.learning_rate
-        # outs:
-            # - data/nco_mlflow_runs
+    # outs:
+        # - data/nco_mlflow_runs
+  06b_SN10_NDB1_crossval:
+    cmd: python scripts/script_06b_SN10_NDB1_crossval.py
+    deps:
+      - data/slack_1/processed
+      - scripts/script_06b_SN10_NDB1_crossval.py
+    params:
+      - 06b_SN10_NDB1_crossval.experiment_id
+      - 06b_SN10_NDB1_crossval.run_name
+      - 06b_SN10_NDB1_crossval.num_processes
+      - 06b_SN10_NDB1_crossval.epochs_val
+      - 06b_SN10_NDB1_crossval.epochs_train
+      - 06b_SN10_NDB1_crossval.learning_rate_range
+      - 06b_SN10_NDB1_crossval.batch_sizes
+      - 06b_SN10_NDB1_crossval.momentum_range
+      - 06b_SN10_NDB1_crossval.weight_decays
+      - 06b_SN10_NDB1_crossval.n_trials
+    # outs:
+          # - data/nco_mlflow_runs
