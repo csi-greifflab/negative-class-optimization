@@ -254,9 +254,14 @@ def preprocess_data_for_pytorch_multiclass(
     return (train_data, test_data, train_loader, test_loader)
 
 
+def farmhash_mod_10(seq: str) -> int:
+    return farmhash.hash64(seq) % 10
+
+
 def openset_datasplit_from_global_stable(
     df_global: pd.DataFrame, 
-    openset_antigens: List[str] = config.ANTIGENS_OPENSET
+    openset_antigens: List[str] = config.ANTIGENS_OPENSET,
+    farmhash_mod_10_test_mask: int = config.FARMHASH_MOD_10_TEST_MASK,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """From a global dataset get a train_val, an exclusive closed test
     and an exclusive open test dataset.
@@ -274,10 +279,10 @@ def openset_datasplit_from_global_stable(
     df_test_open_exclusive = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])].copy()
         
     df_closed["Slide_farmhash_mod_10"] = list(map(
-            lambda slide: farmhash.hash64(slide) % 10,
+            farmhash_mod_10,
             df_closed["Slide"]
         ))
-    test_mask = df_closed["Slide_farmhash_mod_10"] == 9
+    test_mask = df_closed["Slide_farmhash_mod_10"] == farmhash_mod_10_test_mask
     df_train_val = df_closed.loc[~test_mask].copy()
     df_test_closed_exclusive = df_closed.loc[test_mask].copy()
     df_test_closed_exclusive = df_test_closed_exclusive.loc[

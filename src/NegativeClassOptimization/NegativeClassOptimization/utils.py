@@ -163,8 +163,21 @@ def load_global_dataframe(path = config.DATA_SLACK_1_GLOBAL):
     return pd.read_csv(path, sep='\t', dtype={"Antigen": str}).iloc[:, 1:]
 
 
-def load_processed_dataframes(dir_path = config.DATA_SLACK_1_PROCESSED_DIR) -> dict:
-    load_df = lambda fname: pd.read_csv(dir_path / fname, sep='\t', dtype={"Antigen": str})
+def load_processed_dataframes(
+    dir_path = config.DATA_SLACK_1_PROCESSED_DIR,
+    sample: Optional[int] = None,
+    ) -> dict:
+
+    if sample is None:
+        load_df = lambda fname: (
+            pd.read_csv(dir_path / fname, sep='\t', dtype={"Antigen": str})
+        )
+    else:
+        load_df = lambda fname: (
+            pd.read_csv(dir_path / fname, sep='\t', dtype={"Antigen": str})
+            .sample(frac=1)
+            .sample(sample)
+        )
     return {
         "train_val": load_df("df_train_val.tsv"),
         "test_closed_exclusive": load_df("df_test_closed_exclusive.tsv"),

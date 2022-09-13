@@ -15,6 +15,7 @@ dependencies:
   - torchaudio 
   - captum
   - cudatoolkit=10.2
+  - optuna
   - pip
   - pip:
       - dvc[gdrive]==2.10.2

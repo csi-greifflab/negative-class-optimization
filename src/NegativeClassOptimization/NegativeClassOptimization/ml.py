@@ -161,7 +161,43 @@ def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> 
     return records
 
 
-def train_for_ndb1(epochs, learning_rate, train_loader, test_loader, open_loader, model):
+def construct_optimizer(
+    optimizer_type,
+    learning_rate,
+    momentum,
+    weight_decay,
+    model,
+    ) -> torch.optim.Optimizer:
+    if optimizer_type == "SGD":
+        optimizer = torch.optim.SGD(
+            model.parameters(), 
+            lr=learning_rate,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            )
+    elif optimizer_type == "Adam":
+        optimizer = torch.optim.Adam(
+            model.parameters(), 
+            lr=learning_rate,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            )
+    else:
+        raise ValueError(f"optimizer_type `{optimizer_type}` not recognized.")
+    return optimizer
+
+
+def train_for_ndb1(
+    epochs, 
+    learning_rate,
+    train_loader,
+    test_loader,
+    open_loader,
+    model,
+    optimizer_type: str = "SGD",
+    momentum: float = 0,
+    weight_decay: float = 0,
+    ) -> List[dict]:
     """Train model for the NDB1 problem formalization.
 
     Args:
@@ -174,9 +210,16 @@ def train_for_ndb1(epochs, learning_rate, train_loader, test_loader, open_loader
 
     Returns:
         List[dict]: metrics per epoch.
-    """    
+    """
+
     loss_fn = nn.BCELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = construct_optimizer(
+        optimizer_type, 
+        learning_rate, 
+        momentum, 
+        weight_decay, 
+        model
+        )
 
     online_metrics_per_epoch = []
     for t in range(epochs):
