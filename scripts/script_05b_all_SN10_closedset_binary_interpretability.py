@@ -104,7 +104,7 @@ if __name__ == "__main__":
     out_dir.mkdir(exist_ok=True)
 
     ag_pairs = []
-    for (ag_pos, ag_neg) in combinations(config.ANTIGENS, 2):
+    for (ag_pos, ag_neg) in combinations(config.ANTIGENS_CLOSEDSET, 2):
         ag_pairs.append((ag_pos, ag_neg))
 
     with multiprocessing.Pool(processes=num_processes) as pool:

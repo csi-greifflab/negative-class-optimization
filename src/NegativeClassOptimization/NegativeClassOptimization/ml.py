@@ -37,12 +37,16 @@ class SN10(nn.Module):
         )
         self.sigmoid = nn.Sigmoid()
 
-    def forward_logits(self, x):
+    def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
 
-    def forward(self, x, return_logits = False):
+    def forward(
+        self, 
+        x: torch.Tensor, 
+        return_logits = False
+        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         logits = self.forward_logits(x)
         expits = self.sigmoid(logits)
         if return_logits:
@@ -157,7 +161,43 @@ def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> 
     return records
 
 
-def train_for_ndb1(epochs, learning_rate, train_loader, test_loader, open_loader, model):
+def construct_optimizer(
+    optimizer_type,
+    learning_rate,
+    momentum,
+    weight_decay,
+    model,
+    ) -> torch.optim.Optimizer:
+    if optimizer_type == "SGD":
+        optimizer = torch.optim.SGD(
+            model.parameters(), 
+            lr=learning_rate,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            )
+    elif optimizer_type == "Adam":
+        optimizer = torch.optim.Adam(
+            model.parameters(), 
+            lr=learning_rate,
+            betas=(momentum, 0.999),  # beta1 ~ momentum
+            weight_decay=weight_decay,
+            )
+    else:
+        raise ValueError(f"optimizer_type `{optimizer_type}` not recognized.")
+    return optimizer
+
+
+def train_for_ndb1(
+    epochs, 
+    learning_rate,
+    train_loader,
+    test_loader,
+    open_loader,
+    model,
+    optimizer_type: str = "SGD",
+    momentum: float = 0,
+    weight_decay: float = 0,
+    ) -> List[dict]:
     """Train model for the NDB1 problem formalization.
 
     Args:
@@ -170,9 +210,16 @@ def train_for_ndb1(epochs, learning_rate, train_loader, test_loader, open_loader
 
     Returns:
         List[dict]: metrics per epoch.
-    """    
+    """
+
     loss_fn = nn.BCELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = construct_optimizer(
+        optimizer_type, 
+        learning_rate, 
+        momentum, 
+        weight_decay, 
+        model
+        )
 
     online_metrics_per_epoch = []
     for t in range(epochs):
@@ -205,6 +252,7 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
     y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
     y_test_true = y_test.detach().numpy().reshape(-1)
+    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
     roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
     recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
     precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
@@ -213,6 +261,7 @@ def compute_metrics_closed_testset(model, x_test, y_test):
         "y_test_logits": y_test_logits,
         "y_test_pred": y_test_pred,
         "y_test_true": y_test_true,
+        "acc_closed": acc_closed,
         "roc_auc_closed": roc_auc_closed,
         "recall_closed": recall_closed,
         "precision_closed": precision_closed,
@@ -244,9 +293,9 @@ def compute_metrics_open_testset(model, x_open, x_test):
         ),
         axis=0
     ).reset_index(drop=True)
-    y_open_abs_logits = df_tmp["abs_logits"]
+    y_open_abs_logits = df_tmp["abs_logits"].values
     df_tmp["y"] = np.where(df_tmp["test_type"] == "open", 0, 1)
-    y_open_true = df_tmp["y"]
+    y_open_true = df_tmp["y"].values
     del df_tmp
     roc_auc_open = metrics.roc_auc_score(y_true=y_open_true, y_score=y_open_abs_logits)
     metrics_open = {

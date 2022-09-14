@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 
 
@@ -43,8 +44,15 @@ if __name__ == "__main__":
     
     np.random.seed(config.SEED)
 
-    df = pd.read_csv(config.DATA_SLACK_1_GLOBAL, sep='\t')
-    
+    processed_dfs: dict = utils.load_processed_dataframes()
+    df_train_val = processed_dfs["train_val"]
+    df_test_open = processed_dfs["test_open_exclusive"]
+    df_test_open_ag_group = df_test_open.copy()
+    df_test_open_ag_group["Antigen"] = "OPENSET"
+    df_test_open_ag_group = df_test_open_ag_group.drop_duplicates("Slide", keep="first")
+    df = pd.concat([df_train_val, df_test_open, df_test_open_ag_group], axis=0)
+
+
     if not TEST:
         dir_path = Path("data/CompAIRR/prepared_data")
 

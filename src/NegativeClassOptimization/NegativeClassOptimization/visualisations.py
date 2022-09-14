@@ -1,3 +1,7 @@
+"""
+TODO: Move/add umap projections here.
+"""
+from typing import Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -5,7 +9,20 @@ import seaborn as sns
 from sklearn import metrics
 
 
-def plot_abs_logit_distr(eval_metrics, metadata: dict):
+def plot_abs_logit_distr(
+    eval_metrics: dict, 
+    metadata: dict
+    ) -> tuple:
+    """Plots distribution of absolute logits from the 
+    metrics recorded during mlflow run from script 06.
+
+    Args:
+        eval_metrics (dict): contains logits in a currently hard-coded way.
+        metadata (dict): metadata regarding the run (data, model, etc.).
+
+    Returns:
+        (fig, axs)
+    """    
     df_hist = pd.DataFrame(data={
         "abs_logits": eval_metrics["open"]["y_open_abs_logits"],
         "test_type": np.where(eval_metrics["open"]["y_open_true"] == 1, "closed", "open")
@@ -34,6 +51,8 @@ def plot_roc_open_and_closed_testsets(eval_metrics, metadata: dict):
     """
     def find_optimal_threshold(fpr, tpr, thresholds) -> float:
         """Finds optimal threshold based on argmin(|FPR+TPR-1|).
+
+        TODO: move to another file and use to build open set classifiers.
 
         Returns:
             float: _description_

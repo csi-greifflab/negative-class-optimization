@@ -16,6 +16,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from captum.attr import IntegratedGradients
 
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 from NegativeClassOptimization.datasets import (
     BinaryDataset
@@ -64,16 +65,24 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
     Returns:
         _type_
     """    
-    df = pd.read_csv(data_path, sep='\t')
-    df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+    # df = utils.load_global_dataframe(data_path)
+    # df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+
+    processed_dfs = utils.load_processed_dataframes()
+    df_train_val = processed_dfs["train_val"]
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])].copy()
+    df_test_closed = processed_dfs["test_closed_exclusive"]
+    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, ag_neg])].copy()
 
     (
         train_data,
         test_data,
         train_loader,
-        test_loader) = preprocess_data_for_pytorch_binary(
-            df,
-            [ag_pos],
+        test_loader,
+        ) = preprocess_data_for_pytorch_binary(
+            df_train_val=df_train_val,
+            df_test_closed=df_test_closed,
+            ag_pos=[ag_pos],
             scale_onehot=True
     )
 

@@ -3,85 +3,151 @@ stages:
   04a_prepare_CompAIRR_data:
     cmd: python scripts/script_04a_prepare_CompAIRR_data.py
     deps:
-    - path: data/globals/slack_1_global.tsv
-      md5: 8877beb902b485ded2b9f9e9b2072a1c
-      size: 64556814
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
     - path: scripts/script_04a_prepare_CompAIRR_data.py
-      md5: b10be52ae9da67b5568de9ac6eda2ad8
-      size: 2071
+      md5: a907317b7b474c0f7427150dd86f63bb
+      size: 2485
     outs:
     - path: data/CompAIRR/prepared_data
-      md5: 03999812dcfa281fa0e5513f55b6fb7e.dir
-      size: 32121580
+      md5: 7e7e6ff604f9de17999e2cafe0be10a5.dir
+      size: 36459937
       nfiles: 2
   04b_CompAIRR:
     cmd: bash scripts/script_04b_CompAIRR.sh
     deps:
     - path: data/CompAIRR/prepared_data/AIRR.tsv
-      md5: f4ca9d118dea546b4410a57a9a727aca
-      size: 15600307
+      md5: ce14f80ffb8cb19aa8553583eef9975c
+      size: 17909848
     - path: data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
-      md5: 79c52242b128289f7aff2c14ff77a99d
-      size: 16521273
+      md5: 9a3dc82dd568d2818e3c80ad660c463d
+      size: 18550089
     - path: scripts/script_04b_CompAIRR.sh
       md5: 65e8da1f62d5621fee8e038e6b79fa21
       size: 2213
     outs:
     - path: data/CompAIRR/results
-      md5: bc367d3c844a841c25d09c72838fa528.dir
-      size: 3451219404
+      md5: 425cbe1802850de9cd60b94425b4380a.dir
+      size: 3867902815
       nfiles: 21
   05_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05_SN10_closedset_binary_interpretability.py
     deps:
-    - path: data/globals/slack_1_global.tsv
-      md5: 8877beb902b485ded2b9f9e9b2072a1c
-      size: 64556814
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
     - path: scripts/script_05_SN10_closedset_binary_interpretability.py
-      md5: 9850759446c4534b5ba25879f613b4b2
-      size: 5774
+      md5: 1d59254e1dd18880ca50f5b1dccedcb9
+      size: 6264
     params:
       params.yaml:
-        05_SN10_closedset_binary_interpretability.ag_neg: 1ADQ
+        05_SN10_closedset_binary_interpretability.ag_neg: 1WEJ
         05_SN10_closedset_binary_interpretability.ag_pos: 3VRL
-        05_SN10_closedset_binary_interpretability.epochs: 5
+        05_SN10_closedset_binary_interpretability.epochs: 30
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
     outs:
     - path: data/SN10_closedset_binary_interpretability/
-      md5: 3eb04503674d0e1cca988fbf4946c68e.dir
-      size: 84093749
+      md5: 2cfb094adc4cf2b5ee859a3812bce6fa.dir
+      size: 43046582
       nfiles: 4
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     deps:
-    - path: data/globals/slack_1_global.tsv
-      md5: 8877beb902b485ded2b9f9e9b2072a1c
-      size: 64556814
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
     - path: scripts/script_05b_all_SN10_closedset_binary_interpretability.py
-      md5: a310debba621e7df5b2987ff29815ae0
-      size: 3504
+      md5: cf6089353dfdda77c793e56ef37aa2f1
+      size: 3514
     params:
       params.yaml:
-        05_SN10_closedset_binary_interpretability.epochs: 5
+        05_SN10_closedset_binary_interpretability.epochs: 30
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
     outs:
     - path: data/SN10_closedset_binary_interpretability_all
-      md5: a27617b9e279d389b66169afd79f8cad.dir
-      size: 4095854682
-      nfiles: 180
+      md5: 3a98fa0697129206e5fa6d29d9ce44d1.dir
+      size: 685823712
+      nfiles: 60
   06_SN10_openset_NDB1:
     cmd: python scripts/script_06_SN10_openset_NDB1.py
     deps:
-    - path: data/globals/slack_1_global.tsv
-      md5: 8877beb902b485ded2b9f9e9b2072a1c
-      size: 64556814
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
     - path: scripts/script_06_SN10_openset_NDB1.py
-      md5: e87a0263aab8a73efd3a64e491d0ac1e
-      size: 4485
+      md5: 425b39bba912fba08c626abf1c9c95f3
+      size: 5420
     params:
       params.yaml:
-        06_SN10_openset_NDB1.epochs: 30
+        06_SN10_openset_NDB1.epochs: 50
         06_SN10_openset_NDB1.experiment_id: 2
         06_SN10_openset_NDB1.learning_rate: 0.01
         06_SN10_openset_NDB1.num_processes: 20
-        06_SN10_openset_NDB1.run_name: DEV
+        06_SN10_openset_NDB1.run_name: run_2
+  01a_build_global_dataset:
+    cmd: python scripts/script_01_build_datasets.py global
+    deps:
+    - path: data/slack_1/raw
+      md5: d0d633ab19c1ef7b438530f5729f5b2e.dir
+      size: 759986597
+      nfiles: 20
+    - path: scripts/script_01_build_datasets.py
+      md5: ff7e9a6cc3252c00513b33921cbf81e6
+      size: 2937
+    outs:
+    - path: data/slack_1/global/slack_1_global.tsv
+      md5: 5f675875920330d69522cf1817cf8d45
+      size: 45356240
+  01b_build_processed_datasets:
+    cmd: python scripts/script_01_build_datasets.py processed
+    deps:
+    - path: data/slack_1/global/slack_1_global.tsv
+      md5: 5f675875920330d69522cf1817cf8d45
+      size: 45356240
+    - path: scripts/script_01_build_datasets.py
+      md5: ff7e9a6cc3252c00513b33921cbf81e6
+      size: 2937
+    outs:
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
+  06b_SN10_NDB1_crossval:
+    cmd: python scripts/script_06b_SN10_NDB1_crossval.py
+    deps:
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
+    - path: scripts/script_06b_SN10_NDB1_crossval.py
+      md5: 57e55b2e6e049d52279aabe9fe45e7b9
+      size: 8572
+    params:
+      params.yaml:
+        06b_SN10_NDB1_crossval.batch_sizes:
+        - 128
+        - 256
+        - 512
+        - 1024
+        06b_SN10_NDB1_crossval.epochs_train: 50
+        06b_SN10_NDB1_crossval.epochs_val: 25
+        06b_SN10_NDB1_crossval.experiment_id: 3
+        06b_SN10_NDB1_crossval.learning_rate_range:
+        - 0.001
+        - 1
+        06b_SN10_NDB1_crossval.momentum_range:
+        - 0.8
+        - 0.99
+        06b_SN10_NDB1_crossval.n_trials: 30
+        06b_SN10_NDB1_crossval.num_processes: 20
+        06b_SN10_NDB1_crossval.run_name: run_1
+        06b_SN10_NDB1_crossval.weight_decays:
+        - 0
+        - 1e-05
+        - 0.0001
+        - 0.001

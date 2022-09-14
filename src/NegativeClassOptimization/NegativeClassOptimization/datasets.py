@@ -1,25 +1,21 @@
 # import abc
-from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
-from typing import Optional, List
 import warnings
-import pandas as pd
-import numpy as np
-# from tinydb import TinyDB, Query
+from pathlib import Path
+from typing import Optional
 
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-import sys
-sys.path.append('/nfs/scistore08/kondrgrp/aminnega/negative-class-optimization/src/NegativeClassOptimization')
-
-
-import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 
 
 def trim_short_CDR3(df) -> pd.DataFrame:
+    """Legacy function for removing short CDR3 - was relevant when
+    working with ImmuneML.
+    # TODO: Remove.
+    """    
     LEN_TH = 25
     cdr3_len_counts = df["CDR3"].str.len().value_counts()
     small_lengths = (
@@ -38,7 +34,7 @@ def trim_short_CDR3(df) -> pd.DataFrame:
     return df
 
 
-def generate_pairwise_dataset(
+def generate_pairwise_dataframe(
     df_global: pd.DataFrame,
     ag1: str,
     ag2: str,
@@ -48,7 +44,23 @@ def generate_pairwise_dataset(
     read_if_exists = True,
     Slide=True,
     save_datasets=True
-    ):
+    ) -> pd.DataFrame:
+    """Generate pairwise dataframe from a global dataframe.
+
+    Args:
+        df_global (pd.DataFrame): _description_
+        ag1 (str): _description_
+        ag2 (str): _description_
+        N (Optional[int], optional): _description_. Defaults to None.
+        base_data_path (Path, optional): _description_. Defaults to config.DATA_BASE_PATH.
+        seed (_type_, optional): _description_. Defaults to config.SEED.
+        read_if_exists (bool, optional): _description_. Defaults to True.
+        Slide (bool, optional): _description_. Defaults to True.
+        save_datasets (bool, optional): _description_. Defaults to True.
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
 
     if Slide:
         filepath = base_data_path / "pairwise_wo_dupl" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
@@ -85,7 +97,6 @@ def generate_pairwise_dataset(
 
     df = pd.concat([df_ag1, df_ag2], axis=0)
 
-    #df = trim_short_CDR3(df)
     df = df.sample(frac=1, random_state=config.SEED)
     if save_datasets:
         df.to_csv(filepath, sep='\t')
@@ -99,6 +110,17 @@ def generate_1_vs_all_dataset(
     base_data_path: Path = config.DATA_BASE_PATH,
     seed = config.SEED,
     ) -> pd.DataFrame:
+    """Generate a 1_vs_all dataframe.
+
+    Args:
+        df_global (pd.DataFrame): _description_
+        ag (str): _description_
+        base_data_path (Path, optional): _description_. Defaults to config.DATA_BASE_PATH.
+        seed (_type_, optional): _description_. Defaults to config.SEED.
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
     df = df_global.copy()
     df["binder"] = df["Antigen"] == ag
     df = trim_short_CDR3(df)
