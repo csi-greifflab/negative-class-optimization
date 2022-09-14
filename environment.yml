@@ -1,4 +1,4 @@
-name: ab-negative-training
+name: nco
 channels:
   - defaults
   - conda-forge
@@ -16,6 +16,7 @@ dependencies:
   - captum
   - cudatoolkit=10.2
   - optuna
+  - sphinx
   - pip
   - pip:
       - dvc[gdrive]==2.10.2
@@ -30,3 +31,4 @@ dependencies:
       - mlflow
       - pyfarmhash
       - pre-commit
+      - setuptools==57.5.0

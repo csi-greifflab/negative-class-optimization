@@ -8,7 +8,7 @@ if [[ $COMMAND == "update_env" ]]; then
     echo "Running update_env"
     conda env update --file environment.yml --prune
     echo "Installing local NegativeClassOptimization in [--editable] mode"
-    conda activate ab-negative-training
+    conda activate nco
     pip install -e src/NegativeClassOptimization
     # echo "Installing local immuneML in [--editable] mode"
     # conda activate ab-negative-training

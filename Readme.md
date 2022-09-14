@@ -1,8 +1,10 @@
 # Negative dataset optimization
 
-We use this repository for the `NegativeDatasetOptimization` project.
+[![Github tag](https://badgen.net/github/tag/csi-greifflab/negative-class-optimization)](https://github.com/csi-greifflab/negative-class-optimization/tags/)
+[![GitHub latest commit](https://badgen.net/github/last-commit/csi-greifflab/negative-class-optimization)](https://github.com/csi-greifflab/negative-class-optimization/commit/)
 
-Please follow this readme to setup everything.
+
+This is the `Readme` for the `NegativeDatasetOptimization` project, internally abbreviated as `nco`. This is the closest representative term, as the scope of the project is dynamic. Follow this readme to setup everything and run.
 
 ## Setup
 
@@ -10,22 +12,20 @@ Once you've cloned the repository, run:
 
 ```
 bash manage.sh install_env
-conda activate ab-negative-training
+conda activate nco
 bash manage.sh update_env  # updates and installs local packages
 dvc pull  # fetches all the data
 ```
 
-This will setup the environment and required data. In particular, this will fetch the `data` directory, with all required data, as well as `immuneML` directory, where immuneML yaml specifications, logs, as well as output files are stored.
+### Library dependencies
 
-The `dvc pull` will fetch all the data, and at times this can be a lot. Often one will want to work with just a single file, one can achieve that with `dvc get` (not `dvc import`, to implement read-only mode, since we don't want changes to standard files). For convenience `./manage.sh get_700k` fetches the 700k dataset.
+To add a new library dependence, please add it manually in the `environment.yml` file and run `bash manage.sh update_env`. Don't forget to commit and push.
 
-To add a new library dependence, please add it manually in the `environment.yml` file and run `bash manage.sh update_env`.
+### DVC
 
-## Data and models
+This will setup the environment and required data, including the `data` directory, with all required data.
 
-We use [DVC](https://dvc.org/doc/start/data-management) to sync data and models across the team.
-
-### DVC Workflow
+The `dvc pull` will fetch all the data, and at times this can be a lot. Often one will want to work with just a single file, one can achieve that with `dvc get` (usually not `dvc import`, to implement read-only mode, since we don't want changes to standard files). For convenience `./manage.sh get_700k` fetches the 700k dataset. We are also using `dvc` data pipelines. Please familiarize yourself with the API and check the file for the details.
 
 Once you've made changes to a `DVC`-tracked directory, please add the changes to `dvc` and `git` (provided example is for the `data` directory):
 
@@ -39,26 +39,15 @@ Note that to control file size, some large files are ignored (check `.dvcignore`
 
 For more information check [DVC documentation](https://dvc.org/doc/start/data-management?tab=Mac-Linux).
 
-### Runing a model workflow
+### mlflow
 
-We currently use `immuneML` to run the models. In order to do so:
+We use `mlflow` to track experimental results, it is setup as a docker container. All details in `mlflow/` directory.
 
-1. Generate the datasets of interest, store in `data`.
-2. Generate `yaml` specification to describe the run. Check the existing files for examples. Use script_02_*.py. 
-3. Run `immuneML` and store the results to be shared in `immuneML` directory. 
+## Organization
 
-For more info, please check the [official immuneML docs](https://docs.immuneml.uio.no/latest/index.html#)
+We organize most of the code in:
 
-## Scripts
-
-- script_01_build_datasets.py
-- script_02_build_immuneML_spec.py
-- script_03_run_immuneML.sh
-
-## Notebooks
-
-- 01_Explore.ipynb
-- 02_Datasetgenerator.ipynb
-- 03_Classifier_pairwise_datasets.ipynb
-- 04_Pairwise_datasets.ipynb
-- 05_1_vs_all_datasets.ipynb
+1. Local library `src/NegativeClassOrganization` for functionality required everywhere else. Most organized and clean from this repo.
+2. `/notebooks` for exploratory and results analyses, local development, short experiments and others in this spirit. The messiest fom this repo. We try to keep notebooks short and move well-established functionality into local library and scripts.
+3. `/scripts` for the stable, established, reproducible analyses. These are tracked and managed through mlops tools like dvc and mlflow. They are cleaner than notebooks and leverage the local library.
+4. Other, such as `mlflow/` for docker-based deployment of `mlflow` and auxiliary services.

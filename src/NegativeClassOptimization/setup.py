@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='NegativeClassOptimization',
-    version='0.0.1',
+    version='0.1.0',
     description='Internal package for the NegativeDatasetOptimization project.',
     url='',
     author='ursueugen',
