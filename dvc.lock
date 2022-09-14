@@ -80,15 +80,15 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_06_SN10_openset_NDB1.py
-      md5: 415807638414c34ed0e29a95e7048db8
-      size: 4759
+      md5: 425b39bba912fba08c626abf1c9c95f3
+      size: 5420
     params:
       params.yaml:
         06_SN10_openset_NDB1.epochs: 50
         06_SN10_openset_NDB1.experiment_id: 2
         06_SN10_openset_NDB1.learning_rate: 0.01
         06_SN10_openset_NDB1.num_processes: 20
-        06_SN10_openset_NDB1.run_name: run_1
+        06_SN10_openset_NDB1.run_name: run_2
   01a_build_global_dataset:
     cmd: python scripts/script_01_build_datasets.py global
     deps:
@@ -117,3 +117,37 @@ stages:
       md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
       size: 44037470
       nfiles: 4
+  06b_SN10_NDB1_crossval:
+    cmd: python scripts/script_06b_SN10_NDB1_crossval.py
+    deps:
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
+    - path: scripts/script_06b_SN10_NDB1_crossval.py
+      md5: 57e55b2e6e049d52279aabe9fe45e7b9
+      size: 8572
+    params:
+      params.yaml:
+        06b_SN10_NDB1_crossval.batch_sizes:
+        - 128
+        - 256
+        - 512
+        - 1024
+        06b_SN10_NDB1_crossval.epochs_train: 50
+        06b_SN10_NDB1_crossval.epochs_val: 25
+        06b_SN10_NDB1_crossval.experiment_id: 3
+        06b_SN10_NDB1_crossval.learning_rate_range:
+        - 0.001
+        - 1
+        06b_SN10_NDB1_crossval.momentum_range:
+        - 0.8
+        - 0.99
+        06b_SN10_NDB1_crossval.n_trials: 30
+        06b_SN10_NDB1_crossval.num_processes: 20
+        06b_SN10_NDB1_crossval.run_name: run_1
+        06b_SN10_NDB1_crossval.weight_decays:
+        - 0
+        - 1e-05
+        - 0.0001
+        - 0.001

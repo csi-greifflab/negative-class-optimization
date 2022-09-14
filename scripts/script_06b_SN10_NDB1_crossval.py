@@ -15,7 +15,7 @@ from script_06_SN10_openset_NDB1 import construct_loaders_06, run_main_06
 
 
 # PARAMETERS
-params_06b = config.PARAMS["script_06b_SN10_NDB1_crossval"]
+params_06b = config.PARAMS["06b_SN10_NDB1_crossval"]
 
 experiment_id = params_06b["experiment_id"]
 run_name = params_06b["run_name"]
@@ -199,12 +199,11 @@ def run_main_06b(
             weight_decay=study.best_params["weight_decay"],
             batch_size=study.best_params["batch_size"],
             save_model=True,
-            sample=1000,
         )
 
 
 def construct_loaders_06b(farmhash_mod_10_val_mask, ag_pos, ag_neg, train_batch_size=64):
-    processed_dfs: dict = utils.load_processed_dataframes(sample=1000)
+    processed_dfs: dict = utils.load_processed_dataframes()
     _train_val_loader, test_loader, open_loader = construct_loaders_06(
         processed_dfs,
         ag_pos,

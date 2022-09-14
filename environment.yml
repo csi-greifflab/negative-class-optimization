@@ -29,3 +29,4 @@ dependencies:
       - networkx==2.6.3
       - mlflow
       - pyfarmhash
+      - pre-commit
