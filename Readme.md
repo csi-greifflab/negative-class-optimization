@@ -1,8 +1,6 @@
 # Negative dataset optimization
 
-[![Github tag](https://badgen.net/github/tag/csi-greifflab/negative-class-optimization)](https://github.com/csi-greifflab/negative-class-optimization/tags/)
-[![GitHub latest commit](https://badgen.net/github/last-commit/csi-greifflab/negative-class-optimization)](https://github.com/csi-greifflab/negative-class-optimization/commit/)
-
+![version badge](https://img.shields.io/badge/version-0.1.0-green)
 
 This is the `Readme` for the `NegativeDatasetOptimization` project, internally abbreviated as `nco`. This is the closest representative term, as the scope of the project is dynamic. Follow this readme to setup everything and run.
 

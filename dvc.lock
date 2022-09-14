@@ -80,8 +80,8 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_06_SN10_openset_NDB1.py
-      md5: 425b39bba912fba08c626abf1c9c95f3
-      size: 5420
+      md5: 712f45ce296d47ff9f5bb614bc9cc8c6
+      size: 5421
     params:
       params.yaml:
         06_SN10_openset_NDB1.epochs: 50

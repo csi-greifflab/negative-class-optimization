@@ -46,7 +46,7 @@ def run_main_06(
     learning_rate, 
     ag_pos, 
     ag_neg,
-    optimizer_type = "SGD",
+    optimizer_type = "Adam",
     momentum = 0,
     weight_decay = 0,
     batch_size = 64,
