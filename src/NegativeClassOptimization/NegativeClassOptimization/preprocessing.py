@@ -185,8 +185,8 @@ def preprocess_data_for_pytorch_binary(
     train_data = datasets.BinaryDataset(df_train_val)
     test_data = datasets.BinaryDataset(df_test_closed)
 
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
     if has_openset:
         df_test_open = onehot_encode_df(df_test_open)
