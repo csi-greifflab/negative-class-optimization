@@ -166,6 +166,7 @@ def run_main_06b(
                 "N_closed": len(test_loader.dataset),
                 "N_open": len(open_loader.dataset),
             }
+
             fig_abs_logit_distr, ax_abs_logit_distr = vis.plot_abs_logit_distr(
                 eval_metrics,
                 metadata=metadata,
@@ -176,6 +177,8 @@ def run_main_06b(
                 eval_metrics, metadata=metadata)
             mlflow.log_figure(fig_roc, "fig_roc.png")
 
+            mlflow.pytorch.log_model(model, "pytorch_model")
+            
             return crossval_optimizaion_metric 
 
 

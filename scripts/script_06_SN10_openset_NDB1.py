@@ -8,6 +8,7 @@ import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.visualisations as vis
+import numpy as np
 import pandas as pd
 import torch
 import yaml
@@ -38,7 +39,7 @@ def multiprocessing_wrapper_run_main_06(
         description=f"{ag_pos} vs {ag_neg}"
         ):
 
-        run_main_06(epochs, learning_rate, ag_pos, ag_neg)
+        run_main_06(epochs, learning_rate, ag_pos, ag_neg, save_model=True)
 
 
 def run_main_06(
@@ -110,7 +111,13 @@ def run_main_06(
             )
 
     eval_metrics = ml.evaluate_on_closed_and_open_testsets(open_loader, test_loader, model)
-    # TODO: log eval_metrics
+    mlflow.log_dict(
+        {
+            **{k1: v1.tolist() if type(v1) == np.ndarray else v1 for k1, v1 in eval_metrics["closed"].items()},
+            **{k2: v2.tolist() if type(v2) == np.ndarray else v2 for k2, v2 in eval_metrics["open"].items()},
+        }, 
+        "eval_metrics.json"
+    )
 
     metadata={
             "ag_pos": ag_pos,
