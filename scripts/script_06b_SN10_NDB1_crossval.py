@@ -177,6 +177,10 @@ def run_main_06b(
                 eval_metrics, metadata=metadata)
             mlflow.log_figure(fig_roc, "fig_roc.png")
 
+            fig_pr, _ = vis.plot_pr_open_and_closed_testsets(
+                eval_metrics, metadata=metadata)
+            mlflow.log_figure(fig_pr, "fig_pr.png")
+
             mlflow.pytorch.log_model(model, "pytorch_model")
             
             return crossval_optimizaion_metric 

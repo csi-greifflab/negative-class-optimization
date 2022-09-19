@@ -236,6 +236,19 @@ def train_for_ndb1(
     return online_metrics_per_epoch
 
 
+def compute_binary_metrics(y_test_pred, y_test_true) -> dict:
+    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
+    recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
+    precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
+    f1_closed = metrics.f1_score(y_true=y_test_true, y_pred=y_test_pred)
+    return {
+        "acc": acc_closed,
+        "recall": recall_closed,
+        "precision": precision_closed,
+        "f1": f1_closed,
+    }
+
+
 def compute_metrics_closed_testset(model, x_test, y_test):
     """Compute metrics for the closed test set.
 
@@ -254,27 +267,18 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     y_test_true = y_test.detach().numpy().reshape(-1)
     binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
     roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
+    avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
     metrics_closed = {
         "y_test_logits": y_test_logits,
         "y_test_pred": y_test_pred,
         "y_test_true": y_test_true,
         "roc_auc_closed": roc_auc_closed,
-        **binary_metrics,
+        "avg_precision_closed": avg_precision_closed,
+        **{f"{k}_closed": v for k, v in binary_metrics.items()},
     }
     return metrics_closed
 
 
-def compute_binary_metrics(y_test_pred, y_test_true) -> dict:
-    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
-    recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
-    precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
-    f1_closed = metrics.f1_score(y_true=y_test_true, y_pred=y_test_pred)
-    return {
-        "acc_closed": acc_closed,
-        "recall_closed": recall_closed,
-        "precision_closed": precision_closed,
-        "f1_closed": f1_closed,
-    }
 
 
 def compute_metrics_open_testset(model, x_open, x_test):
@@ -305,10 +309,24 @@ def compute_metrics_open_testset(model, x_open, x_test):
     y_open_true = df_tmp["y"].values
     del df_tmp
     roc_auc_open = metrics.roc_auc_score(y_true=y_open_true, y_score=y_open_abs_logits)
+    avg_precision_open = metrics.average_precision_score(y_true=y_open_true, y_score=y_open_abs_logits)
+
+    # Find optimal threshold based on PR and compute binary classification metrics
+    th_opt = find_optimal_threshold(y_open_true, y_open_abs_logits, method="f1")
+    y_open_pred = (y_open_abs_logits > th_opt).astype(np.int16)
+    open_binary_metrics: dict = compute_binary_metrics(y_open_pred, y_open_true)
+
+    # TODO: refactor, document
+    naive_closedset_prediction = model.forward(x_open).detach().numpy().reshape(-1).round()
+    fpr_naive_model = naive_closedset_prediction.sum() / naive_closedset_prediction.shape[0]  # ideally everything is zero here
+
     metrics_open = {
         "y_open_abs_logits": y_open_abs_logits,
         "y_open_true": y_open_true,
         "roc_auc_open": roc_auc_open,
+        "avg_precision_open": avg_precision_open,
+        **{f"{k}_open": v for k, v in open_binary_metrics.items()},
+        "fpr_naive_model": fpr_naive_model,
     }
     return metrics_open
 
@@ -354,9 +372,9 @@ def find_optimal_threshold(
     """Finds optimal thresholds for binary classification.
 
     https://www.yourdatateacher.com/2021/06/14/are-you-still-using-0-5-as-a-threshold/
-    (1) `roc` - [default] based on ROC curve (top-left corner)
-    (2) `acc` - [not implemented!] maximize accuracy
-    (3) `f1`  - maximize F1 score
+    1. `roc` - [default] based on ROC curve (top-left corner)
+    2. `acc` - [not implemented!] maximize accuracy
+    3. `f1`  - maximize F1 score
 
     Returns:
         float
