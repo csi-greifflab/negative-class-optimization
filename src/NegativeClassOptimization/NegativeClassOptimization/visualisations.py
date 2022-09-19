@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 
+from NegativeClassOptimization.ml import compute_roc_curve
+
 
 def plot_abs_logit_distr(
     eval_metrics: dict, 
@@ -49,28 +51,15 @@ def plot_roc_open_and_closed_testsets(eval_metrics, metadata: dict):
     Returns:
         (fig, axs)
     """
-    def find_optimal_threshold(fpr, tpr, thresholds) -> float:
-        """Finds optimal threshold based on argmin(|FPR+TPR-1|).
 
-        TODO: move to another file and use to build open set classifiers.
-
-        Returns:
-            float: _description_
-        """
-        th_opt = thresholds[
-            np.argmin(np.abs(fpr + tpr - 1))
-        ]
-        return th_opt
-
-    fpr_open, tpr_open, thresholds_open = metrics.roc_curve(
-        y_true=eval_metrics["open"]["y_open_true"], 
-        y_score=eval_metrics["open"]["y_open_abs_logits"],
+    fpr_open, tpr_open, thresholds_open, th_open_opt = compute_roc_curve(
+        eval_metrics["open"]["y_open_true"],
+        eval_metrics["open"]["y_open_abs_logits"]
     )
-    th_open_opt = find_optimal_threshold(fpr_open, tpr_open, thresholds_open)
 
-    fpr_closed, tpr_closed, thresholds_closed = metrics.roc_curve(
-        y_true=eval_metrics["closed"]["y_test_true"], 
-        y_score=eval_metrics["closed"]["y_test_logits"],
+    fpr_closed, tpr_closed, thresholds_closed, _ = compute_roc_curve(
+        eval_metrics["closed"]["y_test_true"],
+        eval_metrics["closed"]["y_test_logits"],
     )
 
     fig, axs = plt.subplots(ncols=2, figsize=(14, 7))

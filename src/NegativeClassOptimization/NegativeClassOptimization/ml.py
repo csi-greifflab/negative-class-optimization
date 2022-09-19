@@ -252,22 +252,29 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
     y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
     y_test_true = y_test.detach().numpy().reshape(-1)
-    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
+    binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
     roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
-    recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
-    precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
-    f1_closed = metrics.f1_score(y_true=y_test_true, y_pred=y_test_pred)
     metrics_closed = {
         "y_test_logits": y_test_logits,
         "y_test_pred": y_test_pred,
         "y_test_true": y_test_true,
-        "acc_closed": acc_closed,
         "roc_auc_closed": roc_auc_closed,
+        **binary_metrics,
+    }
+    return metrics_closed
+
+
+def compute_binary_metrics(y_test_pred, y_test_true) -> dict:
+    acc_closed = metrics.accuracy_score(y_true=y_test_true, y_pred=y_test_pred)
+    recall_closed = metrics.recall_score(y_true=y_test_true, y_pred=y_test_pred)
+    precision_closed = metrics.precision_score(y_true=y_test_true, y_pred=y_test_pred)
+    f1_closed = metrics.f1_score(y_true=y_test_true, y_pred=y_test_pred)
+    return {
+        "acc_closed": acc_closed,
         "recall_closed": recall_closed,
         "precision_closed": precision_closed,
         "f1_closed": f1_closed,
     }
-    return metrics_closed
 
 
 def compute_metrics_open_testset(model, x_open, x_test):
@@ -337,3 +344,77 @@ def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
         "closed": metrics_closed,
     }
     return eval_metrics
+
+
+def find_optimal_threshold(
+    y_true,
+    y_score,
+    method: str = "roc"
+    ) -> float:
+    """Finds optimal thresholds for binary classification.
+
+    https://www.yourdatateacher.com/2021/06/14/are-you-still-using-0-5-as-a-threshold/
+    (1) `roc` - [default] based on ROC curve (top-left corner)
+    (2) `acc` - [not implemented!] maximize accuracy
+    (3) `f1`  - maximize F1 score
+
+    Returns:
+        float
+    """
+
+    if method == "roc":
+        fpr, tpr, thresholds = metrics.roc_curve(
+            y_true=y_true,
+            y_score=y_score,
+        )
+        th_opt = thresholds[
+            np.argmin(np.abs(fpr + tpr - 1))
+        ]
+    elif method == "f1":
+        precision, recall, thresholds = metrics.precision_recall_curve(
+            y_true=y_true, 
+            probas_pred=y_score,
+        )
+        fscore = (2 * precision * recall) / (precision + recall + 1e-8)
+        th_opt = thresholds[np.argmax(fscore)]
+    elif method == "acc":
+        raise NotImplementedError("Not of interest currently.")
+    else:
+        raise ValueError(f"Method {method} not recognized/available.")
+    return th_opt
+
+
+def compute_roc_curve(y_true, y_score) -> tuple:
+    """Compute fpr, tpr and optimal thr for ROC curve.
+
+    Args:
+        y_true (_type_): _description_
+        y_score (_type_): _description_
+
+    Returns:
+        tuple: fpr, tpr, thresholds, optimal_thr
+    """    
+    fpr, tpr, thresholds = metrics.roc_curve(
+        y_true=y_true,
+        y_score=y_score,
+    )
+    optimal_thr = find_optimal_threshold(y_true, y_score, method="roc")
+    return fpr, tpr, thresholds, optimal_thr
+
+
+def compute_pr_curve(y_true, y_score) -> tuple:
+    """Compute precision, recall and f1-score-optimal thr for ROC curve.
+
+    Args:
+        y_true (_type_): _description_
+        y_score (_type_): _description_
+
+    Returns:
+        tuple: precision, recall, thresholds, optimal_thr
+    """  
+    precision, recall, thresholds = metrics.precision_recall_curve(
+        y_true=y_true, 
+        probas_pred=y_score,
+    )
+    optimal_thr = find_optimal_threshold(y_true, y_score, method="f1")
+    return precision, recall, thresholds, optimal_thr
