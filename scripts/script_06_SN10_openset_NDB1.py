@@ -1,6 +1,7 @@
 import multiprocessing
 from itertools import combinations
 from pathlib import Path
+from typing import Union, List
 
 import mlflow
 import NegativeClassOptimization.config as config
@@ -39,14 +40,30 @@ def multiprocessing_wrapper_run_main_06(
         description=f"{ag_pos} vs {ag_neg}"
         ):
 
-        run_main_06(epochs, learning_rate, ag_pos, ag_neg, save_model=True)
+        run_main_06(
+            epochs, 
+            learning_rate, 
+            ag_pos, 
+            ag_neg, 
+            save_model=True,
+            )
+
+
+def resolve_ag_neg(ag_neg) -> List[str]:
+        # Resolve negative antigen
+    if type(ag_neg) == list:
+        return ag_neg
+    elif type(ag_neg) == str:
+        return [ag_neg]
+    else:
+        raise ValueError(f"ag_neg type {type(ag_neg)} not recognized.")
 
 
 def run_main_06(
     epochs, 
     learning_rate, 
     ag_pos, 
-    ag_neg,
+    ag_neg: Union[str, List[str]],
     optimizer_type = "Adam",
     momentum = 0,
     weight_decay = 0,
@@ -54,6 +71,8 @@ def run_main_06(
     save_model = False,
     sample = None,
     ):
+
+    ag_neg = resolve_ag_neg(ag_neg)
 
     mlflow.log_params({
             "epochs": epochs,
@@ -118,10 +137,22 @@ def run_main_06(
         }, 
         "eval_metrics.json"
     )
+    mlflow.log_metrics(
+        {
+            'open_avg_precision' :eval_metrics["open"]["avg_precision_open"],
+            'open_acc' :eval_metrics["open"]["acc_open"],
+            'open_recall' :eval_metrics["open"]["recall_open"],
+            'open_precision' :eval_metrics["open"]["precision_open"],
+            'open_f1' :eval_metrics["open"]["f1_open"],
+            'open_fpr_abs_logit_model' :eval_metrics["open"]["fpr_abs_logit_model"],
+            'open_fpr_naive_model' :eval_metrics["open"]["fpr_naive_model"],
+        }
+    )
+
 
     metadata={
             "ag_pos": ag_pos,
-            "ag_neg": ag_neg,
+            "ag_neg": ag_neg,  # ok to be a list
             "N_train": len(train_loader.dataset),
             "N_closed": len(test_loader.dataset),
             "N_open": len(open_loader.dataset),
@@ -144,11 +175,18 @@ def run_main_06(
     return model
 
 
-def construct_loaders_06(processed_dfs, ag_pos, ag_neg, batch_size):
+def construct_loaders_06(
+    processed_dfs, 
+    ag_pos, 
+    ag_neg: Union[str, List[str]], 
+    batch_size):
+
+    ag_neg: List[str] = resolve_ag_neg(ag_neg)
+
     df_train_val = processed_dfs["train_val"]
-    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])]
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, *ag_neg])]
     df_test_closed = processed_dfs["test_closed_exclusive"]
-    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, ag_neg])]
+    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, *ag_neg])]
     df_test_open = processed_dfs["test_open_exclusive"]
     df_test_open = df_test_open.drop_duplicates(["Slide"], keep="first").reset_index(drop=True)
 

@@ -154,9 +154,16 @@ def run_main_06b(
                     "closed_recall": eval_metrics["closed"]["recall_closed"],
                     "closed_precision": eval_metrics["closed"]["precision_closed"],
                     "closed_f1": eval_metrics["closed"]["f1_closed"],
-
+                    'open_avg_precision':eval_metrics["open"]["avg_precision_open"],
+                    'open_acc':eval_metrics["open"]["acc_open"],
+                    'open_recall':eval_metrics["open"]["recall_open"],
+                    'open_precision':eval_metrics["open"]["precision_open"],
+                    'open_f1':eval_metrics["open"]["f1_open"],
+                    'open_fpr_abs_logit_model':eval_metrics["open"]["fpr_abs_logit_model"],
+                    'open_fpr_naive_model':eval_metrics["open"]["fpr_naive_model"],
                 }
             )
+
 
 
             metadata = {

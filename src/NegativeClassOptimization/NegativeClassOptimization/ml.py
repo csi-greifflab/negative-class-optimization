@@ -315,6 +315,7 @@ def compute_metrics_open_testset(model, x_open, x_test):
     th_opt = find_optimal_threshold(y_open_true, y_open_abs_logits, method="f1")
     y_open_pred = (y_open_abs_logits > th_opt).astype(np.int16)
     open_binary_metrics: dict = compute_binary_metrics(y_open_pred, y_open_true)
+    fpr_abs_logit_model = y_open_pred.sum() / y_open_pred.shape[0]
 
     # TODO: refactor, document
     naive_closedset_prediction = model.forward(x_open).detach().numpy().reshape(-1).round()
@@ -326,6 +327,7 @@ def compute_metrics_open_testset(model, x_open, x_test):
         "roc_auc_open": roc_auc_open,
         "avg_precision_open": avg_precision_open,
         **{f"{k}_open": v for k, v in open_binary_metrics.items()},
+        "fpr_abs_logit_model": fpr_abs_logit_model,
         "fpr_naive_model": fpr_naive_model,
     }
     return metrics_open

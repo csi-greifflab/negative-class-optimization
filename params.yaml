@@ -26,3 +26,6 @@
   momentum_range: [0.8, 0.99]
   weight_decays: [0, 0.00001, 0.0001, 0.001]
   n_trials: 30
+07_SN10_openset_NDBK:
+  experiment_id: 5
+  run_name: "run_1"

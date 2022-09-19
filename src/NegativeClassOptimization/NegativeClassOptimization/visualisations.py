@@ -149,7 +149,6 @@ def plot_pr_open_and_closed_testsets(eval_metrics, metadata: dict):
         lw=lw,
         label=f'Closed, Average precision={eval_metrics["closed"]["avg_precision_closed"]:.2f}',
     )
-    ax.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
     ax.set_xlabel("Precision")
