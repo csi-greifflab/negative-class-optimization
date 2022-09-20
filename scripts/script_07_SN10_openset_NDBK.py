@@ -60,7 +60,8 @@ def multiprocessing_wrapper_script_07(
             ag_pos, 
             ag_neg, 
             save_model=True,
-            sample=(1000 if TEST else training_samples_restriction),
+            sample=(1000 if TEST else None),
+            sample_train=(None if TEST else training_samples_restriction),
             )
 
 

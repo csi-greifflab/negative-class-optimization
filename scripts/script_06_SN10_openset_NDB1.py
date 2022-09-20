@@ -1,7 +1,7 @@
 import multiprocessing
 from itertools import combinations
 from pathlib import Path
-from typing import Union, List
+from typing import Optional, Union, List
 
 import mlflow
 import NegativeClassOptimization.config as config
@@ -70,6 +70,7 @@ def run_main_06(
     batch_size = 64,
     save_model = False,
     sample = None,
+    sample_train = None,
     ):
 
     ag_neg = resolve_ag_neg(ag_neg)
@@ -83,15 +84,21 @@ def run_main_06(
             "batch_size": batch_size,
             "ag_pos": ag_pos,
             "ag_neg": ag_neg,
+            "sample": sample,
+            "sample_train": sample_train,
         })
 
     
-    processed_dfs: dict = utils.load_processed_dataframes(sample=sample)
+    processed_dfs: dict = utils.load_processed_dataframes(
+        sample=sample
+        )
+    
     train_loader, test_loader, open_loader = construct_loaders_06(
         processed_dfs, 
         ag_pos, 
         ag_neg, 
         batch_size=batch_size,
+        sample_train=sample_train,
         )
 
     mlflow.log_params({
@@ -179,12 +186,21 @@ def construct_loaders_06(
     processed_dfs, 
     ag_pos, 
     ag_neg: Union[str, List[str]], 
-    batch_size):
+    batch_size: int,
+    sample_train: Optional[int] = None,
+    ):
 
     ag_neg: List[str] = resolve_ag_neg(ag_neg)
 
-    df_train_val = processed_dfs["train_val"]
+    df_train_val: pd.DataFrame = processed_dfs["train_val"]
     df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, *ag_neg])]
+    
+    if sample_train:
+        if sample_train <= df_train_val.size:
+            df_train_val = df_train_val.sample(sample_train)
+        else:
+            raise OverflowError(f"sample_train {sample_train} > train_val size.")
+    
     df_test_closed = processed_dfs["test_closed_exclusive"]
     df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, *ag_neg])]
     df_test_open = processed_dfs["test_open_exclusive"]

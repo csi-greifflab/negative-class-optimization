@@ -4,6 +4,7 @@ and check the initial dataset files.
 """
 
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 import uuid
 from typing import Optional, List
@@ -167,6 +168,15 @@ def load_processed_dataframes(
     dir_path = config.DATA_SLACK_1_PROCESSED_DIR,
     sample: Optional[int] = None,
     ) -> dict:
+    """Loads processed dataframes for ml runs.
+
+    Args:
+        dir_path (_type_, optional): Defaults to config.DATA_SLACK_1_PROCESSED_DIR.
+        sample (Optional[int], optional): samples train_val, test closed and test open. Defaults to None.
+
+    Returns:
+        dict: _description_
+    """
 
     if sample is None:
         load_df = lambda fname: (
