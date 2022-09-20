@@ -373,6 +373,7 @@ def find_optimal_threshold(
     ) -> float:
     """Finds optimal thresholds for binary classification.
 
+    https://machinelearningmastery.com/threshold-moving-for-imbalanced-classification/
     https://www.yourdatateacher.com/2021/06/14/are-you-still-using-0-5-as-a-threshold/
     1. `roc` - [default] based on ROC curve (top-left corner)
     2. `acc` - [not implemented!] maximize accuracy

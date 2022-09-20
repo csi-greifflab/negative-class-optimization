@@ -28,4 +28,5 @@
   n_trials: 30
 07_SN10_openset_NDBK:
   experiment_id: 5
-  run_name: "run_1"
+  run_name: "norm_train_data_1"
+  normalize_data_volume: true

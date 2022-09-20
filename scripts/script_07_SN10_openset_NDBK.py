@@ -22,21 +22,31 @@ params_06 = config.PARAMS["06_SN10_openset_NDB1"]
 params_07 = config.PARAMS["07_SN10_openset_NDBK"]
 experiment_id = params_07["experiment_id"]
 run_name = params_07["run_name"]
+normalize_data_volume = params_07["normalize_data_volume"]
+
 num_processes = params_06["num_processes"]
 epochs = params_06["epochs"]
 learning_rate = params_06["learning_rate"]
 
-# FLAGS
+# CONSTS
 TEST = False
+TRAINING_SAMPLES_RESTRICTION = 73000
 
 
 def multiprocessing_wrapper_script_07(
     ag_pair, 
-    experiment_id=experiment_id, 
-    run_name=run_name, 
-    epochs=epochs, 
-    learning_rate=learning_rate, 
-    ):
+    experiment_id = experiment_id, 
+    run_name = run_name, 
+    epochs = epochs, 
+    learning_rate = learning_rate,
+    normalize_data_volume = normalize_data_volume,
+    ) -> None:
+    
+    if normalize_data_volume:
+        training_samples_restriction = TRAINING_SAMPLES_RESTRICTION
+    else:
+        training_samples_restriction = None
+
     ag_pos, ag_neg = ag_pair
     with mlflow.start_run(
         experiment_id=experiment_id, 
@@ -50,8 +60,9 @@ def multiprocessing_wrapper_script_07(
             ag_pos, 
             ag_neg, 
             save_model=True,
-            sample=(1000 if TEST else None),
+            sample=(1000 if TEST else training_samples_restriction),
             )
+
 
 if __name__ == "__main__":
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
