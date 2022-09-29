@@ -66,6 +66,9 @@ def multiprocessing_wrapper_script_07(
 
 
 if __name__ == "__main__":
+    
+    np.random.seed(config.SEED)
+
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
