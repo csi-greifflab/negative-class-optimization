@@ -1,7 +1,8 @@
 # import abc
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
+from itertools import combinations, product
 
 import numpy as np
 import pandas as pd
@@ -164,4 +165,43 @@ class MulticlassDataset(Dataset):
             torch.tensor(self.df.loc[idx, "X"]).reshape(
                 (1, -1)).type(torch.float),
             torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.uint8),
-        )    
+        )
+
+
+def construct_dataset_atoms(
+    antigens: List[str]
+    ) -> List[List[str]]:
+    atoms = []
+    for i in range(len(antigens)):
+        size = i + 1
+        atoms += sorted(combinations(antigens, r=size))
+    return atoms
+
+
+def construct_dataset_atom_combinations(
+    antigens: List[str] = config.ANTIGENS_CLOSEDSET,
+    atoms: Optional[List[List[str]]] = None
+    ) -> List[List[str]]:
+    """Construct ag set pairs to be used in defining datasets.
+
+    Args:
+        antigens (List[str]): antigen support to use for building. Defaults to config.ANTIGENS_CLOSEDSET.
+        atoms (List[List[str]], optional): atoms for building pairs. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """    
+    
+    if atoms is None:
+        atoms = construct_dataset_atoms(antigens)
+    valid_combinations = []
+    
+    for ag_pos_atom, ag_neg_atom in product(atoms, atoms):
+        if len(set(ag_pos_atom).intersection(set(ag_neg_atom))) > 0:
+            continue
+        if len(ag_pos_atom) + len(ag_neg_atom) > len(antigens):
+            continue
+
+        valid_combinations.append((list(ag_pos_atom), list(ag_neg_atom)))
+
+    return valid_combinations

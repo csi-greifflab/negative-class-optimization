@@ -23,6 +23,7 @@ run_name = params_06["run_name"]
 num_processes = params_06["num_processes"]
 epochs = params_06["epochs"]
 learning_rate = params_06["learning_rate"]
+add_reverse_pos_neg = params_06["add_reverse_pos_neg"]
 
 
 def multiprocessing_wrapper_run_main_06(
@@ -32,7 +33,15 @@ def multiprocessing_wrapper_run_main_06(
     epochs=epochs, 
     learning_rate=learning_rate, 
     ):
-    
+    """Function to multiprocess the workflow.
+
+    Args:
+        ag_pair ()
+        experiment_id (optional): Defaults to experiment_id.
+        run_name (optional): Defaults to run_name.
+        epochs (optional): Defaults to epochs.
+        learning_rate (optional): Defaults to learning_rate.
+    """    
     ag_pos, ag_neg = ag_pair
     with mlflow.start_run(
         experiment_id=experiment_id, 
@@ -49,20 +58,30 @@ def multiprocessing_wrapper_run_main_06(
             )
 
 
-def resolve_ag_neg(ag_neg) -> List[str]:
-        # Resolve negative antigen
-    if type(ag_neg) == list:
-        return ag_neg
-    elif type(ag_neg) == str:
-        return [ag_neg]
+def resolve_ag_type(ag: Union[str, List[str]]) -> List[str]:
+    """Utility function to convert ag representation to list.
+
+    Args:
+        ag (Union[str, List[str]])
+
+    Raises:
+        ValueError: if ag of not supported type.
+
+    Returns:
+        List[str]
+    """    
+    if type(ag) == list:
+        return ag
+    elif type(ag) == str:
+        return [ag]
     else:
-        raise ValueError(f"ag_neg type {type(ag_neg)} not recognized.")
+        raise ValueError(f"ag type {type(ag)} not recognized.")
 
 
 def run_main_06(
     epochs, 
     learning_rate, 
-    ag_pos, 
+    ag_pos: Union[str, List[str]],
     ag_neg: Union[str, List[str]],
     optimizer_type = "Adam",
     momentum = 0,
@@ -73,7 +92,8 @@ def run_main_06(
     sample_train = None,
     ):
 
-    ag_neg = resolve_ag_neg(ag_neg)
+    ag_pos = resolve_ag_type(ag_pos)
+    ag_neg = resolve_ag_type(ag_neg)
 
     mlflow.log_params({
             "epochs": epochs,
@@ -190,10 +210,11 @@ def construct_loaders_06(
     sample_train: Optional[int] = None,
     ):
 
-    ag_neg: List[str] = resolve_ag_neg(ag_neg)
+    ag_pos: List[str] = resolve_ag_type(ag_pos)
+    ag_neg: List[str] = resolve_ag_type(ag_neg)
 
     df_train_val: pd.DataFrame = processed_dfs["train_val"]
-    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, *ag_neg])]
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([*ag_pos, *ag_neg])]
     
     if sample_train:
         if sample_train <= df_train_val.size:
@@ -202,7 +223,7 @@ def construct_loaders_06(
             raise OverflowError(f"sample_train {sample_train} > train_val size.")
     
     df_test_closed = processed_dfs["test_closed_exclusive"]
-    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([ag_pos, *ag_neg])]
+    df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([*ag_pos, *ag_neg])]
     df_test_open = processed_dfs["test_open_exclusive"]
     df_test_open = df_test_open.drop_duplicates(["Slide"], keep="first").reset_index(drop=True)
 
@@ -216,7 +237,7 @@ def construct_loaders_06(
         ) = preprocessing.preprocess_data_for_pytorch_binary(
             df_train_val=df_train_val,
             df_test_closed=df_test_closed,
-            ag_pos=[ag_pos],
+            ag_pos=ag_pos,
             scale_onehot=True,
             batch_size=batch_size,
             df_test_open=df_test_open,
@@ -235,6 +256,8 @@ if __name__ == "__main__":
     ag_pairs = []
     for (ag_pos, ag_neg) in combinations(config.ANTIGENS_CLOSEDSET, 2):
         ag_pairs.append((ag_pos, ag_neg))
+        if add_reverse_pos_neg:
+            ag_pairs.append((ag_pos, ag_neg))
 
     with multiprocessing.Pool(processes=num_processes) as pool:
         pool.map(multiprocessing_wrapper_run_main_06, ag_pairs)

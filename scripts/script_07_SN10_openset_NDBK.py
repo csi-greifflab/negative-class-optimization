@@ -1,3 +1,7 @@
+"""
+Workflow for NDBK problem.
+"""
+
 import multiprocessing
 from itertools import combinations
 from pathlib import Path
@@ -41,7 +45,17 @@ def multiprocessing_wrapper_script_07(
     learning_rate = learning_rate,
     normalize_data_volume = normalize_data_volume,
     ) -> None:
-    
+    """Function to multiprocess the workflow.
+
+    Args:
+        ag_pair (): 
+        experiment_id (, optional): . Defaults to experiment_id.
+        run_name (, optional): Defaults to run_name.
+        epochs (optional): Defaults to epochs.
+        learning_rate (optional): Defaults to learning_rate.
+        normalize_data_volume (optional): Defaults to normalize_data_volume.
+    """
+
     if normalize_data_volume:
         training_samples_restriction = TRAINING_SAMPLES_RESTRICTION
     else:

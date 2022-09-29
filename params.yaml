@@ -15,6 +15,7 @@
   num_processes: 20
   epochs: 50
   learning_rate: 0.01
+  add_reverse_pos_neg: true
 06b_SN10_NDB1_crossval:
   experiment_id: 3
   run_name: "v.0.1.1_dev_2"
