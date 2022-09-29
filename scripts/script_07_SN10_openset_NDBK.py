@@ -5,7 +5,9 @@ Workflow for NDBK problem.
 import multiprocessing
 from itertools import combinations
 from pathlib import Path
+import random
 from typing import Union, List
+from NegativeClassOptimization.datasets import construct_dataset_atom_combinations
 
 import mlflow
 import NegativeClassOptimization.config as config
@@ -27,6 +29,7 @@ params_07 = config.PARAMS["07_SN10_openset_NDBK"]
 experiment_id = params_07["experiment_id"]
 run_name = params_07["run_name"]
 normalize_data_volume = params_07["normalize_data_volume"]
+run_all_2class_problems = params_07["run_all_2class_problems"]
 
 num_processes = params_06["num_processes"]
 epochs = params_06["epochs"]
@@ -40,8 +43,8 @@ TRAINING_SAMPLES_RESTRICTION = 73000
 def multiprocessing_wrapper_script_07(
     ag_pair, 
     experiment_id = experiment_id, 
-    run_name = run_name, 
-    epochs = epochs, 
+    run_name = run_name if not TEST else "test",
+    epochs = epochs,
     learning_rate = learning_rate,
     normalize_data_volume = normalize_data_volume,
     ) -> None:
@@ -79,25 +82,30 @@ def multiprocessing_wrapper_script_07(
             )
 
 
+
+
 if __name__ == "__main__":
     
-    np.random.seed(config.SEED)
+    utils.nco_seed()
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     if not TEST:
-        ag_pairs = []
-        for ag_pos in config.ANTIGENS_CLOSEDSET:
-            antigens_negative_closedset = (
-                set(config.ANTIGENS_CLOSEDSET) - set([ag_pos])
-            )
-            for ag_neg_cardinality in range(1, 6):
-                for ag_neg_comb in combinations(antigens_negative_closedset, ag_neg_cardinality):
-                    ag_neg_comb_list = list(sorted(ag_neg_comb))
-                    ag_pairs.append((ag_pos, ag_neg_comb_list))
+        if run_all_2class_problems:
+            ag_pairs: List[List[str]] = construct_dataset_atom_combinations()
+        else:
+            ag_pairs = []
+            for ag_pos in config.ANTIGENS_CLOSEDSET:
+                antigens_negative_closedset = (
+                    set(config.ANTIGENS_CLOSEDSET) - set([ag_pos])
+                )
+                for ag_neg_cardinality in range(1, len(config.ANTIGENS_CLOSEDSET) + 1):
+                    for ag_neg_comb in combinations(antigens_negative_closedset, ag_neg_cardinality):
+                        ag_neg_comb_list = list(sorted(ag_neg_comb))
+                        ag_pairs.append((ag_pos, ag_neg_comb_list))
     else:
-        ag_pairs = [('1FBI', ['3VRL', '1NSN'])]
+        ag_pairs = [(['1FBI', '1OB1', '1WEJ'], ['3VRL', '1NSN'])]
         print(len(ag_pairs))
         print(ag_pairs)
 

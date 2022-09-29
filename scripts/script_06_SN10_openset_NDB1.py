@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+import farmhash
 
 
 ## PARAMETERS
@@ -218,7 +219,19 @@ def construct_loaders_06(
     
     if sample_train:
         if sample_train <= df_train_val.size:
-            df_train_val = df_train_val.sample(sample_train)
+            
+            # deterministic split
+            df_train_val["Slide_farmhash_mod_64"] = (
+                farmhash.hash64(df_train_val["Slide"]) % 64
+            )
+            sampling_frac = sample_train / df_train_val.size
+            num_buckets_to_sample = np.round(sampling_frac * 64)
+            df_train_val = (
+                df_train_val
+                .loc[
+                    df_train_val["Slide_framhash_mod_64"] <= num_buckets_to_sample
+                ]
+            )
         else:
             raise OverflowError(f"sample_train {sample_train} > train_val size.")
     
@@ -257,7 +270,7 @@ if __name__ == "__main__":
     for (ag_pos, ag_neg) in combinations(config.ANTIGENS_CLOSEDSET, 2):
         ag_pairs.append((ag_pos, ag_neg))
         if add_reverse_pos_neg:
-            ag_pairs.append((ag_pos, ag_neg))
+            ag_pairs.append((ag_neg, ag_pos))
 
     with multiprocessing.Pool(processes=num_processes) as pool:
         pool.map(multiprocessing_wrapper_run_main_06, ag_pairs)

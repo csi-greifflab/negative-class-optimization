@@ -31,3 +31,4 @@
   experiment_id: 5
   run_name: "v.0.1.1_dev_2"
   normalize_data_volume: true
+  run_all_2class_problems: true
