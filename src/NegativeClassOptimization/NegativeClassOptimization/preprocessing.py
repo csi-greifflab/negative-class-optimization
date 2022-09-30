@@ -1,6 +1,7 @@
 """
 Preprocessing and transforms.
 """
+import logging
 from typing import List, Tuple
 
 import farmhash
@@ -125,6 +126,7 @@ def preprocess_data_for_pytorch_binary(
     batch_size = 64,
     scale_onehot = True,
     df_test_open = None,
+    sample_train = None,
 ):
     """Get train, test and openset pytorch Datasets and DataLoaders.
 
@@ -136,6 +138,7 @@ def preprocess_data_for_pytorch_binary(
         scale_onehot
         df_test_closed
         df_test_open
+        sample_train
 
     Returns:
         tuple: (train_data, test_data, train_loader, test_loader).
@@ -162,6 +165,9 @@ def preprocess_data_for_pytorch_binary(
 
     df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
     df_train_val = onehot_encode_df(df_train_val)
+    
+    if sample_train:
+        df_train_val = sample_train_val(df_train_val, sample_train)
 
     df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
     df_test_closed = onehot_encode_df(df_test_closed)
@@ -200,6 +206,52 @@ def preprocess_data_for_pytorch_binary(
         return (train_data, test_data, openset_data, train_loader, test_loader, openset_loader)
     else:
         return (train_data, test_data, train_loader, test_loader)
+
+
+def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
+    """Deterministic sampling of train_val based on hashing.
+
+    Args:
+        df_train_val (_type_): _description_
+        sample_train (_type_): _description_
+        num_buckets (int, optional): _description_. Defaults to 16384.
+
+    Raises:
+        OverflowError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+    logger = logging.info()
+    nrows = df_train_val.shape[0]
+    try:
+        if sample_train <= nrows:
+            # deterministic split
+            slide_hash_colname = f"Slide_farmhash_mod_{num_buckets}"
+            df_train_val[slide_hash_colname] = list(map(
+                    lambda s: farmhash.hash64(s) % num_buckets,
+                    df_train_val["Slide"]
+                ))
+            sampling_frac = sample_train / nrows
+            num_buckets_to_sample = np.round(sampling_frac * num_buckets)
+            df_train_val = (
+                    df_train_val
+                    .loc[
+                        df_train_val[slide_hash_colname] <= num_buckets_to_sample
+                    ].copy()
+                )
+            logger.info(
+                f"Sampling df_train_val (nrows={nrows})"
+                f" and sample_train={sample_train} => "
+                f"{df_train_val.shape[0]}"
+                )
+        else:
+            raise OverflowError(f"sample_train={sample_train} > train_val nrows={nrows}.")
+    except OverflowError as error:
+        logger.exception(error)
+        raise
+    logger.warning("Resetting the index of df_train_val.")
+    return df_train_val.reset_index(drop=True)  # not resetting index yields index error in Dataset and DataLoader.
 
 
 def preprocess_data_for_pytorch_multiclass(

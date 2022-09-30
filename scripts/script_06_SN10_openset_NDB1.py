@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 import yaml
 import farmhash
+import logging
 
 
 ## PARAMETERS
@@ -25,6 +26,7 @@ num_processes = params_06["num_processes"]
 epochs = params_06["epochs"]
 learning_rate = params_06["learning_rate"]
 add_reverse_pos_neg = params_06["add_reverse_pos_neg"]
+sample_train = params_06["sample_train"]
 
 
 def multiprocessing_wrapper_run_main_06(
@@ -33,6 +35,7 @@ def multiprocessing_wrapper_run_main_06(
     run_name=run_name, 
     epochs=epochs, 
     learning_rate=learning_rate, 
+    sample_train=sample_train,
     ):
     """Function to multiprocess the workflow.
 
@@ -43,7 +46,11 @@ def multiprocessing_wrapper_run_main_06(
         epochs (optional): Defaults to epochs.
         learning_rate (optional): Defaults to learning_rate.
     """    
+    logger = logging.getLogger()
+    
     ag_pos, ag_neg = ag_pair
+    logger.info(f"Start run for ({ag_pos}, {ag_neg})")
+
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
@@ -56,6 +63,7 @@ def multiprocessing_wrapper_run_main_06(
             ag_pos, 
             ag_neg, 
             save_model=True,
+            sample_train=sample_train if type(sample_train) == int else None,
             )
 
 
@@ -93,6 +101,8 @@ def run_main_06(
     sample_train = None,
     ):
 
+    logger = logging.getLogger()
+
     ag_pos = resolve_ag_type(ag_pos)
     ag_neg = resolve_ag_type(ag_neg)
 
@@ -121,6 +131,7 @@ def run_main_06(
         batch_size=batch_size,
         sample_train=sample_train,
         )
+    logger.info(f"Loaders ready.")
 
     mlflow.log_params({
             "N_train": len(train_loader.dataset),
@@ -141,6 +152,7 @@ def run_main_06(
         momentum=momentum,
         weight_decay=weight_decay,
         )
+    logger.info("Model trained.")
     for i, epoch_metrics in enumerate(online_metrics):
         epoch = i+1
         mlflow.log_metrics(
@@ -205,7 +217,7 @@ def run_main_06(
 
 def construct_loaders_06(
     processed_dfs, 
-    ag_pos, 
+    ag_pos: Union[str, List[str]], 
     ag_neg: Union[str, List[str]], 
     batch_size: int,
     sample_train: Optional[int] = None,
@@ -216,24 +228,6 @@ def construct_loaders_06(
 
     df_train_val: pd.DataFrame = processed_dfs["train_val"]
     df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([*ag_pos, *ag_neg])]
-    
-    if sample_train:
-        if sample_train <= df_train_val.size:
-            
-            # deterministic split
-            df_train_val["Slide_farmhash_mod_64"] = (
-                farmhash.hash64(df_train_val["Slide"]) % 64
-            )
-            sampling_frac = sample_train / df_train_val.size
-            num_buckets_to_sample = np.round(sampling_frac * 64)
-            df_train_val = (
-                df_train_val
-                .loc[
-                    df_train_val["Slide_framhash_mod_64"] <= num_buckets_to_sample
-                ]
-            )
-        else:
-            raise OverflowError(f"sample_train {sample_train} > train_val size.")
     
     df_test_closed = processed_dfs["test_closed_exclusive"]
     df_test_closed = df_test_closed.loc[df_test_closed["Antigen"].isin([*ag_pos, *ag_neg])]
@@ -254,6 +248,7 @@ def construct_loaders_06(
             scale_onehot=True,
             batch_size=batch_size,
             df_test_open=df_test_open,
+            sample_train=sample_train,
         )
     
     return train_loader, test_loader, open_loader
@@ -261,7 +256,21 @@ def construct_loaders_06(
 
 if __name__ == "__main__":
 
-    np.random.seed(config.SEED)
+    logging.basicConfig(
+        format="%(asctime)s %(process)d %(funcName)s %(levelname)s %(message)s",
+        level=logging.DEBUG,
+        handlers=[
+            logging.FileHandler(
+                filename="data/logs/06.log",
+                mode="a",
+            ),
+            logging.StreamHandler()
+        ]
+    )
+    logger = logging.getLogger()
+    logger.info(f"Start")
+
+    utils.nco_seed()
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)

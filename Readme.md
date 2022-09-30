@@ -47,12 +47,20 @@ We organize most of the code in:
 
 1. Local library `src/NegativeClassOrganization` for functionality required everywhere else. Most organized and clean from this repo.
 2. `/notebooks` for exploratory and results analyses, local development, short experiments and others in this spirit. The messiest fom this repo. We try to keep notebooks short and move well-established functionality into local library and scripts.
-3. `/scripts` for the stable, established, reproducible analyses. These are tracked and managed through mlops tools like dvc and mlflow. They are cleaner than notebooks and leverage the local library.
-    - script_01
+3. `/scripts` for the stable, established, reproducible analyses. These are tracked and managed through mlops tools like dvc and mlflow. They are cleaner than notebooks and leverage the local library. Check `dvc dag` for a dependency graph of the stages.
+    - script_01: builds the datasets.
     - script_04a
     - script_04b
     - script_05
     - script_05b
     - script_06
     - script_06b
+    - script_07
 4. Other, such as `mlflow/` for docker-based deployment of `mlflow` and auxiliary services.
+
+### Runs
+
+We use various run names in mlflow to track experiments. We document the runs here:
+- v.0.1.1_dev_2: some train losses are not good in this version and previouses. Will address in a future run: loss curve analysis. Interrupted because I detected this during the run. Will rerun with some improvements in next one.
+- v.0.1.1_dev_3
+    - add sampling after duplicate removal for consistency and rerun.

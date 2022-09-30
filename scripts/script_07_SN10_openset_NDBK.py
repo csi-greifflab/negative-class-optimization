@@ -28,7 +28,7 @@ params_06 = config.PARAMS["06_SN10_openset_NDB1"]
 params_07 = config.PARAMS["07_SN10_openset_NDBK"]
 experiment_id = params_07["experiment_id"]
 run_name = params_07["run_name"]
-normalize_data_volume = params_07["normalize_data_volume"]
+sample_train = params_07["sample_train"]
 run_all_2class_problems = params_07["run_all_2class_problems"]
 
 num_processes = params_06["num_processes"]
@@ -46,7 +46,7 @@ def multiprocessing_wrapper_script_07(
     run_name = run_name if not TEST else "test",
     epochs = epochs,
     learning_rate = learning_rate,
-    normalize_data_volume = normalize_data_volume,
+    sample_train = sample_train,
     ) -> None:
     """Function to multiprocess the workflow.
 
@@ -59,8 +59,8 @@ def multiprocessing_wrapper_script_07(
         normalize_data_volume (optional): Defaults to normalize_data_volume.
     """
 
-    if normalize_data_volume:
-        training_samples_restriction = TRAINING_SAMPLES_RESTRICTION
+    if type(sample_train) == int:
+        training_samples_restriction = sample_train
     else:
         training_samples_restriction = None
 

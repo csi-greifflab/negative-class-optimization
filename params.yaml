@@ -11,14 +11,15 @@
   epochs: 30
 06_SN10_openset_NDB1:
   experiment_id: 2
-  run_name: "v.0.1.1_dev_2"
+  run_name: "v.0.1.1_dev_3"
   num_processes: 20
   epochs: 50
   learning_rate: 0.01
   add_reverse_pos_neg: true
+  sample_train: 70000
 06b_SN10_NDB1_crossval:
   experiment_id: 3
-  run_name: "v.0.1.1_dev_2"
+  run_name: "v.0.1.0"
   num_processes: 20
   epochs_val: 25
   epochs_train: 50
@@ -29,6 +30,6 @@
   n_trials: 30
 07_SN10_openset_NDBK:
   experiment_id: 5
-  run_name: "v.0.1.1_dev_2"
-  normalize_data_volume: true
+  run_name: "v.0.1.1_dev_3"
+  sample_train: 70000
   run_all_2class_problems: true
