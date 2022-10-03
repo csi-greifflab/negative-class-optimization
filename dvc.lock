@@ -80,15 +80,15 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_06_SN10_openset_NDB1.py
-      md5: 0db6fe86c2fc4fc5f781343113c1170c
-      size: 8613
+      md5: be79ff07b1f272522346df7b3891928d
+      size: 8860
     params:
       params.yaml:
         06_SN10_openset_NDB1.epochs: 50
         06_SN10_openset_NDB1.experiment_id: 2
         06_SN10_openset_NDB1.learning_rate: 0.01
         06_SN10_openset_NDB1.num_processes: 20
-        06_SN10_openset_NDB1.run_name: v.0.1.1_dev_2
+        06_SN10_openset_NDB1.run_name: v.0.1.1_dev_3
   01a_build_global_dataset:
     cmd: python scripts/script_01_build_datasets.py global
     deps:
@@ -159,12 +159,12 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_07_SN10_openset_NDBK.py
-      md5: bf48d0cdf10c765486501a47de65df55
-      size: 2694
+      md5: 6909fbd72488a56e993b98be2da694e1
+      size: 5669
     params:
       params.yaml:
         06_SN10_openset_NDB1.epochs: 50
         06_SN10_openset_NDB1.learning_rate: 0.01
         06_SN10_openset_NDB1.num_processes: 20
         07_SN10_openset_NDBK.experiment_id: 5
-        07_SN10_openset_NDBK.run_name: v.0.1.1_dev_2
+        07_SN10_openset_NDBK.run_name: v.0.1.1_dev_3

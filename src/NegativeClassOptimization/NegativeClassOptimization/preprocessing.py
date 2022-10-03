@@ -222,7 +222,7 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
     Returns:
         _type_: _description_
     """
-    logger = logging.info()
+    logger = logging.getLogger()
     nrows = df_train_val.shape[0]
     try:
         if sample_train <= nrows:

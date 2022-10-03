@@ -47,7 +47,7 @@ def multiprocessing_wrapper_run_main_06(
         learning_rate (optional): Defaults to learning_rate.
     """    
     logger = logging.getLogger()
-    
+
     ag_pos, ag_neg = ag_pair
     logger.info(f"Start run for ({ag_pos}, {ag_neg})")
 
@@ -65,6 +65,8 @@ def multiprocessing_wrapper_run_main_06(
             save_model=True,
             sample_train=sample_train if type(sample_train) == int else None,
             )
+        logger.info(f"End mlflow run for ({ag_pos}, {ag_neg})")
+    logger.info(f"End process ({ag_pos}, {ag_neg})")
 
 
 def resolve_ag_type(ag: Union[str, List[str]]) -> List[str]:

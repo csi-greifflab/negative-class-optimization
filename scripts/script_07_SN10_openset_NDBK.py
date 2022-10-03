@@ -19,6 +19,8 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+import logging
+from joblib import Parallel, delayed
 
 from script_06_SN10_openset_NDB1 import run_main_06
 
@@ -59,12 +61,15 @@ def multiprocessing_wrapper_script_07(
         normalize_data_volume (optional): Defaults to normalize_data_volume.
     """
 
+    logger = logging.getLogger()
+
     if type(sample_train) == int:
         training_samples_restriction = sample_train
     else:
         training_samples_restriction = None
 
     ag_pos, ag_neg = ag_pair
+    logger.info(f"Start mlflow run for ({ag_pos}, {ag_neg}), {experiment_id=}")
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
@@ -80,12 +85,27 @@ def multiprocessing_wrapper_script_07(
             sample=(1000 if TEST else None),
             sample_train=(None if TEST else training_samples_restriction),
             )
-
-
+        
+        logger.info(f"End mlflow run for ({ag_pos}, {ag_neg})")
+    logger.info(f"End workflow wrapper for ({ag_pos}, {ag_neg})")
 
 
 if __name__ == "__main__":
     
+    logging.basicConfig(
+        format="%(asctime)s %(process)d %(funcName)s %(levelname)s %(message)s",
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler(
+                filename="data/logs/07.log",
+                mode="a",
+            ),
+            logging.StreamHandler()
+        ]
+    )
+    logger = logging.getLogger()
+    logger.info("Start")
+
     utils.nco_seed()
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
@@ -109,5 +129,46 @@ if __name__ == "__main__":
         print(len(ag_pairs))
         print(ag_pairs)
 
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        pool.map(multiprocessing_wrapper_script_07, ag_pairs)
+
+    # Direct application might consume too much memory
+    # with multiprocessing.Pool(processes=num_processes) as pool:
+    #     pool.map(multiprocessing_wrapper_script_07, ag_pairs)
+
+    # Split manually, ag_pairs len ~ 600
+    index_ranges = []
+    for i in range(0, len(ag_pairs), 60):
+        index_ranges.append((i, i+60))
+
+    num_processed = 0
+    for start_idx, end_idx in index_ranges:
+        ag_pairs_batch = ag_pairs[start_idx:end_idx]
+        
+        logger.info(f"Processing batch for multiprocessing pooling: {ag_pairs_batch}")
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            pool.map(multiprocessing_wrapper_script_07, ag_pairs_batch)
+        
+        num_processed += len(ag_pairs_batch)
+
+    assert num_processed == len(ag_pairs), (
+        f"Processed #ag_pair ({num_processed=}) "
+        f"is different than total ({len(ag_pairs_batch)=})"
+    )
+
+    # pool -> joblib for potentially better multiprocess memory management.
+    # strange interaction bug with mlflow - experiment_id not found.
+    # try:
+    #     r = Parallel(n_jobs=num_processes)(
+    #         delayed(multiprocessing_wrapper_script_07)(
+    #             ag_pair,
+    #             # experiment_id = experiment_id, 
+    #             # run_name = run_name if not TEST else "test",
+    #             # epochs = epochs,
+    #             # learning_rate = learning_rate,
+    #             # sample_train = sample_train,
+
+    #         )
+    #         for ag_pair in ag_pairs[-2:]
+    #     )
+    # except mlflow.exceptions.MlflowException as err:
+    #     logger.exception(f"mlflow error: {err=}, {type(err)=}")
+    #     raise
