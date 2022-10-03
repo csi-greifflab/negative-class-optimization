@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 
+from NegativeClassOptimization.ml import compute_roc_curve, compute_pr_curve
+
 
 def plot_abs_logit_distr(
     eval_metrics: dict, 
@@ -49,28 +51,15 @@ def plot_roc_open_and_closed_testsets(eval_metrics, metadata: dict):
     Returns:
         (fig, axs)
     """
-    def find_optimal_threshold(fpr, tpr, thresholds) -> float:
-        """Finds optimal threshold based on argmin(|FPR+TPR-1|).
 
-        TODO: move to another file and use to build open set classifiers.
-
-        Returns:
-            float: _description_
-        """
-        th_opt = thresholds[
-            np.argmin(np.abs(fpr + tpr - 1))
-        ]
-        return th_opt
-
-    fpr_open, tpr_open, thresholds_open = metrics.roc_curve(
-        y_true=eval_metrics["open"]["y_open_true"], 
-        y_score=eval_metrics["open"]["y_open_abs_logits"],
+    fpr_open, tpr_open, thresholds_open, th_open_opt = compute_roc_curve(
+        eval_metrics["open"]["y_open_true"],
+        eval_metrics["open"]["y_open_abs_logits"]
     )
-    th_open_opt = find_optimal_threshold(fpr_open, tpr_open, thresholds_open)
 
-    fpr_closed, tpr_closed, thresholds_closed = metrics.roc_curve(
-        y_true=eval_metrics["closed"]["y_test_true"], 
-        y_score=eval_metrics["closed"]["y_test_logits"],
+    fpr_closed, tpr_closed, thresholds_closed, _ = compute_roc_curve(
+        eval_metrics["closed"]["y_test_true"],
+        eval_metrics["closed"]["y_test_logits"],
     )
 
     fig, axs = plt.subplots(ncols=2, figsize=(14, 7))
@@ -122,3 +111,56 @@ def plot_roc_open_and_closed_testsets(eval_metrics, metadata: dict):
     axs[1].set_title("Optimal threshold for closed and open set test sets")
     axs[1].grid()
     return (fig, axs)
+
+
+def plot_pr_open_and_closed_testsets(eval_metrics, metadata: dict):
+    """Plot ROC plots for the open and closed test sets evaluations.
+
+    Args:
+        eval_metrics (dict): contains the necessary metrics.
+
+    Returns:
+        (fig, axs)
+    """
+
+    precision_open, recall_open, _, _ = compute_pr_curve(
+        eval_metrics["open"]["y_open_true"],
+        eval_metrics["open"]["y_open_abs_logits"]
+    )
+
+    precision_closed, recall_closed, _, _ = compute_pr_curve(
+        eval_metrics["closed"]["y_test_true"],
+        eval_metrics["closed"]["y_test_logits"],
+    )
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    lw = 2
+    ax.plot(
+        precision_open,
+        recall_open,
+        color="darkorange",
+        lw=lw,
+        label=f'Open, Average precision={eval_metrics["open"]["avg_precision_open"]:.2f}',
+    )
+    ax.plot(
+        precision_closed,
+        recall_closed,
+        color="darkred",
+        lw=lw,
+        label=f'Closed, Average precision={eval_metrics["closed"]["avg_precision_closed"]:.2f}',
+    )
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.05])
+    ax.set_xlabel("Precision")
+    ax.set_ylabel("Recall")
+    ax.set_title(
+        "Open set PR curve\n"
+        f'NDB1({metadata.get("ag_pos")} vs {metadata.get("ag_neg")})\n'
+        r'$N_{train} = $'f'{metadata.get("N_train")}\n'
+        r'$N_{closed}$ = 'f'{metadata.get("N_closed")}\n'
+        r'$N_{open}$ = 'f'{metadata.get("N_open")}'
+    )
+    ax.legend(loc="lower right")
+    ax.grid()
+
+    return (fig, ax)

@@ -4,14 +4,28 @@ and check the initial dataset files.
 """
 
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
+import random
 import uuid
 from typing import Optional, List
 import numpy as np
 import pandas as pd
-
+import torch
 
 import NegativeClassOptimization.config as config
+
+
+def nco_seed(seed: int = config.SEED):
+    """Seed for the project.
+    https://pytorch.org/docs/stable/notes/randomness.html
+
+    Args:
+        seed (int, optional): Defaults to config.SEED.
+    """    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def summarize_data_files(path: Path) -> pd.DataFrame:
@@ -167,6 +181,15 @@ def load_processed_dataframes(
     dir_path = config.DATA_SLACK_1_PROCESSED_DIR,
     sample: Optional[int] = None,
     ) -> dict:
+    """Loads processed dataframes for ml runs.
+
+    Args:
+        dir_path (_type_, optional): Defaults to config.DATA_SLACK_1_PROCESSED_DIR.
+        sample (Optional[int], optional): samples train_val, test closed and test open. Defaults to None.
+
+    Returns:
+        dict: _description_
+    """
 
     if sample is None:
         load_df = lambda fname: (

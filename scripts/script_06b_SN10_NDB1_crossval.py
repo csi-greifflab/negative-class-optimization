@@ -1,3 +1,7 @@
+"""
+Script for NDB1 with cross-validation.
+"""
+
 import multiprocessing
 from itertools import combinations
 import mlflow
@@ -154,9 +158,16 @@ def run_main_06b(
                     "closed_recall": eval_metrics["closed"]["recall_closed"],
                     "closed_precision": eval_metrics["closed"]["precision_closed"],
                     "closed_f1": eval_metrics["closed"]["f1_closed"],
-
+                    'open_avg_precision':eval_metrics["open"]["avg_precision_open"],
+                    'open_acc':eval_metrics["open"]["acc_open"],
+                    'open_recall':eval_metrics["open"]["recall_open"],
+                    'open_precision':eval_metrics["open"]["precision_open"],
+                    'open_f1':eval_metrics["open"]["f1_open"],
+                    'open_fpr_abs_logit_model':eval_metrics["open"]["fpr_abs_logit_model"],
+                    'open_fpr_naive_model':eval_metrics["open"]["fpr_naive_model"],
                 }
             )
+
 
 
             metadata = {
@@ -166,6 +177,7 @@ def run_main_06b(
                 "N_closed": len(test_loader.dataset),
                 "N_open": len(open_loader.dataset),
             }
+
             fig_abs_logit_distr, ax_abs_logit_distr = vis.plot_abs_logit_distr(
                 eval_metrics,
                 metadata=metadata,
@@ -176,6 +188,12 @@ def run_main_06b(
                 eval_metrics, metadata=metadata)
             mlflow.log_figure(fig_roc, "fig_roc.png")
 
+            fig_pr, _ = vis.plot_pr_open_and_closed_testsets(
+                eval_metrics, metadata=metadata)
+            mlflow.log_figure(fig_pr, "fig_pr.png")
+
+            mlflow.pytorch.log_model(model, "pytorch_model")
+            
             return crossval_optimizaion_metric 
 
 
@@ -239,6 +257,8 @@ def construct_loaders_06b(farmhash_mod_10_val_mask, ag_pos, ag_neg, train_batch_
 
 
 if __name__ == "__main__":
+
+    np.random.seed(config.SEED)
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
