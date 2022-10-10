@@ -138,6 +138,7 @@ class BinaryDataset(Dataset):
 
     def __init__(self, df):
         self.df = df
+        self.process_y_tensor = lambda t: t.reshape((1)).type(torch.float)
 
     def __len__(self):
         return self.df.shape[0]
@@ -146,26 +147,17 @@ class BinaryDataset(Dataset):
         return (
             torch.tensor(self.df.loc[idx, "X"]).reshape(
                 (1, -1)).type(torch.float),
-            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.float),
+            self.process_y_tensor(torch.tensor(self.df.loc[idx, "y"])),
         )
 
 
-class MulticlassDataset(Dataset):
+class MulticlassDataset(BinaryDataset):
     """Pytorch dataset for modelling antigen binding multiclass classifiers.
     """
 
     def __init__(self, df):
-        self.df = df
-
-    def __len__(self):
-        return self.df.shape[0]
-
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.df.loc[idx, "X"]).reshape(
-                (1, -1)).type(torch.float),
-            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.uint8),
-        )
+        super().__init__(df)
+        self.process_y_tensor = lambda t: t.reshape(-1).type(torch.long)
 
 
 def construct_dataset_atoms(

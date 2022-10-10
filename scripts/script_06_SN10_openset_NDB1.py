@@ -144,7 +144,7 @@ def run_main_06(
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ml.SN10().to(device)
     online_metrics = ml.train_for_ndb1(
-        epochs, 
+        epochs,
         learning_rate, 
         train_loader, 
         test_loader, 

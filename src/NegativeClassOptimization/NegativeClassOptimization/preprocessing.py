@@ -174,10 +174,9 @@ def preprocess_data_for_pytorch_binary(
 
     if scale_onehot:
 
-        arr_from_series = lambda s: np.stack(s, axis=0)
+        train_onehot_stack = arr_from_list_series(df_train_val["Slide_onehot"])
+        test_onehot_stack = arr_from_list_series(df_test_closed["Slide_onehot"])
 
-        train_onehot_stack = arr_from_series(df_train_val["Slide_onehot"])
-        test_onehot_stack = arr_from_series(df_test_closed["Slide_onehot"])
         scaler = StandardScaler()
         scaler.fit(train_onehot_stack)
         df_train_val["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
@@ -197,7 +196,7 @@ def preprocess_data_for_pytorch_binary(
     if has_openset:
         df_test_open = onehot_encode_df(df_test_open)
         if scale_onehot:
-            openset_onehot_stack = arr_from_series(df_test_open["Slide_onehot"])
+            openset_onehot_stack = arr_from_list_series(df_test_open["Slide_onehot"])
             df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
         df_test_open["X"] = df_test_open["Slide_onehot"]
         df_test_open["y"] = 0
@@ -206,6 +205,11 @@ def preprocess_data_for_pytorch_binary(
         return (train_data, test_data, openset_data, train_loader, test_loader, openset_loader)
     else:
         return (train_data, test_data, train_loader, test_loader)
+
+
+def arr_from_list_series(s: pd.Series): 
+    """Convert to 2D array from series of lists."""    
+    return np.stack(s, axis=0)
 
 
 def sample_train_val(df_train_val, sample_train, num_buckets = 16384):

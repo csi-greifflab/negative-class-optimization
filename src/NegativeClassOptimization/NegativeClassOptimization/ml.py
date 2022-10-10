@@ -30,16 +30,16 @@ class SN10(nn.Module):
     def __init__(self):
         super(SN10, self).__init__()
         self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(11*20, 10),
-            nn.ReLU(),
-            nn.Linear(10, 1)
-        )
-        self.sigmoid = nn.Sigmoid()
+        self.linear_1 = nn.Linear(11*20, 10)
+        self.activation = nn.ReLU()
+        self.linear_2 = nn.Linear(10, 1)
+        self.final = nn.Sigmoid()
 
     def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
         x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
+        x = self.linear_1(x)
+        x = self.activation(x)
+        logits = self.linear_2(x)
         return logits
 
     def forward(
@@ -47,12 +47,35 @@ class SN10(nn.Module):
         x: torch.Tensor, 
         return_logits = False
         ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        
         logits = self.forward_logits(x)
-        expits = self.sigmoid(logits)
+        expits = self.final(logits)
         if return_logits:
             return expits, logits
         else:
             return expits
+
+
+class MulticlassSN10(SN10):
+
+    def __init__(self, num_classes: int):
+        
+        super().__init__()
+        
+        assert num_classes < 10
+        self.linear_2 = nn.Linear(10, num_classes)
+
+        # Cross-entropy loss expects raw, not softmax
+        self.final = nn.Identity()
+    
+    def forward(
+        self,
+        x: torch.Tensor,
+        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+
+        # confusing but these are the logits
+        logits = super().forward(x, return_logits = False)
+        return logits
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -68,7 +91,13 @@ def train_loop(loader, model, loss_fn, optimizer):
     size = len(loader.dataset)
     for batch, (X, y) in enumerate(loader):
         y_pred = model(X)
-        loss = loss_fn(y_pred, y)
+        
+        if type(loss_fn) == nn.CrossEntropyLoss:
+            loss = loss_fn(y_pred, y.reshape(-1))
+        elif type(loss_fn) == nn.BCELoss:
+            loss = loss_fn(y_pred, y)
+        else:
+            raise NotImplementedError(f"{loss_fn=} not implemented.")
 
         optimizer.zero_grad()
         loss.backward()
