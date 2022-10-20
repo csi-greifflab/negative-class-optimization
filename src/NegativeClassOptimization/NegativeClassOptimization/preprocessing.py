@@ -181,6 +181,8 @@ def preprocess_data_for_pytorch_binary(
         scaler.fit(train_onehot_stack)
         df_train_val["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
         df_test_closed["Slide_onehot"] = scaler.transform(test_onehot_stack).tolist()
+    else:
+        scaler = None
 
     df_train_val["X"] = df_train_val["Slide_onehot"]
     df_train_val["y"] = df_train_val["binds_a_pos_ag"]
@@ -194,17 +196,32 @@ def preprocess_data_for_pytorch_binary(
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
     if has_openset:
-        df_test_open = onehot_encode_df(df_test_open)
-        if scale_onehot:
-            openset_onehot_stack = arr_from_list_series(df_test_open["Slide_onehot"])
-            df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
-        df_test_open["X"] = df_test_open["Slide_onehot"]
-        df_test_open["y"] = 0
-        openset_data = datasets.BinaryDataset(df_test_open)
-        openset_loader = DataLoader(openset_data, batch_size=batch_size, shuffle=False)
+        
+        openset_data, openset_loader = construct_open_dataset_loader(
+            df_test_open, 
+            batch_size, 
+            scaler=scaler,
+            )
+
         return (train_data, test_data, openset_data, train_loader, test_loader, openset_loader)
     else:
         return (train_data, test_data, train_loader, test_loader)
+
+
+def construct_open_dataset_loader(
+    df_test_open, 
+    batch_size, 
+    scaler=None
+    ):
+    df_test_open = onehot_encode_df(df_test_open)
+    if scaler is not None:
+        openset_onehot_stack = arr_from_list_series(df_test_open["Slide_onehot"])
+        df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
+    df_test_open["X"] = df_test_open["Slide_onehot"]
+    df_test_open["y"] = 0
+    openset_data = datasets.BinaryDataset(df_test_open)
+    openset_loader = DataLoader(openset_data, batch_size=batch_size, shuffle=True)
+    return openset_data, openset_loader
 
 
 def arr_from_list_series(s: pd.Series): 

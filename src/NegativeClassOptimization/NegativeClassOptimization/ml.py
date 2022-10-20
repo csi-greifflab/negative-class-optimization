@@ -6,6 +6,7 @@ Includes models, datasets and data loaders.
 
 from argparse import ArgumentError
 from pathlib import Path
+from tkinter import Y
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -67,15 +68,23 @@ class MulticlassSN10(SN10):
 
         # Cross-entropy loss expects raw, not softmax
         self.final = nn.Identity()
+        self.softmax = nn.Softmax(dim=1)
     
     def forward(
         self,
         x: torch.Tensor,
-        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        ) -> torch.Tensor:
 
         # confusing but these are the logits
         logits = super().forward(x, return_logits = False)
         return logits
+    
+    def forward_prob(
+        self,
+        x: torch.Tensor,
+        ) -> torch.Tensor:
+        logits = self.forward(x)
+        return self.softmax(logits)
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -110,7 +119,7 @@ def train_loop(loader, model, loss_fn, optimizer):
     return losses
 
 
-def test_loop(loader, model, loss_fn):
+def test_loop(loader, model, loss_fn) -> dict:
     """Basic test loop for pytorch.
 
     Args:
@@ -139,6 +148,8 @@ def test_loop(loader, model, loss_fn):
         "accuracy": 100*correct
     }
 
+    # TODO: Split above and below into 2 funcs.
+
     x_test, y_test = list(
         DataLoader(loader.dataset, batch_size=len(loader.dataset))
         )[0]
@@ -157,6 +168,8 @@ def openset_loop(open_loader, test_loader, model):
     x_test, y_test = list(
         DataLoader(test_loader.dataset, batch_size=len(test_loader.dataset))
         )[0]
+    del y
+    del y_test
     open_metrics = compute_metrics_open_testset(model, x_open, x_test)
     return open_metrics
 
@@ -308,8 +321,6 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     return metrics_closed
 
 
-
-
 def compute_metrics_open_testset(model, x_open, x_test):
     """Compute metrics for the open test set.
 
@@ -323,8 +334,15 @@ def compute_metrics_open_testset(model, x_open, x_test):
     """
     assert hasattr(model, "forward_logits")
     
-    open_abs_logits = abs(model.forward_logits(x_open)).detach().numpy().reshape(-1)
-    closed_abs_logits = abs(model.forward_logits(x_test).detach().numpy()).reshape(-1)
+    l2_norm = lambda arr: np.linalg.norm(arr, ord=2, axis=1)
+
+    ## Norm implementation works in both binary and multiclass case.
+    # open_abs_logits = abs(model.forward_logits(x_open)).detach().numpy().reshape(-1)
+    # closed_abs_logits = abs(model.forward_logits(x_test).detach().numpy()).reshape(-1)
+
+    open_abs_logits = l2_norm(model.forward_logits(x_open).detach().numpy()).reshape(-1)
+    closed_abs_logits = l2_norm(model.forward_logits(x_test).detach().numpy()).reshape(-1)    
+
     df_tmp = pd.DataFrame(data=open_abs_logits, columns=["logits"])
     df_tmp = pd.concat(
         (
@@ -344,11 +362,13 @@ def compute_metrics_open_testset(model, x_open, x_test):
     th_opt = find_optimal_threshold(y_open_true, y_open_abs_logits, method="f1")
     y_open_pred = (y_open_abs_logits > th_opt).astype(np.int16)
     open_binary_metrics: dict = compute_binary_metrics(y_open_pred, y_open_true)
-    fpr_abs_logit_model = y_open_pred.sum() / y_open_pred.shape[0]
+    ## TODO: wrong computation
+    # fpr_abs_logit_model = y_open_pred.sum() / y_open_pred.shape[0]
 
     # TODO: refactor, document
-    naive_closedset_prediction = model.forward(x_open).detach().numpy().reshape(-1).round()
-    fpr_naive_model = naive_closedset_prediction.sum() / naive_closedset_prediction.shape[0]  # ideally everything is zero here
+    # TODO: wrong computation for fpr_naive_model
+    # naive_closedset_prediction = model.forward(x_open).detach().numpy().reshape(-1).round()
+    # fpr_naive_model = naive_closedset_prediction.sum() / naive_closedset_prediction.shape[0]  # ideally everything is zero here
 
     metrics_open = {
         "y_open_abs_logits": y_open_abs_logits,
@@ -356,8 +376,8 @@ def compute_metrics_open_testset(model, x_open, x_test):
         "roc_auc_open": roc_auc_open,
         "avg_precision_open": avg_precision_open,
         **{f"{k}_open": v for k, v in open_binary_metrics.items()},
-        "fpr_abs_logit_model": fpr_abs_logit_model,
-        "fpr_naive_model": fpr_naive_model,
+        # "fpr_abs_logit_model": fpr_abs_logit_model,
+        # "fpr_naive_model": fpr_naive_model,
     }
     return metrics_open
 
