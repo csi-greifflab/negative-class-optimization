@@ -155,21 +155,7 @@ def run_main_06(
         weight_decay=weight_decay,
         )
     logger.info("Model trained.")
-    for i, epoch_metrics in enumerate(online_metrics):
-        epoch = i+1
-        mlflow.log_metrics(
-                {
-                    "train_loss": epoch_metrics["train_losses"][-1],
-                    "test_loss": epoch_metrics["test_metrics"]["test_loss"],
-                    "test_acc": epoch_metrics["test_metrics"]["accuracy"],
-                    "closed_roc_auc": epoch_metrics["test_metrics"]["roc_auc_closed"],
-                    "closed_recall": epoch_metrics["test_metrics"]["recall_closed"],
-                    "closed_precision": epoch_metrics["test_metrics"]["precision_closed"],
-                    "closed_f1": epoch_metrics["test_metrics"]["f1_closed"],
-                    "open_roc_auc": epoch_metrics["open_metrics"]["roc_auc_open"],
-                }, 
-                step=epoch
-            )
+    utils.mlflow_log_params_online_metrics(online_metrics)
 
     eval_metrics = ml.evaluate_on_closed_and_open_testsets(open_loader, test_loader, model)
     mlflow.log_dict(

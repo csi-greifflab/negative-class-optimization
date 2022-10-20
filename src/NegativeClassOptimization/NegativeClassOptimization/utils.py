@@ -4,6 +4,7 @@ and check the initial dataset files.
 """
 
 from dataclasses import dataclass
+from itertools import chain
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 import random
@@ -12,6 +13,7 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 import torch
+import mlflow
 
 import NegativeClassOptimization.config as config
 
@@ -206,3 +208,30 @@ def load_processed_dataframes(
         "test_closed_exclusive": load_df("df_test_closed_exclusive.tsv"),
         "test_open_exclusive": load_df("df_test_open_exclusive.tsv"),
     }
+
+
+def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
+    for i, epoch_metrics in enumerate(online_metrics):
+        epoch = i+1
+        try:
+            mlflow.log_metrics(
+                    process_epoch_metrics(epoch_metrics),
+                    step=epoch
+                )
+        except TypeError as e:
+            print(f"TypeError: {e}")
+            print(epoch_metrics)
+
+
+def process_epoch_metrics(epoch_metrics: dict) -> dict:
+    metrics = {}
+    metrics["train_loss"] = epoch_metrics["train_losses"][-1]
+    metrics_iter = chain(
+        epoch_metrics["test_metrics"].items(),
+        epoch_metrics["open_metrics"].items(),
+    )
+    for metric, val in metrics_iter:
+        if type(val) != np.ndarray:
+            metrics[metric] = val
+        
+    return metrics

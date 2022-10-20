@@ -207,7 +207,7 @@ def test_loop(loader, model, loss_fn) -> dict:
     with torch.no_grad():
         for X, y in loader:
             
-            test_loss = compute_loss(model, loss_fn, X, y)
+            test_loss = compute_loss(model, loss_fn, X, y).item()
             correct += (
                 (model.predict(X) == y)
                 .type(torch.float)
@@ -472,12 +472,8 @@ def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
     """
     assert hasattr(model, "forward_logits")
 
-    x, y = list(
-        DataLoader(open_loader.dataset, batch_size=len(open_loader.dataset))
-        )[0]
-    x_test, y_test = list(
-        DataLoader(test_loader.dataset, batch_size=len(test_loader.dataset))
-        )[0]
+    x, y = Xy_from_loader(open_loader)
+    x_test, y_test = Xy_from_loader(test_loader)
 
     metrics_open = compute_metrics_open_testset(model, x, x_test)
     metrics_closed = compute_metrics_closed_testset(model, x_test, y_test)

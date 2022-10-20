@@ -213,6 +213,7 @@ def construct_open_dataset_loader(
     batch_size, 
     scaler=None
     ):
+    df_test_open = df_test_open.reset_index(drop=True)
     df_test_open = onehot_encode_df(df_test_open)
     if scaler is not None:
         openset_onehot_stack = arr_from_list_series(df_test_open["Slide_onehot"])
