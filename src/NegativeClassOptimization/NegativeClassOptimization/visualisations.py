@@ -1,7 +1,7 @@
 """
 TODO: Move/add umap projections here.
 """
-from typing import Tuple
+from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,32 +12,35 @@ from NegativeClassOptimization.ml import compute_roc_curve, compute_pr_curve
 
 
 def plot_abs_logit_distr(
-    eval_metrics: dict, 
-    metadata: dict
+    open_metrics: dict, 
+    metadata: Optional[dict] = None,
     ) -> tuple:
     """Plots distribution of absolute logits from the 
     metrics recorded during mlflow run from script 06.
 
     Args:
-        eval_metrics (dict): contains logits in a currently hard-coded way.
+        open_metrics (dict): contains logits in a currently hard-coded way.
         metadata (dict): metadata regarding the run (data, model, etc.).
 
     Returns:
         (fig, axs)
     """    
     df_hist = pd.DataFrame(data={
-        "abs_logits": eval_metrics["open"]["y_open_abs_logits"],
-        "test_type": np.where(eval_metrics["open"]["y_open_true"] == 1, "closed", "open")
+        "abs_logits": open_metrics["y_open_abs_logits"],
+        "test_type": np.where(open_metrics["y_open_true"] == 1, "closed", "open")
     })
     fig, ax = plt.subplots(figsize=(10, 7))
     sns.histplot(data=df_hist, x="abs_logits", hue="test_type", stat="probability", ax=ax, common_norm=False, kde=True)
-    ax.set_title(
-        "Absolute logit distribution per open and closed set evaluation.\n"
-        f'NDB1({metadata.get("ag_pos")} vs {metadata.get("ag_neg")})\n'
-        r'$N_{train} = $'f'{metadata.get("N_train")}\n'
-        r'$N_{closed}$ = 'f'{metadata.get("N_closed")}\n'
-        r'$N_{open}$ = 'f'{metadata.get("N_open")}'
-    )
+    if metadata is not None:
+        ax.set_title(
+            "Absolute logit distribution per open and closed set evaluation.\n"
+            f'NDB1({metadata.get("ag_pos")} vs {metadata.get("ag_neg")})\n'
+            r'$N_{train} = $'f'{metadata.get("N_train")}\n'
+            r'$N_{closed}$ = 'f'{metadata.get("N_closed")}\n'
+            r'$N_{open}$ = 'f'{metadata.get("N_open")}'
+        )
+    else:
+        ax.set_title("Absolute logit distribution per open and closed set evaluation.\n")
     ax.grid()
     return (fig, ax)
 
@@ -114,6 +117,7 @@ def plot_roc_open_and_closed_testsets(eval_metrics, metadata: dict):
 
 
 def plot_pr_open_and_closed_testsets(eval_metrics, metadata: dict):
+
     """Plot ROC plots for the open and closed test sets evaluations.
 
     Args:
@@ -164,3 +168,19 @@ def plot_pr_open_and_closed_testsets(eval_metrics, metadata: dict):
     ax.grid()
 
     return (fig, ax)
+
+
+def plot_confusion(
+    cm: np.ndarray, 
+    cm_normed: np.ndarray,
+    class_names: Optional[List[str]] = None,
+    ):
+    
+    fig, axs = plt.subplots(ncols=2, figsize=(12, 5))
+
+    metrics.ConfusionMatrixDisplay(cm_normed, display_labels=class_names).plot(ax=axs[0])
+    axs[0].set_title("Confusion matrix: normalized")
+
+    metrics.ConfusionMatrixDisplay(cm, display_labels=class_names).plot(ax=axs[1])
+    axs[1].set_title("Confusion matrix: counts")
+    return fig, axs

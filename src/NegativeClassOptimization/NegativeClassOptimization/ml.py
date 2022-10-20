@@ -55,6 +55,30 @@ class SN10(nn.Module):
             return expits, logits
         else:
             return expits
+    
+    def predict(
+        self,
+        x: torch.Tensor,
+        ) -> torch.Tensor:
+        return self.forward(x, return_logits=False).round()
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        y_test_logits = self.forward_logits(x_test).detach().numpy().reshape(-1)
+        y_test_pred = self.forward(x_test).detach().numpy().reshape(-1).round()
+        y_test_true = y_test.detach().numpy().reshape(-1)
+        binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
+        roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
+        avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
+        metrics_closed = {
+                "y_test_logits": y_test_logits,
+                "y_test_pred": y_test_pred,
+                "y_test_true": y_test_true,
+                "roc_auc_closed": roc_auc_closed,
+                "avg_precision_closed": avg_precision_closed,
+                **{f"{k}_closed": v for k, v in binary_metrics.items()},
+            }
+        
+        return metrics_closed
 
 
 class MulticlassSN10(SN10):
@@ -85,6 +109,57 @@ class MulticlassSN10(SN10):
         ) -> torch.Tensor:
         logits = self.forward(x)
         return self.softmax(logits)
+    
+    def predict(
+        self,
+        x: torch.Tensor,
+        ) -> torch.Tensor:
+        return self.forward_prob(x).argmax(dim=1)
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        y_test_pred_prob = self.forward_prob(x_test).detach().numpy()
+        y_test_pred = y_test_pred_prob.argmax(axis=1)
+        metrics_closed = {
+            "acc_closed": metrics.accuracy_score(y_test, y_test_pred),
+            "acc_balanced_closed": metrics.balanced_accuracy_score(y_test, y_test_pred),
+            **{
+                f"{str(func).split(' ')[1].split('_')[0]}_{str(avg_type)}_closed": func(
+                    y_test, 
+                    y_test_pred, 
+                    average=avg_type
+                    )
+                for func in {
+                    metrics.f1_score, 
+                    metrics.precision_score, 
+                    metrics.recall_score,
+                    }
+                for avg_type in {"micro", "macro", "weighted", None}
+            },
+            **{
+                f"roc_auc_{avg_type}_closed": metrics.roc_auc_score(
+                    y_test, 
+                    y_test_pred_prob, 
+                    average=avg_type,
+                    multi_class="ovr",
+                    )
+                for avg_type in {"macro", "weighted", None}
+            },
+            
+            "confusion_matrix_closed": metrics.confusion_matrix(
+                y_test, 
+                y_test_pred,
+                ),
+            "confusion_matrix_normed_closed": metrics.confusion_matrix(
+                y_test,
+                y_test_pred,
+                normalize="all",
+                ),
+            "mcc_closed": metrics.matthews_corrcoef(y_test, y_test_pred),
+            }
+        return metrics_closed
+
+
+AVAILABLE_MODELS = [SN10, MulticlassSN10]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -99,14 +174,8 @@ def train_loop(loader, model, loss_fn, optimizer):
     losses = []
     size = len(loader.dataset)
     for batch, (X, y) in enumerate(loader):
-        y_pred = model(X)
         
-        if type(loss_fn) == nn.CrossEntropyLoss:
-            loss = loss_fn(y_pred, y.reshape(-1))
-        elif type(loss_fn) == nn.BCELoss:
-            loss = loss_fn(y_pred, y)
-        else:
-            raise NotImplementedError(f"{loss_fn=} not implemented.")
+        loss = compute_loss(model, loss_fn, X, y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -127,16 +196,24 @@ def test_loop(loader, model, loss_fn) -> dict:
         model (nn.Model)
         loss_fn (Callable)
     """
+    assert type(model) in AVAILABLE_MODELS, (
+        f"Model class {type(model)} not recognized."
+        )
+
     size = len(loader.dataset)
     num_batches = len(loader)
     test_loss, correct = 0, 0
 
     with torch.no_grad():
         for X, y in loader:
-            y_pred = model(X)
-            test_loss += loss_fn(y_pred, y).item()
-            correct += (torch.round(y_pred) ==
-                        y).type(torch.float).sum().item()
+            
+            test_loss = compute_loss(model, loss_fn, X, y)
+            correct += (
+                (model.predict(X) == y)
+                .type(torch.float)
+                .sum()
+                .item()
+                )
 
     test_loss /= num_batches
     correct /= size
@@ -150,9 +227,7 @@ def test_loop(loader, model, loss_fn) -> dict:
 
     # TODO: Split above and below into 2 funcs.
 
-    x_test, y_test = list(
-        DataLoader(loader.dataset, batch_size=len(loader.dataset))
-        )[0]
+    x_test, y_test = Xy_from_loader(loader=loader)
     closed_metrics = compute_metrics_closed_testset(model, x_test, y_test)
 
     return {
@@ -161,17 +236,28 @@ def test_loop(loader, model, loss_fn) -> dict:
     }
 
 
+def compute_loss(model, loss_fn, X, y):
+    if type(loss_fn) == nn.CrossEntropyLoss:
+        loss = loss_fn(model(X), y.reshape(-1))
+    elif type(loss_fn) == nn.BCELoss:
+        loss = loss_fn(model(X), y)
+    else:
+        raise NotImplementedError(f"{loss_fn=} not implemented.")
+    return loss
+
+
 def openset_loop(open_loader, test_loader, model):
-    x_open, y = list(
-        DataLoader(open_loader.dataset, batch_size=len(open_loader.dataset))
-        )[0]
-    x_test, y_test = list(
-        DataLoader(test_loader.dataset, batch_size=len(test_loader.dataset))
-        )[0]
-    del y
-    del y_test
+    x_open, _ = Xy_from_loader(open_loader)
+    x_test, _ = Xy_from_loader(test_loader)
     open_metrics = compute_metrics_open_testset(model, x_open, x_test)
     return open_metrics
+
+
+def Xy_from_loader(loader: DataLoader):
+    X, y = list(
+        DataLoader(loader.dataset, batch_size=len(loader.dataset))
+        )[0]
+    return X, y
 
 
 def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> List[Tuple[np.array, float]]:
@@ -303,21 +389,9 @@ def compute_metrics_closed_testset(model, x_test, y_test):
         dict: recorded relevant metrics.
     """
     assert hasattr(model, "forward_logits")
+    assert type(model) in AVAILABLE_MODELS
 
-    y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
-    y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
-    y_test_true = y_test.detach().numpy().reshape(-1)
-    binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
-    roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
-    avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
-    metrics_closed = {
-        "y_test_logits": y_test_logits,
-        "y_test_pred": y_test_pred,
-        "y_test_true": y_test_true,
-        "roc_auc_closed": roc_auc_closed,
-        "avg_precision_closed": avg_precision_closed,
-        **{f"{k}_closed": v for k, v in binary_metrics.items()},
-    }
+    metrics_closed = model.compute_metrics_closed_testset(x_test, y_test)
     return metrics_closed
 
 

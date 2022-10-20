@@ -5,6 +5,7 @@ import farmhash
 import unittest
 
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.ml as ml
 
 
 class GenericTests(unittest.TestCase):
@@ -59,6 +60,16 @@ class GenericTests(unittest.TestCase):
         print(f"df_train_val.shape after onehot_encode_df: {df.shape}")
         df = sample_train_val(df, 73)
         print(f"df_train_val.shape after sample_train_val 73000: {df.shape}")
+    
+    # def test_basic_MulticlassSN10(self):
+    #     y_pred = model.forward(torch.Tensor(df["X"]))
+    #     print(f"{y_pred.shape=}")
+
+    #     y_true = torch.Tensor(df["y"]).type(torch.long)
+    #     print(f"{y_true.shape=}")
+
+    #     loss = nn.CrossEntropyLoss()(y_pred, y_true)
+    #     print(f"{loss=}")
 
 
 if __name__ == "__main__":

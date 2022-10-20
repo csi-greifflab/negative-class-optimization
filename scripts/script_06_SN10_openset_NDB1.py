@@ -200,7 +200,7 @@ def run_main_06(
             "N_open": len(open_loader.dataset),
         }
     fig_abs_logit_distr, ax_abs_logit_distr = vis.plot_abs_logit_distr(
-            eval_metrics, 
+            eval_metrics["open"], 
             metadata=metadata,
         )
     mlflow.log_figure(fig_abs_logit_distr, "fig_abs_logit_distr.png")
