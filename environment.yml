@@ -34,3 +34,5 @@ dependencies:
       - setuptools==57.5.0
       - joblib
       - dovpanda
+      - nbconvert
+      - nbdev

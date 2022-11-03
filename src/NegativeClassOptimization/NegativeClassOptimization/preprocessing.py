@@ -268,7 +268,7 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
                 f"{df_train_val.shape[0]}"
                 )
         else:
-            raise OverflowError(f"sample_train={sample_train} > train_val nrows={nrows}.")
+            raise OverflowError()
     except OverflowError as error:
         logger.exception(error)
         raise

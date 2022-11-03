@@ -342,9 +342,9 @@ def train_for_ndb1(
 
     loss_fn = nn.BCELoss()
     optimizer = construct_optimizer(
-        optimizer_type, 
-        learning_rate, 
-        momentum, 
+        optimizer_type,
+        learning_rate,
+        momentum,
         weight_decay, 
         model
         )

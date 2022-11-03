@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from pathlib import Path
 import re
@@ -25,13 +26,13 @@ import NegativeClassOptimization.ml as ml
 from NegativeClassOptimization import visualisations
 
 
-TEST = True
+TEST = False
 
 experiment_id = 6
-run_name = "test"
-sample_train = None  # 70000
+run_name = "v0.1.2_2"
+sample_train = 10000  # 70000
 batch_size = 64
-epochs = 50
+epochs = 20
 learning_rate = 0.01
 num_processes = 20
 
@@ -64,7 +65,8 @@ def run_main_08(
     sample_train = None,
     ):
     
-    # TODO: logger = logging.getLogger()
+    logger = logging.getLogger()
+    logger.info("Start run_main_08")
 
     mlflow.log_params({
         "epochs": epochs,
@@ -84,10 +86,9 @@ def run_main_08(
     dfs = utils.load_processed_dataframes(sample=sample)
 
     df_train = dfs["train_val"]
-    df_train, scaler, encoder = preprocess_df_for_multiclass(df_train, ags)
+    df_train, scaler, encoder = preprocess_df_for_multiclass(df_train, ags, sample_train=sample_train)
     mlflow.log_params({"encoder_classes": "_".join(encoder.classes_)})
-    if sample_train is not None:
-        df_train = preprocessing.sample_train_val(df_train, sample_train)
+    
 
     df_test = dfs["test_closed_exclusive"]
     df_test, _, _ = preprocess_df_for_multiclass(
@@ -124,7 +125,7 @@ def run_main_08(
     )
 
     online_metrics = []
-    for t in range(10):
+    for t in range(epochs):
         
         print(f"Epoch {t+1}\n-------------------------------")
         
@@ -209,27 +210,28 @@ def preprocess_df_for_multiclass(
     ags: List[str],
     scaler = None,
     encoder = None,
+    sample_train = None,
     ):
     
     df = df.loc[df["Antigen"].isin(ags)].copy()
 
 
-    df = preprocessing.remove_duplicates_for_multiclass(df)
+    df = preprocessing.remove_duplicates_for_multiclass(df)    
+    if sample_train is not None:
+        df = preprocessing.sample_train_val(df, sample_train)
+
     df = preprocessing.onehot_encode_df(df)
 
-
     arr = preprocessing.arr_from_list_series(df["Slide_onehot"])
-
     if scaler is None:
         scaler = StandardScaler()
         scaler.fit(arr)
-    
     df["X"] = scaler.transform(arr).tolist()
-    
+
     if encoder is None:
         antigens = df["Antigen"].unique().tolist()
         encoder = LabelEncoder().fit(antigens)
-    
+
     df["y"] = encoder.transform(df["Antigen"])
     df = df[["X", "y"]]
     return df, scaler, encoder
@@ -250,6 +252,18 @@ def construct_dataset_loader(
 
 if __name__ == "__main__":
 
+    logging.basicConfig(
+        format="%(asctime)s %(process)d %(funcName)s %(levelname)s %(message)s",
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler(
+                filename="data/logs/08.log",
+                mode="a",
+            ),
+            logging.StreamHandler()
+        ]
+    )
+
     utils.nco_seed()
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
@@ -258,7 +272,10 @@ if __name__ == "__main__":
     if TEST:
         ags = [config.ANTIGENS_CLOSEDSET[:3], config.ANTIGENS_CLOSEDSET[:5]]
     else:
-        raise NotImplementedError("Implement ag generation")
+        atoms = datasets.construct_dataset_atoms(config.ANTIGENS_CLOSEDSET)
+        atoms = list(filter(lambda atom: len(atom) > 2, atoms))
+        np.random.shuffle(atoms)
+        ags = atoms[:]
 
     with multiprocessing.Pool(processes=num_processes) as pool:
         pool.map(multiprocessing_wrapper_script_08, ags)
