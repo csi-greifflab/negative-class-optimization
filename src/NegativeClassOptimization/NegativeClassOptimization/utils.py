@@ -235,3 +235,23 @@ def process_epoch_metrics(epoch_metrics: dict) -> dict:
             metrics[metric] = val
         
     return metrics
+
+
+def download_absolut(
+    out_dir: Path = config.DATA_ABSOLUT_DIR,
+    doi_csv: Path = config.DATA_ABSOLUT_DOI,
+) -> None:
+
+    from urllib import request
+
+    df = pd.read_csv(doi_csv, header=None)
+    url_paths: List[str] = df.iloc[:, 1].to_list()
+    
+    URL = "https://ns9999k.webs.sigma2.no/10.11582_2021.00063"
+    for url_path in url_paths:
+        print(f"Processing {url_path=}")
+        url = URL + url_path[1:]
+        filepath = url_path.split("AbsolutOnline/")[1]
+        filepath = Path(out_dir) / filepath
+        filepath.parent.mkdir(parents=True)
+        request.urlretrieve(url, filename=str(filepath))

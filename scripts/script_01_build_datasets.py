@@ -24,6 +24,7 @@ Usage:
     script_01_build_datasets.py processed
     script_01_build_datasets.py pairwise
     script_01_build_datasets.py 1_vs_all
+    script_01_build_datasets.py download_absolut
 
 Options:
     -h --help   Show help.
@@ -90,3 +91,5 @@ if __name__ == "__main__":
         with open(out_dir / "build_metadata.json", "w+") as fh:
             json.dump(meta, fh)
 
+    elif arguments["download_absolut"]:
+        utils.download_absolut()

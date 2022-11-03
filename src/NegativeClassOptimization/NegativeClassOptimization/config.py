@@ -25,6 +25,9 @@ DATA_SLACK_1_PROCESSED_DIR = DATA_SLACK_1 / "processed"
 # GLOBAL_DATASETS_DIR = adjust_filepaths(Path("data/globals"))
 PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
+DATA_ABSOLUT_DIR = DATA_BASE_PATH / "Absolut/data"
+DATA_ABSOLUT_DOI = DATA_BASE_PATH / "Absolut/toc_doi10.11582_2021.00063.csv"
+
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
                     'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
 
