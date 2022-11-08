@@ -12,6 +12,7 @@ dependencies:
       - dvc[gdrive]
       - dash==2.3.1
       - nptyping
-      - immuneML==2.2.2
       - docopt
       - upsetplot
+      - dask
+      - git+https://github.com/uio-bmi/immuneML.git

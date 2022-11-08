@@ -10,6 +10,7 @@ if [[ $COMMAND == "update_env" ]]; then
     echo "Installing local NegativeClassOptimization in [--editable] mode"
     conda activate ab-negative-training
     pip install -e src/NegativeClassOptimization
+    pip install --force-reinstall --no-deps git+https://github.com/uio-bmi/immuneML.git
     # echo "Installing local immuneML in [--editable] mode"
     # conda activate ab-negative-training
     # pip install -e immuneML/immuneML

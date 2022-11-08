@@ -23,7 +23,8 @@ Options:
     --k_fold=<int>  Number of cross-validation iterations [default: 3]
     --refit_best    Refits best model on all training data [default: False]
     --add_explore   [default: False]
-    -o FILE         Specify output file.
+    -o FILE         Specify output file
+    --metadata      Used if metadata file is used for train-test split
     
     
 """
@@ -36,7 +37,7 @@ class NoAliasDumper(yaml.SafeDumper):
         return True
 
 
-def basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore) -> dict:
+def basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata=False) -> dict:
     datasets = {}
     for dataset_path in datasets_paths:
         dataset_name = dataset_path.name.split(".")[0]
@@ -49,16 +50,16 @@ def basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, se
                     "region_type": "FULL_SEQUENCE",
                     "column_mapping": {
                         "Slide": "sequence_aas",
-                        "ID_slide_Variant": "sequence_id"
+                        "example_id": "sequence_identifiers"
                     },
                     "metadata_column_mapping": {
-                        "UID": "UID",
+                        "example_id": "sequence_identifiers",
                         "Antigen": "Antigen",
                         "binder": "binder",
                     }
                 },
             }
-    specification = immuneml_utils.ImmuneMLSpecBuilder(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore).spec
+    specification = immuneml_utils.ImmuneMLSpecBuilder(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata).spec
     return specification
 
 
@@ -67,9 +68,10 @@ if __name__ == "__main__":
     arguments = docopt(docopt_doc, help=True, version='Naval Fate 2.0')
     
     #Parameters validation
-    data_types_paths = {'pw_wo_dupl':"../data/pairwise_wo_dupl",
-                       'pairwise':"../data/pairwise",
-                       '1_vs_all':"../data/1_vs_all"}
+    data_types_paths = {'pw_high': str(config.DATA_BASE_PATH) +"/full_data/high_pairwise",
+                       'pairwise':str(config.DATA_BASE_PATH) +"/pairwise",
+                       '1_vs_all':str(config.DATA_BASE_PATH) +"/full_data/1_vs_all",
+                       'high_low':str(config.DATA_BASE_PATH) +"/full_data/high_low_concat"}
     try:
         folder_path = data_types_paths[arguments['<data_type>']]
         logging.info(f"Building spec for {arguments['<data_type>']} analysis.")
@@ -117,9 +119,14 @@ if __name__ == "__main__":
     else:
         k_fold = 3
     
+    if arguments['--metadata']:
+        metadata =  str(datasets_paths[0].parent) + '/metadata/'
+    else:
+        metadata = False
+    
     spec_fp = arguments['-o']
     
-    specification = basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, selection = optional['selection'], k_fold = k_fold, refit_best=optional['refit_best'], add_explore=optional['add_explore'])
+    specification = basic_spec_from_dataset_paths(datasets_paths, encoding, ml_model, metric, selection = optional['selection'], k_fold = k_fold, refit_best=optional['refit_best'], add_explore=optional['add_explore'], metadata=metadata)
     with open(spec_fp, 'w+') as f:
         yaml.dump(
             specification,

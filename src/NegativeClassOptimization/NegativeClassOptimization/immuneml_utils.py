@@ -111,13 +111,13 @@ class ImmuneMLSpecBuilder:
 
     def __init__(
         self,
-        datasets: dict, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore
+        datasets: dict, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata
     ):
-        self.spec = ImmuneMLSpecBuilder._build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore)
+        self.spec = ImmuneMLSpecBuilder._build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore,metadata)
 
     @staticmethod
-    def _build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore) -> dict:
-        instructions = ImmuneMLSpecBuilder._build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore)
+    def _build_specification(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata=False) -> dict:
+        instructions = ImmuneMLSpecBuilder._build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata)
         specification = {
             "definitions": {
                 "datasets": datasets,
@@ -133,7 +133,7 @@ class ImmuneMLSpecBuilder:
         return specification
 
     @staticmethod
-    def _build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore) -> dict:
+    def _build_instructions(datasets, encoding, ml_model, metric, selection, k_fold, refit_best, add_explore, metadata) -> dict:
         
         dataset_names: list[str] = list(datasets.keys())
 
@@ -152,6 +152,8 @@ class ImmuneMLSpecBuilder:
                 }
 
         fit_instructs = {}
+        if metadata:
+            metadata_path = metadata
         for name in dataset_names:
             fit_instructs[f"fit_{name}_instruction"] = {
                 "type": "TrainMLModel",
@@ -164,16 +166,29 @@ class ImmuneMLSpecBuilder:
                         "encoding": encoding,
                         "ml_method": ml_model,
                     },
-                ],
-                "assessment": {
-                    "split_strategy": "random",
+                ]}
+            if metadata:
+                fit_instructs[f"fit_{name}_instruction"]["assessment"] = {
+                    "split_strategy": "manual",
                     "split_count": 1,
-                    "training_percentage": 0.7,
+                    "manual_config":{
+                        "train_metadata_path": f"{metadata_path}{name}_train_metadata.csv",#need to add a path
+                        "test_metadata_path": f"{metadata_path}{name}_test_metadata.csv",
+                                    },
                     "reports": {
                         "models": MODEL_REPORTS_LIST,
-                    },
-                }}
-            
+                    }
+                }
+            else:
+                {
+                        "split_strategy": "random",
+                        "split_count": 1,
+                        "training_percentage": 0.7,
+                        "reports": {
+                            "models": MODEL_REPORTS_LIST,
+                        }
+                    }
+
             if selection:
                 fit_instructs[f"fit_{name}_instruction"]["selection"] = {
                      "split_strategy": "k_fold",
@@ -182,6 +197,7 @@ class ImmuneMLSpecBuilder:
                         "models": MODEL_REPORTS_LIST
                      },
                 }
+
             
             fit_instructs[f"fit_{name}_instruction"].update({
                 "strategy": "GridSearch",
