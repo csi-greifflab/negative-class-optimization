@@ -241,7 +241,12 @@ def download_absolut(
     out_dir: Path = config.DATA_ABSOLUT_DIR,
     doi_csv: Path = config.DATA_ABSOLUT_DOI,
 ) -> None:
+    """Download Absolut raw data (https://ns9999k.webs.sigma2.no/10.11582_2021.00063).
 
+    Args:
+        out_dir (Path, optional): output directory. Defaults to config.DATA_ABSOLUT_DIR.
+        doi_csv (Path, optional): path to csv with filepaths (as obtained from Norwegian database website). Defaults to config.DATA_ABSOLUT_DOI.
+    """
     from urllib import request
 
     df = pd.read_csv(doi_csv, header=None)
@@ -253,5 +258,7 @@ def download_absolut(
         url = URL + url_path[1:]
         filepath = url_path.split("AbsolutOnline/")[1]
         filepath = Path(out_dir) / filepath
-        filepath.parent.mkdir(parents=True)
+        
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents=True)
         request.urlretrieve(url, filename=str(filepath))
