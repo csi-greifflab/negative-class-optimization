@@ -53,6 +53,7 @@ def multiprocessing_wrapper_script_08(
             save_model=True,
             sample = (1000 if TEST else None),
             sample_train=sample_train if type(sample_train) == int else None,
+            dfs=None,
             )
 
 
@@ -63,6 +64,7 @@ def run_main_08(
     save_model = True,
     sample = None,
     sample_train = None,
+    dfs = None,
     ):
     
     logger = logging.getLogger()
@@ -83,7 +85,8 @@ def run_main_08(
 
     ###########
 
-    dfs = utils.load_processed_dataframes(sample=sample)
+    if dfs is None:
+        dfs = utils.load_processed_dataframes(sample=sample)
 
     df_train = dfs["train_val"]
     df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(df_train, ags, sample_train=sample_train)

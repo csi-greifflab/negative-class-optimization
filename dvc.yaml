@@ -26,8 +26,8 @@ stages:
       - data/CompAIRR/prepared_data/AIRR.tsv
       - data/CompAIRR/prepared_data/AIRR_global_repertoire.tsv
       - scripts/script_04b_CompAIRR.sh
-    outs:
-      - data/CompAIRR/results
+    # outs:
+      # - data/CompAIRR/results
   05_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05_SN10_closedset_binary_interpretability.py
     deps:
@@ -38,8 +38,8 @@ stages:
       - 05_SN10_closedset_binary_interpretability.ag_pos
       - 05_SN10_closedset_binary_interpretability.epochs
       - 05_SN10_closedset_binary_interpretability.learning_rate
-    outs:
-      - data/SN10_closedset_binary_interpretability/
+    # outs:
+      # - data/SN10_closedset_binary_interpretability/
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     deps:

@@ -1,5 +1,33 @@
 schema: '2.0'
 stages:
+  01a_build_global_dataset:
+    cmd: python scripts/script_01_build_datasets.py global
+    deps:
+    - path: data/slack_1/raw
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: scripts/script_01_build_datasets.py
+      md5: 4e9a4aadb6f63435caae917e1a4af2fd
+      size: 3059
+    outs:
+    - path: data/slack_1/global/slack_1_global.tsv
+      md5: 5f675875920330d69522cf1817cf8d45
+      size: 45356240
+  01b_build_processed_datasets:
+    cmd: python scripts/script_01_build_datasets.py processed
+    deps:
+    - path: data/slack_1/global/slack_1_global.tsv
+      md5: 5f675875920330d69522cf1817cf8d45
+      size: 45356240
+    - path: scripts/script_01_build_datasets.py
+      md5: 4e9a4aadb6f63435caae917e1a4af2fd
+      size: 3059
+    outs:
+    - path: data/slack_1/processed
+      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
+      size: 44037470
+      nfiles: 4
   04a_prepare_CompAIRR_data:
     cmd: python scripts/script_04a_prepare_CompAIRR_data.py
     deps:
@@ -27,11 +55,6 @@ stages:
     - path: scripts/script_04b_CompAIRR.sh
       md5: 65e8da1f62d5621fee8e038e6b79fa21
       size: 2213
-    outs:
-    - path: data/CompAIRR/results
-      md5: 425cbe1802850de9cd60b94425b4380a.dir
-      size: 3867902815
-      nfiles: 21
   05_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05_SN10_closedset_binary_interpretability.py
     deps:
@@ -48,11 +71,6 @@ stages:
         05_SN10_closedset_binary_interpretability.ag_pos: 3VRL
         05_SN10_closedset_binary_interpretability.epochs: 30
         05_SN10_closedset_binary_interpretability.learning_rate: 0.01
-    outs:
-    - path: data/SN10_closedset_binary_interpretability/
-      md5: 2cfb094adc4cf2b5ee859a3812bce6fa.dir
-      size: 43046582
-      nfiles: 4
   05b_all_SN10_closedset_binary_interpretability:
     cmd: python scripts/script_05b_all_SN10_closedset_binary_interpretability.py
     deps:
@@ -80,8 +98,8 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_06_SN10_openset_NDB1.py
-      md5: be79ff07b1f272522346df7b3891928d
-      size: 8860
+      md5: dd4ecf236434b06390903d41c9bdfa52
+      size: 8100
     params:
       params.yaml:
         06_SN10_openset_NDB1.epochs: 50
@@ -89,34 +107,6 @@ stages:
         06_SN10_openset_NDB1.learning_rate: 0.01
         06_SN10_openset_NDB1.num_processes: 20
         06_SN10_openset_NDB1.run_name: v.0.1.1_dev_3
-  01a_build_global_dataset:
-    cmd: python scripts/script_01_build_datasets.py global
-    deps:
-    - path: data/slack_1/raw
-      md5: d0d633ab19c1ef7b438530f5729f5b2e.dir
-      size: 759986597
-      nfiles: 20
-    - path: scripts/script_01_build_datasets.py
-      md5: ff7e9a6cc3252c00513b33921cbf81e6
-      size: 2937
-    outs:
-    - path: data/slack_1/global/slack_1_global.tsv
-      md5: 5f675875920330d69522cf1817cf8d45
-      size: 45356240
-  01b_build_processed_datasets:
-    cmd: python scripts/script_01_build_datasets.py processed
-    deps:
-    - path: data/slack_1/global/slack_1_global.tsv
-      md5: 5f675875920330d69522cf1817cf8d45
-      size: 45356240
-    - path: scripts/script_01_build_datasets.py
-      md5: ff7e9a6cc3252c00513b33921cbf81e6
-      size: 2937
-    outs:
-    - path: data/slack_1/processed
-      md5: 65fb3e9414b0c3bb1ed0da4a3aeb70fb.dir
-      size: 44037470
-      nfiles: 4
   06b_SN10_NDB1_crossval:
     cmd: python scripts/script_06b_SN10_NDB1_crossval.py
     deps:
@@ -125,8 +115,8 @@ stages:
       size: 44037470
       nfiles: 4
     - path: scripts/script_06b_SN10_NDB1_crossval.py
-      md5: 7ce014ad4a1834bd62910bbc83f9a926
-      size: 9381
+      md5: 1e3fa2fdc9ccb0c5b7575d96766688af
+      size: 9437
     params:
       params.yaml:
         06b_SN10_NDB1_crossval.batch_sizes:
@@ -145,7 +135,7 @@ stages:
         - 0.99
         06b_SN10_NDB1_crossval.n_trials: 30
         06b_SN10_NDB1_crossval.num_processes: 20
-        06b_SN10_NDB1_crossval.run_name: v.0.1.1_dev_2
+        06b_SN10_NDB1_crossval.run_name: v.0.1.0
         06b_SN10_NDB1_crossval.weight_decays:
         - 0
         - 1e-05
