@@ -19,7 +19,9 @@ dvc pull  # fetches all the data
 
 To add a new library dependence, please add it manually in the `environment.yml` file and run `bash manage.sh update_env`. Don't forget to commit and push.
 
-### DVC
+### Data
+
+#### DVC
 
 This will setup the environment and required data, including the `data` directory, with all required data.
 
@@ -36,6 +38,9 @@ dvc push
 Note that to control file size, some large files are ignored (check `.dvcignore`).
 
 For more information check [DVC documentation](https://dvc.org/doc/start/data-management?tab=Mac-Linux).
+
+#### Download `Absolut` data
+Get the doi csv from [data source](https://archive.norstore.no/pages/public/datasetDetail.jsf?id=10.11582/2021.00063), save it to data/Absolut/toc_doi10.11582_2021.00063.csv. Then run `python scripts/script_01_build_datasets.py download_absolut`.
 
 ### mlflow
 
@@ -56,6 +61,7 @@ We organize most of the code in:
     - script_06
     - script_06b
     - script_07
+    - script_08
 4. Other, such as `mlflow/` for docker-based deployment of `mlflow` and auxiliary services.
 
 ### Runs

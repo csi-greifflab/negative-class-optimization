@@ -86,21 +86,19 @@ def run_main_08(
     dfs = utils.load_processed_dataframes(sample=sample)
 
     df_train = dfs["train_val"]
-    df_train, scaler, encoder = preprocess_df_for_multiclass(df_train, ags, sample_train=sample_train)
+    df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(df_train, ags, sample_train=sample_train)
     mlflow.log_params({"encoder_classes": "_".join(encoder.classes_)})
     
-
     df_test = dfs["test_closed_exclusive"]
-    df_test, _, _ = preprocess_df_for_multiclass(
+    df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
         df_test,
         ags,
         scaler,
         encoder
     )
 
-
-    _, train_loader = construct_dataset_loader(df_train, batch_size)
-    _, test_loader = construct_dataset_loader(df_test, batch_size)
+    _, train_loader = ml.construct_dataset_loader_multiclass(df_train, batch_size)
+    _, test_loader = ml.construct_dataset_loader_multiclass(df_test, batch_size)
     _, open_loader = preprocessing.construct_open_dataset_loader(
         dfs["test_open_exclusive"],
         batch_size=batch_size,
@@ -205,51 +203,6 @@ def run_main_08(
     return model
 
 
-def preprocess_df_for_multiclass(
-    df,
-    ags: List[str],
-    scaler = None,
-    encoder = None,
-    sample_train = None,
-    ):
-    
-    df = df.loc[df["Antigen"].isin(ags)].copy()
-
-
-    df = preprocessing.remove_duplicates_for_multiclass(df)    
-    if sample_train is not None:
-        df = preprocessing.sample_train_val(df, sample_train)
-
-    df = preprocessing.onehot_encode_df(df)
-
-    arr = preprocessing.arr_from_list_series(df["Slide_onehot"])
-    if scaler is None:
-        scaler = StandardScaler()
-        scaler.fit(arr)
-    df["X"] = scaler.transform(arr).tolist()
-
-    if encoder is None:
-        antigens = df["Antigen"].unique().tolist()
-        encoder = LabelEncoder().fit(antigens)
-
-    df["y"] = encoder.transform(df["Antigen"])
-    df = df[["X", "y"]]
-    return df, scaler, encoder
-
-
-def construct_dataset_loader(
-    df: pd.DataFrame,
-    batch_size: int = 64,
-    ):
-    dataset = datasets.MulticlassDataset(df.reset_index(drop=True))
-    loader = DataLoader(
-        dataset=dataset,
-        batch_size=batch_size,
-        shuffle=True,
-    )
-    return dataset, loader
-
-
 if __name__ == "__main__":
 
     logging.basicConfig(
@@ -270,6 +223,7 @@ if __name__ == "__main__":
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     if TEST:
+        # TODO: bug in test case
         ags = [config.ANTIGENS_CLOSEDSET[:3], config.ANTIGENS_CLOSEDSET[:5]]
     else:
         atoms = datasets.construct_dataset_atoms(config.ANTIGENS_CLOSEDSET)

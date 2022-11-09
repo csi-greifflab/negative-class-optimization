@@ -207,7 +207,7 @@ def test_loop(loader, model, loss_fn) -> dict:
     with torch.no_grad():
         for X, y in loader:
             
-            test_loss = compute_loss(model, loss_fn, X, y).item()
+            test_loss += compute_loss(model, loss_fn, X, y).item()
             correct += (
                 (model.predict(X) == y)
                 .type(torch.float)
@@ -258,6 +258,19 @@ def Xy_from_loader(loader: DataLoader):
         DataLoader(loader.dataset, batch_size=len(loader.dataset))
         )[0]
     return X, y
+
+
+def construct_dataset_loader_multiclass(
+    df: pd.DataFrame,
+    batch_size: int = 64,
+    ):
+    dataset = datasets.MulticlassDataset(df.reset_index(drop=True))
+    loader = DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+    return dataset, loader
 
 
 def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> List[Tuple[np.array, float]]:

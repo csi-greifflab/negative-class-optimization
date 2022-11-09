@@ -328,6 +328,37 @@ def preprocess_data_for_pytorch_multiclass(
     return (train_data, test_data, train_loader, test_loader)
 
 
+def preprocess_df_for_multiclass(
+    df,
+    ags: List[str],
+    scaler = None,
+    encoder = None,
+    sample_train = None,
+    ):
+    
+    df = df.loc[df["Antigen"].isin(ags)].copy()
+
+    df = remove_duplicates_for_multiclass(df)    
+    if sample_train is not None:
+        df = sample_train_val(df, sample_train)
+
+    df = onehot_encode_df(df)
+
+    arr = arr_from_list_series(df["Slide_onehot"])
+    if scaler is None:
+        scaler = StandardScaler()
+        scaler.fit(arr)
+    df["X"] = scaler.transform(arr).tolist()
+
+    if encoder is None:
+        antigens = df["Antigen"].unique().tolist()
+        encoder = LabelEncoder().fit(antigens)
+
+    df["y"] = encoder.transform(df["Antigen"])
+    df = df[["X", "y"]]
+    return df, scaler, encoder
+
+
 def farmhash_mod_10(seq: str) -> int:
     return farmhash.hash64(seq) % 10
 
