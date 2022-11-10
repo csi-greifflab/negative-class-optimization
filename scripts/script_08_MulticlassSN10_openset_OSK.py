@@ -107,6 +107,7 @@ def run_main_08(
         batch_size=batch_size,
         scaler=scaler
     )
+
     mlflow.log_params({
             "N_train": len(train_loader.dataset),
             "N_closed": len(test_loader.dataset),

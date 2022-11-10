@@ -27,6 +27,7 @@ PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
 DATA_ABSOLUT_DIR = DATA_BASE_PATH / "Absolut/data"
 DATA_ABSOLUT_DOI = DATA_BASE_PATH / "Absolut/toc_doi10.11582_2021.00063.csv"
+DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_ABSOLUT_DIR / "processed/multiclass"
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
                     'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
