@@ -538,3 +538,65 @@
 2022-10-21 11:31:59,429 2531654 run_main_08 INFO Start run_main_08
 2022-10-21 11:32:01,517 2531654 sample_train_val INFO Sampling df_train_val (nrows=166707) and sample_train=10000 => 9994
 2022-10-21 11:32:01,517 2531654 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:48:48,803 807093 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:48:48,820 807092 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:48:50,014 807092 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=1000 => 1091
+2022-11-10 18:48:50,015 807092 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:48:50,102 807093 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=1000 => 1030
+2022-11-10 18:48:50,102 807093 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:59:28,999 817345 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:59:29,007 817344 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:59:30,181 817344 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 18:59:30,181 817344 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:59:30,245 817345 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 18:59:30,245 817345 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:01:11,584 819787 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:01:11,593 819786 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:01:12,757 819786 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:01:12,757 819786 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:01:12,881 819787 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:01:12,881 819787 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:05:57,394 830853 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:05:57,417 830852 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:05:58,654 830853 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:05:58,654 830853 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:05:58,835 830852 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:05:58,835 830852 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:12:06,728 832907 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:12:06,732 832906 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:12:07,960 832907 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:12:07,960 832907 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:12:08,048 832906 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:12:08,049 832906 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:19:28,954 843950 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:19:28,954 843950 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:19:28,957 843949 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:19:28,957 843949 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:19:30,106 843949 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:19:30,107 843949 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:19:30,207 843950 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:19:30,207 843950 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:22:07,265 845581 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:22:07,265 845581 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:22:07,272 845582 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:22:07,272 845582 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:22:08,407 845581 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:22:08,408 845581 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:22:08,586 845582 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:22:08,587 845582 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:25:10,616 847286 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:25:10,616 847286 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:25:10,624 847287 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:25:10,624 847287 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:25:12,272 847286 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:25:12,272 847286 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:25:12,347 847287 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:25:12,347 847287 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:35:26,840 848392 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:35:26,841 848392 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:35:26,843 848393 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:35:26,843 848393 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:35:28,058 848392 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:35:28,059 848392 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:35:28,147 848393 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:35:28,147 848393 sample_train_val WARNING Resetting the index of df_train_val.

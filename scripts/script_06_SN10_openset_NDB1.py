@@ -8,6 +8,7 @@ import NegativeClassOptimization.config as config
 import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.visualisations as vis
 import numpy as np
 import pandas as pd
@@ -122,7 +123,7 @@ def run_main_06(
         })
 
     
-    processed_dfs: dict = utils.load_processed_dataframes(
+    processed_dfs: dict = ml.DataPipeline.load_processed_dataframes(
         sample=sample
         )
     

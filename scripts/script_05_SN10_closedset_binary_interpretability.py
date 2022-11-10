@@ -21,6 +21,7 @@ import NegativeClassOptimization.config as config
 from NegativeClassOptimization.datasets import (
     BinaryDataset
 )
+import NegativeClassOptimization.datasets as datasets
 from NegativeClassOptimization.preprocessing import (
     preprocess_data_for_pytorch_binary
 )
@@ -29,6 +30,7 @@ from NegativeClassOptimization.ml import (
     train_loop, test_loop,
     compute_integratedgradients_attribution
 )
+import NegativeClassOptimization.ml as ml
 
 
 # Get parameters
@@ -68,7 +70,7 @@ def process_data_and_train_model(ag_pos, ag_neg, learning_rate, epochs, data_pat
     # df = utils.load_global_dataframe(data_path)
     # df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
 
-    processed_dfs = utils.load_processed_dataframes()
+    processed_dfs = ml.DataPipeline.load_processed_dataframes()
     df_train_val = processed_dfs["train_val"]
     df_train_val = df_train_val.loc[df_train_val["Antigen"].isin([ag_pos, ag_neg])].copy()
     df_test_closed = processed_dfs["test_closed_exclusive"]
