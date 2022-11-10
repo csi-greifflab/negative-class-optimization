@@ -8,7 +8,7 @@ if [[ $COMMAND == "update_env" ]]; then
     echo "Running update_env"
     conda env update --file environment.yml --prune
     echo "Installing local NegativeClassOptimization in [--editable] mode"
-    conda activate ab-negative-training
+    conda activate nco
     pip install -e src/NegativeClassOptimization
     pip install --force-reinstall --no-deps git+https://github.com/uio-bmi/immuneML.git
     # echo "Installing local immuneML in [--editable] mode"
@@ -17,6 +17,14 @@ if [[ $COMMAND == "update_env" ]]; then
 elif [[ $COMMAND == "install_env" ]]; then
     echo "Running install_env"
     conda env create --force --file environment.yml
+elif [[ $COMMAND == "get_700k" ]]; then
+    echo "Fetching the 700k dataset with DVC."
+    mkdir -p data/globals
+    dvc get --out data/globals/slack_1_global.tsv . data/globals/slack_1_global.tsv
+elif [[ $COMMAND == "update_dvc_pipelines" ]]; then
+    echo "Updating and reproducing dvc pipelines."
+    dvc repro
+    dvc commit
 else
     echo "Command $COMMAND not detected."
 fi

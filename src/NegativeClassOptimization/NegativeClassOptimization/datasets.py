@@ -1,148 +1,22 @@
 # import abc
-from dataclasses import dataclass
-from enum import Enum
+import warnings
 from pathlib import Path
 from typing import Optional, List
-import warnings
-import pandas as pd
+from itertools import combinations, product
+
 import numpy as np
-# from tinydb import TinyDB, Query
-import sys
-sys.path.append('/nfs/scistore08/kondrgrp/aminnega/negative-class-optimization/src/NegativeClassOptimization')
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
 
-
-import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.config as config
 
 
-class BindingDatasetsType(Enum):
-    BASE = 0
-    RANDOM = 1
-    POSITIVE = 2
-    NEGATIVE = 3
-    COMPLETE = 4
-
-
-class BaseBindingDataset:
-
-    DF_VALIDATION_COLS = ["CDR3", "UID", "Antigen"]
-
-    def __init__(
-        self, 
-        name: str, 
-        dstype: BindingDatasetsType, 
-        df: pd.DataFrame) -> None:
-        self.name = name
-        self.dstype = dstype
-        self.df = df.copy()
-        
-        if not self.validate_df():
-            raise ValueError("Failed to init BaseBindingDataset")
-    
-    def validate_df(self) -> bool:
-        return all(map(
-                lambda validation_col: validation_col in self.df.columns,
-                BaseBindingDataset.DF_VALIDATION_COLS
-        ))
-
-
-class RandomBindingDataset(BaseBindingDataset):
-
-    def __init__(self, name: str, num_seq: int):
-
-        dstype = BindingDatasetsType.RANDOM
-        df = utils.build_random_dataset(num_seq)
-        df["Dataset"] = name
-
-        assert df["Antigen"].unique()[0] == "random"
-        super().__init__(name, dstype, df)
-
-
-class PositiveBindingDataset(BaseBindingDataset):
-
-    def __init__(
-        self,
-        name: str,
-        df: pd.DataFrame,
-        antigen: str) -> None:
-        
-        self.antigen = antigen
-
-        dstype = BindingDatasetsType.POSITIVE
-        df_ = df.copy()
-        df_["Dataset"] = name
-        super().__init__(name, dstype, df_)
-
-        if not self.validate_positive_dataset():
-            raise ValueError("Failed to init PositiveBindingDataset")
-
-    def validate_positive_dataset(self):
-        return self.df["Antigen"].unique()[0] == self.antigen
-
-
-class NegativeBindingDataset(BaseBindingDataset):
-    
-    def __init__(
-        self,
-        name: str,
-        positive_datasets: Optional[List[PositiveBindingDataset]] = None,
-        random_datasets: Optional[List[RandomBindingDataset]] = None
-        ) -> None:
-        
-        if (
-            (positive_datasets is None and random_datasets is None) 
-            or (len(positive_datasets) == len(random_datasets) == 0)
-            ):
-            raise ValueError("Datasets not provided or empty")
-
-        self.positive_datasets = positive_datasets
-        self.random_datasets = random_datasets
-        df = pd.concat(map(lambda ds: ds.df, positive_datasets + random_datasets), axis=0)
-        df = df[BaseBindingDataset.DF_VALIDATION_COLS + ["Dataset"]]
-
-        dstype = BindingDatasetsType.NEGATIVE
-        super().__init__(name, dstype, df)
-
-
-class CompleteBindingDataset(BaseBindingDataset):
-
-    # DB_PATH = config.COMPLETE_DATASETS_DB_PATH
-
-    def __init__(
-        self,
-        name: str,
-        positive_dataset: PositiveBindingDataset,
-        negative_dataset: NegativeBindingDataset,
-        ) -> None:
-        
-        self.positive_dataset = positive_dataset
-        self.negative_dataset = negative_dataset
-
-
-        df_pos = positive_dataset.df.copy()
-        df_pos["binder"] = True
-        df_neg = negative_dataset.df.copy()
-        df_neg["binder"] = False
-        df = pd.concat([df_pos, df_neg], axis=0)
-
-        dstype = BindingDatasetsType.COMPLETE
-        super().__init__(name, dstype, df)
-    
-    def save_df(self, fp: Path) -> None:
-        self.df.to_csv(fp, sep='\t')
-    
-    # def record_dataset(self, fp, metadata: dict) -> None:
-    #     self.save_df(fp)
-        
-    #     db = TinyDB(config.COMPLETE_DATASETS_DB_PATH)
-    #     record = {
-    #         "filepath": fp,
-    #         **metadata,
-    #     }
-    #     db.insert(record)
-
-
 def trim_short_CDR3(df) -> pd.DataFrame:
+    """Legacy function for removing short CDR3 - was relevant when
+    working with ImmuneML.
+    # TODO: Remove.
+    """    
     LEN_TH = 25
     cdr3_len_counts = df["CDR3"].str.len().value_counts()
     small_lengths = (
@@ -161,7 +35,7 @@ def trim_short_CDR3(df) -> pd.DataFrame:
     return df
 
 
-def generate_pairwise_dataset(
+def generate_pairwise_dataframe(
     df_global: pd.DataFrame,
     ag1: str,
     ag2: str,
@@ -171,7 +45,23 @@ def generate_pairwise_dataset(
     read_if_exists = True,
     Slide=True,
     save_datasets=True
-    ):
+    ) -> pd.DataFrame:
+    """Generate pairwise dataframe from a global dataframe.
+
+    Args:
+        df_global (pd.DataFrame): _description_
+        ag1 (str): _description_
+        ag2 (str): _description_
+        N (Optional[int], optional): _description_. Defaults to None.
+        base_data_path (Path, optional): _description_. Defaults to config.DATA_BASE_PATH.
+        seed (_type_, optional): _description_. Defaults to config.SEED.
+        read_if_exists (bool, optional): _description_. Defaults to True.
+        Slide (bool, optional): _description_. Defaults to True.
+        save_datasets (bool, optional): _description_. Defaults to True.
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
 
     if Slide:
         filepath = base_data_path / "pairwise_wo_dupl" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
@@ -208,7 +98,6 @@ def generate_pairwise_dataset(
 
     df = pd.concat([df_ag1, df_ag2], axis=0)
 
-    #df = trim_short_CDR3(df)
     df = df.sample(frac=1, random_state=config.SEED)
     if save_datasets:
         df.to_csv(filepath, sep='\t')
@@ -222,6 +111,17 @@ def generate_1_vs_all_dataset(
     base_data_path: Path = config.DATA_BASE_PATH,
     seed = config.SEED,
     ) -> pd.DataFrame:
+    """Generate a 1_vs_all dataframe.
+
+    Args:
+        df_global (pd.DataFrame): _description_
+        ag (str): _description_
+        base_data_path (Path, optional): _description_. Defaults to config.DATA_BASE_PATH.
+        seed (_type_, optional): _description_. Defaults to config.SEED.
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
     df = df_global.copy()
     df["binder"] = df["Antigen"] == ag
     df = trim_short_CDR3(df)
@@ -231,9 +131,77 @@ def generate_1_vs_all_dataset(
     
     return df
 
-# @dataclass(frozen=True)
-class BuildCmd:
-    pass
 
-class DatasetBuilder:
-    pass
+class BinaryDataset(Dataset):
+    """Pytorch dataset for modelling antigen binding binary classifiers.
+    """
+
+    def __init__(self, df):
+        self.df = df
+
+    def __len__(self):
+        return self.df.shape[0]
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.df.loc[idx, "X"]).reshape(
+                (1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.float),
+        )
+
+
+class MulticlassDataset(Dataset):
+    """Pytorch dataset for modelling antigen binding multiclass classifiers.
+    """
+
+    def __init__(self, df):
+        self.df = df
+
+    def __len__(self):
+        return self.df.shape[0]
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.df.loc[idx, "X"]).reshape(
+                (1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.uint8),
+        )
+
+
+def construct_dataset_atoms(
+    antigens: List[str]
+    ) -> List[List[str]]:
+    atoms = []
+    for i in range(len(antigens)):
+        size = i + 1
+        atoms += sorted(combinations(antigens, r=size))
+    return atoms
+
+
+def construct_dataset_atom_combinations(
+    antigens: List[str] = config.ANTIGENS_CLOSEDSET,
+    atoms: Optional[List[List[str]]] = None
+    ) -> List[List[str]]:
+    """Construct ag set pairs to be used in defining datasets.
+
+    Args:
+        antigens (List[str]): antigen support to use for building. Defaults to config.ANTIGENS_CLOSEDSET.
+        atoms (List[List[str]], optional): atoms for building pairs. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """    
+    
+    if atoms is None:
+        atoms = construct_dataset_atoms(antigens)
+    valid_combinations = []
+    
+    for ag_pos_atom, ag_neg_atom in product(atoms, atoms):
+        if len(set(ag_pos_atom).intersection(set(ag_neg_atom))) > 0:
+            continue
+        if len(ag_pos_atom) + len(ag_neg_atom) > len(antigens):
+            continue
+
+        valid_combinations.append((list(ag_pos_atom), list(ag_neg_atom)))
+
+    return valid_combinations

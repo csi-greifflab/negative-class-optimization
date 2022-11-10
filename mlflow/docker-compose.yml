@@ -1,0 +1,45 @@
+version: '3.3'
+
+services:
+
+    nco_mlflow:
+        restart: always
+        build: ./mlflow-build
+        image: mlflow_server
+        container_name: nco_mlflow_server
+        ports:
+            - 5000:5000
+        networks:
+            - nco_mlflow_net
+        volumes:
+            - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs:/home/mlflow
+        command: >
+          mlflow server 
+          --host 0.0.0.0 
+          --backend-store-uri ./backend_store
+          --registry-store-uri sqlite:////home/mlflow/registry_store.db
+          --default-artifact-root ftp://${FTP_USER}:${FTP_PASS}@${IP}/artifacts_store
+    
+    nco_ftp:
+        restart: always
+        image: fauria/vsftpd
+        container_name: nco_mlflow_vsftpd
+        ports:
+            - "20:20"
+            - "21:21"
+            - "21100-21110:21100-21110"
+        networks:
+            - nco_mlflow_net
+        volumes:
+            - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs/ftp:/home/vsftpd/${FTP_USER}
+        environment:
+            - FTP_USER=${FTP_USER}
+            - FTP_PASS=${FTP_PASS}
+            - PASV_ADDRESS=${IP}
+            - LOCAL_UMASK=022
+            - PASV_MIN_PORT=21100
+            - PASV_MAX_PORT=21110
+
+networks:
+    nco_mlflow_net:
+        driver: bridge

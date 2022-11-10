@@ -1,18 +1,37 @@
-name: ab-negative-training
+name: nco
 channels:
   - defaults
+  - conda-forge
+  - pytorch
 dependencies:
   - python=3.8
   - pandas
   - seaborn
   - more-itertools
-  - pip
   - jupyterlab
+  - umap-learn
+  - pytorch 
+  - torchvision 
+  - torchaudio 
+  - captum
+  - cudatoolkit=10.2
+  - optuna
+  - sphinx
+  - pip
   - pip:
-      - dvc[gdrive]
+      - dvc[gdrive]==2.10.2
       - dash==2.3.1
       - nptyping
       - docopt
       - upsetplot
       - dask
       - git+https://github.com/uio-bmi/immuneML.git
+      - scikit-learn
+      - joypy
+      - networkx==2.6.3
+      - mlflow
+      - pyfarmhash
+      - pre-commit
+      - setuptools==57.5.0
+      - joblib
+      - dovpanda

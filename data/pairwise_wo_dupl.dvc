@@ -1,0 +1,5 @@
+outs:
+- md5: 218913dd8e53baaa5a51acaf5c1830e0.dir
+  size: 407637924
+  nfiles: 45
+  path: pairwise_wo_dupl

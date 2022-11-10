@@ -1,31 +1,62 @@
+"""
+# TODO: Trim many unnecessary functions. They were useful initially to validate
+and check the initial dataset files.
+"""
+
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
+import random
 import uuid
 from typing import Optional, List
 import numpy as np
 import pandas as pd
-
+import torch
 
 import NegativeClassOptimization.config as config
 
 
+def nco_seed(seed: int = config.SEED):
+    """Seed for the project.
+    https://pytorch.org/docs/stable/notes/randomness.html
+
+    Args:
+        seed (int, optional): Defaults to config.SEED.
+    """    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+
 def summarize_data_files(path: Path) -> pd.DataFrame:
+    """Function to summarize the data files obtained in
+    the `Slack` format. This is the file structure of the
+    data that we first received from Slack.
+
+    Args:
+        path (Path): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
     filepaths = path.glob("*")
     records = []
     for filepath in filepaths:
         fname = filepath.name
-        
-        if fname.split("_")[0] != "outputFeaturesFile":
-            antigen = fname.split("_")[0]
-        else:
-            antigen = None
-        
         ftype = fname.split(".")[-1]
         
         if ftype == "csv":
             datatype = "corpus"
         elif ftype == "txt":
             datatype = "features"
+        else:
+            continue
+        
+        if fname.split("_")[0] != "outputFeaturesFile":
+            antigen = fname.split("_")[0]
+        else:
+            antigen = None
+        
 
         records.append({
             "filepath": filepath,
@@ -85,7 +116,10 @@ def antigens_from_dataset_path(dataset_path: Path) -> List[str]:
     )
 
 
-def build_global_dataset(dataset_path: Path):
+def build_global_dataset(
+    dataset_path: Path,
+    remove_ag_slide_duplicates = True,
+    ):
     antigens: List[str] = antigens_from_dataset_path(dataset_path)
 
     dfs = []
@@ -96,6 +130,15 @@ def build_global_dataset(dataset_path: Path):
         dfs.append(ag_data.df_c)
 
     df_global = pd.concat(dfs, axis=0)
+
+    # Remove duplicated Slide that bind the same Antigen
+    if remove_ag_slide_duplicates:
+        df_global = df_global.groupby("Antigen").apply(
+            lambda df_: df_
+            .sort_values(["Slide", "Energy"], ascending=True)
+            .drop_duplicates("Slide", keep="first")
+            ).reset_index(drop=True)
+
     return df_global
 
 
@@ -128,3 +171,38 @@ def build_random_dataset(
     df = df.drop_duplicates(["UID"])
     df["Antigen"] = "random"
     return df
+
+
+def load_global_dataframe(path = config.DATA_SLACK_1_GLOBAL):
+    return pd.read_csv(path, sep='\t', dtype={"Antigen": str}).iloc[:, 1:]
+
+
+def load_processed_dataframes(
+    dir_path = config.DATA_SLACK_1_PROCESSED_DIR,
+    sample: Optional[int] = None,
+    ) -> dict:
+    """Loads processed dataframes for ml runs.
+
+    Args:
+        dir_path (_type_, optional): Defaults to config.DATA_SLACK_1_PROCESSED_DIR.
+        sample (Optional[int], optional): samples train_val, test closed and test open. Defaults to None.
+
+    Returns:
+        dict: _description_
+    """
+
+    if sample is None:
+        load_df = lambda fname: (
+            pd.read_csv(dir_path / fname, sep='\t', dtype={"Antigen": str})
+        )
+    else:
+        load_df = lambda fname: (
+            pd.read_csv(dir_path / fname, sep='\t', dtype={"Antigen": str})
+            .sample(frac=1)
+            .sample(sample)
+        )
+    return {
+        "train_val": load_df("df_train_val.tsv"),
+        "test_closed_exclusive": load_df("df_test_closed_exclusive.tsv"),
+        "test_open_exclusive": load_df("df_test_open_exclusive.tsv"),
+    }
