@@ -7,7 +7,7 @@ Includes models, datasets and data loaders.
 from argparse import ArgumentError
 from pathlib import Path
 from tkinter import Y
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,10 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from captum.attr import IntegratedGradients
 
+import mlflow
+
 import NegativeClassOptimization.config as config
+import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
 
@@ -201,40 +204,33 @@ def test_loop(loader, model, loss_fn) -> dict:
         f"Model class {type(model)} not recognized."
         )
 
-    size = len(loader.dataset)
-    num_batches = len(loader)
-    test_loss, correct = 0, 0
+    test_loss = compute_avg_test_loss(loader, model, loss_fn)
 
-    with torch.no_grad():
-        for X, y in loader:
-            
-            test_loss += compute_loss(model, loss_fn, X, y).item()
-            correct += (
-                (model.predict(X) == y)
-                .type(torch.float)
-                .sum()
-                .item()
-                )
-
-    test_loss /= num_batches
-    correct /= size
-    print(
-        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
-    )
     loop_metrics = {
         "test_loss": test_loss,
-        "accuracy": 100*correct
     }
-
-    # TODO: Split above and below into 2 funcs.
 
     x_test, y_test = Xy_from_loader(loader=loader)
     closed_metrics = compute_metrics_closed_testset(model, x_test, y_test)
+
+    print(
+        f"Test Error: \n Acc: {100*closed_metrics['acc_closed']:.1f} Avg loss: {test_loss:>8f} \n"
+    )
 
     return {
         **loop_metrics,
         **closed_metrics,
     }
+
+
+def compute_avg_test_loss(loader, model, loss_fn):
+    num_batches = len(loader)
+    test_loss = 0
+    with torch.no_grad():
+        for X, y in loader:
+            test_loss += compute_loss(model, loss_fn, X, y).item()
+    test_loss /= num_batches
+    return test_loss
 
 
 def compute_loss(model, loss_fn, X, y):

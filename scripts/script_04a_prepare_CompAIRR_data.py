@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.config as config
+import NegativeClassOptimization.ml as ml
 
 
 TEST = False
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     
     np.random.seed(config.SEED)
 
-    processed_dfs: dict = utils.load_processed_dataframes()
+    processed_dfs: dict = ml.DataPipeline.load_processed_dataframes()
     df_train_val = processed_dfs["train_val"]
     df_test_open = processed_dfs["test_open_exclusive"]
     df_test_open_ag_group = df_test_open.copy()

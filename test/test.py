@@ -5,6 +5,7 @@ import farmhash
 import unittest
 
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.ml as ml
 
 
@@ -12,7 +13,7 @@ class GenericTests(unittest.TestCase):
 
     def test_deterministic_split_script_07(self):
         
-        processed_dfs: dict = utils.load_processed_dataframes()
+        processed_dfs: dict = ml.DataPipeline.load_processed_dataframes()
         ag_pos = ['3VRL']
         ag_neg = ['1FBI', '1WEJ', '5E94']
         sample_train = 73000
@@ -46,12 +47,12 @@ class GenericTests(unittest.TestCase):
     
     def test_remove_duplicates_for_binary(self):
         raise NotImplementedError()
-        processed_dfs: dict = utils.load_processed_dataframes()
+        processed_dfs: dict = ml.DataPipeline.load_processed_dataframes()
         df_train_val = processed_dfs["train_val"]
         df = remove_duplicates_for_binary(df_train_val, ag_pos=["1NSN", "1OB1"])
 
     def test_preprocessing_train_sampling(self):
-        processed_dfs: dict = utils.load_processed_dataframes()
+        processed_dfs: dict = ml.DataPipeline.load_processed_dataframes()
         df_train_val = processed_dfs["train_val"].sample(100)
         print(f"df_train_val.shape: {df_train_val.shape}")
         df = remove_duplicates_for_binary(df_train_val, ag_pos=["1NSN", "1OB1"])
