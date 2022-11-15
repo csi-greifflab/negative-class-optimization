@@ -7,22 +7,23 @@ from NegativeClassOptimization import config, utils, datasets
 from script_08_MulticlassSN10_openset_OSK import multiprocessing_wrapper_script_08
 
 
-TEST = True
+TEST = False
 
 experiment_id = 7
-run_name = "test"
+run_name = "dev-0.1.2"
 input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
 sample_data_source = None
-sample_train_val = 500  # 70000
+sample_train_val = 50000
+sample_test = 50000
 batch_size = 64
-epochs = 3  # 20
+model = "SN10_MULTICLASS"
+hidden_dim = None
+epochs = 20
 learning_rate = 0.01
 num_processes = 20
 
 
 if __name__ == "__main__":
-
-    raise NotImplementedError()
 
     logging.basicConfig(
         format="%(asctime)s %(process)d %(funcName)s %(levelname)s %(message)s",
@@ -39,10 +40,14 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
+    antigens = datasets.AbsolutDataset3.get_antigens()
+    antigens_shuffled = utils.shuffle_antigens(antigens)
 
     if TEST:
-        ags = None
-        raise NotImplementedError()
+        ags = [
+            antigens_shuffled[:5],
+            antigens_shuffled[:10],
+        ]
     else:
         raise NotImplementedError()
         atoms = datasets.construct_dataset_atoms(config.ANTIGENS_CLOSEDSET)
@@ -61,7 +66,10 @@ if __name__ == "__main__":
                     input_data_dir,
                     sample_data_source,
                     sample_train_val,
+                    sample_test,
                     batch_size,
+                    model,
+                    hidden_dim,
                     epochs,
                     learning_rate,
                 )

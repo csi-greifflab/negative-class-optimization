@@ -13,15 +13,18 @@ import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.pipelines as pipelines
 
 
-TEST = True
+TEST = False
 
 experiment_id = 6
 run_name = "test"
 input_data_dir = config.DATA_SLACK_1_PROCESSED_DIR
 sample_data_source = None
-sample_train_val = 500  # 70000
+sample_train_val = 70000
+sample_test = None
 batch_size = 64
-epochs = 3  # 20
+model = "SN10_MULTICLASS"
+hidden_dim = None
+epochs = 20
 learning_rate = 0.01
 num_processes = 20
 
@@ -33,10 +36,15 @@ def multiprocessing_wrapper_script_08(
     input_data_dir,
     sample_data_source,
     sample_train_val,
+    sample_test,
     batch_size,
+    model,
+    hidden_dim,
     epochs,
     learning_rate,
     ):
+
+    assert model in {"SN10_MULTICLASS", "SNN_MULTICLASS"}
 
     # run_name issue, next version should work
     #  https://github.com/mlflow/mlflow/issues/7217
@@ -55,16 +63,19 @@ def multiprocessing_wrapper_script_08(
         mlflow.log_params({
             "input_data_dir": str(input_data_dir),
             "test": str(TEST),
+            "model": model,
+            "hidden_dim": hidden_dim,
             "epochs": epochs,
             "learning_rate": learning_rate,
             "optimizer_type": "Adam",
             "momentum": 0.9,
             "weight_decay": 0,
             "batch_size": batch_size,
-            "ags": "_".join(ags),
+            "ags": "__".join(ags),
             "k": len(ags),
             "sample": None,
             "sample_train": sample_train_val,
+            "sample_test": sample_test,
         })
 
         pipeline = pipelines.MulticlassPipeline(
@@ -78,9 +89,15 @@ def multiprocessing_wrapper_script_08(
             batch_size=batch_size,
             sample_data_source=sample_data_source,
             sample_train_val=sample_train_val,
+            sample_test=sample_test,
         )
 
-        model = ml.MulticlassSN10(num_classes=len(ags))
+        if model == "SN10_MULTICLASS":
+            model = ml.MulticlassSN10(num_classes=len(ags))
+            assert hidden_dim is None
+        elif model == "SNN_MULTICLASS":
+            model = ml.MulticlassSNN(hidden_dim=40, num_classes=len(ags))
+            assert type(hidden_dim) == int
         loss_fn = nn.CrossEntropyLoss()
         optimizer = ml.construct_optimizer(
             optimizer_type="Adam",
@@ -139,6 +156,8 @@ if __name__ == "__main__":
                     sample_data_source,
                     sample_train_val,
                     batch_size,
+                    model,
+                    hidden_dim,
                     epochs,
                     learning_rate,
                 )

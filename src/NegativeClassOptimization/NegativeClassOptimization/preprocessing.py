@@ -352,14 +352,14 @@ def preprocess_df_for_multiclass(
     ags: List[str],
     scaler = None,
     encoder = None,
-    sample_train = None,
+    sample = None,
     ):
     
     df = df.loc[df["Antigen"].isin(ags)].copy()
 
     df = remove_duplicates_for_multiclass(df)    
-    if sample_train is not None:
-        df = sample_train_val(df, sample_train)
+    if sample is not None:
+        df = sample_train_val(df, sample)
 
     df = onehot_encode_df(df)
 

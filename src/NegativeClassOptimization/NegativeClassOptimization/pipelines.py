@@ -44,6 +44,7 @@ class MulticlassPipeline(DataPipeline):
         batch_size: int,
         sample_data_source: Optional[int] = None,
         sample_train_val: Optional[int] = None,
+        sample_test: Optional[int] = None,
     ):
 
         dfs = MulticlassPipeline.load_processed_dataframes(
@@ -55,11 +56,11 @@ class MulticlassPipeline(DataPipeline):
         df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(
             df_train, 
             ags, 
-            sample_train=sample_train_val
+            sample=sample_train_val
             )
         
         if self.log_mlflow:
-            mlflow.log_params({"encoder_classes": "_".join(encoder.classes_)})
+            mlflow.log_params({"encoder_classes": "__".join(encoder.classes_)})
         
         df_test = dfs["test_closed_exclusive"]
         df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
@@ -67,6 +68,7 @@ class MulticlassPipeline(DataPipeline):
             ags,
             scaler,
             encoder,
+            sample=sample_test,
             )
 
         _, train_loader = ml.construct_dataset_loader_multiclass(df_train, batch_size)

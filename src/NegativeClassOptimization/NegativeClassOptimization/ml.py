@@ -91,7 +91,6 @@ class MulticlassSN10(SN10):
         
         super().__init__()
         
-        assert num_classes < 10
         self.linear_2 = nn.Linear(10, num_classes)
 
         # Cross-entropy loss expects raw, not softmax
@@ -161,6 +160,14 @@ class MulticlassSN10(SN10):
             "mcc_closed": metrics.matthews_corrcoef(y_test, y_test_pred),
             }
         return metrics_closed
+
+
+class MulticlassSNN(MulticlassSN10):
+    """Generalizes `MulticlassSN10` to a variable size of the hidden dimension.
+    """    
+    def __init__(self, hidden_dim: int, num_classes: int):
+        super().__init__(num_classes=num_classes)
+        self.linear_2 = nn.Linear(hidden_dim, num_classes)
 
 
 AVAILABLE_MODELS = [SN10, MulticlassSN10]
