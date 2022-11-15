@@ -136,6 +136,39 @@ def shuffle_antigens(antigens: List[str], seed: int = config.SEED) -> List[str]:
     return antigens_shuffled
 
 
+def generate_ag_set_chain(
+    antigens,
+    ag_set_sizes: List[int],
+    seed_ban_list: Optional[List[List[str]]] = None,
+    ) -> List[List[str]]:
+    """Generate antigen set chains.
+
+    Args:
+        antigens (_type_): _description_
+        ag_set_sizes (List[int]): _description_
+        seed_ban_list (Optional[List[List[str]]], optional): List of seed sets to exclude. Defaults to None.
+
+    Returns:
+        List[List[str]]: _description_
+    """    
+    ag_sets_chain = []
+    for size in ag_set_sizes:
+        if len(ag_sets_chain) == 0:
+            while True:
+                ag_set = sorted(np.random.choice(antigens, size=size, replace=False))
+                if (seed_ban_list is None) or (ag_set not in seed_ban_list):
+                    break
+        else:
+            last_set = ag_sets_chain[-1]
+            increment = size - len(last_set)
+            ag_set = sorted(np.random.choice(list(set(antigens) - set(last_set)), size=increment, replace=False))
+            ag_set = sorted(last_set + ag_set)    
+        ag_sets_chain.append(ag_set)
+    
+    assert list(map(len, ag_sets_chain)) == ag_set_sizes, "ag_set_sizes not correct"
+    return ag_sets_chain
+
+
 def build_global_dataset(
     dataset_path: Path,
     remove_ag_slide_duplicates = True,

@@ -130,6 +130,7 @@ class MulticlassPipeline(DataPipeline):
                 mlflow.pytorch.log_model(model, f"pytorch_model_epoch_{t+1}")
 
         if self.log_mlflow:
+            mlflow.log_params({"model_num_params": sum(p.numel() for p in model.parameters())})
             utils.mlflow_log_params_online_metrics(online_metrics)
         
         if self.save_model_mlflow:

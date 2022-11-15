@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+from typing import List
 import mlflow
 import numpy as np
 
@@ -7,18 +8,18 @@ from NegativeClassOptimization import config, utils, datasets
 from script_08_MulticlassSN10_openset_OSK import multiprocessing_wrapper_script_08
 
 
-TEST = False
+TEST = True
 
 experiment_id = 7
 run_name = "dev-0.1.2"
 input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
 sample_data_source = None
-sample_train_val = 50000
-sample_test = 50000
+sample_train_val = 500
+sample_test = 500
 batch_size = 64
 model = "SN10_MULTICLASS"
 hidden_dim = None
-epochs = 20
+epochs = 3
 learning_rate = 0.01
 num_processes = 20
 
@@ -48,31 +49,66 @@ if __name__ == "__main__":
             antigens_shuffled[:5],
             antigens_shuffled[:10],
         ]
-    else:
-        raise NotImplementedError()
-        atoms = datasets.construct_dataset_atoms(config.ANTIGENS_CLOSEDSET)
-        atoms = list(filter(lambda atom: len(atom) > 2, atoms))
-        np.random.shuffle(atoms)
-        ags = atoms[:]
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            pool.starmap(
+                multiprocessing_wrapper_script_08, 
+                [
+                    (
+                        ag_list, 
+                        experiment_id,
+                        run_name,
+                        input_data_dir,
+                        sample_data_source,
+                        sample_train_val,
+                        sample_test,
+                        batch_size,
+                        model,
+                        hidden_dim,
+                        epochs,
+                        learning_rate,
+                    )
+                    for ag_list in ags
+                ],
+            )
 
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        pool.starmap(
-            multiprocessing_wrapper_script_08, 
-            [
-                (
-                    ag_list, 
-                    experiment_id,
-                    run_name,
-                    input_data_dir,
-                    sample_data_source,
-                    sample_train_val,
-                    sample_test,
-                    batch_size,
-                    model,
-                    hidden_dim,
-                    epochs,
-                    learning_rate,
-                )
-                for ag_list in ags
-            ],
-        )
+    else:
+        num_closed = config.NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3
+        ags_c = antigens_shuffled[:num_closed]
+        # ags_o = antigens_shuffled[num_closed:]
+
+        NUM_CHAINS_PER_ITERATION = 3
+        AG_SET_SIZES = [10, 20, 40, 80, 100]
+        AG_SEED_SET_BANLIST = []
+        while True:
+            try:
+                ags: List[str] = []
+                for _ in range(NUM_CHAINS_PER_ITERATION):
+                    chain = utils.generate_ag_set_chain(ags_c, AG_SET_SIZES, AG_SEED_SET_BANLIST)
+                    AG_SEED_SET_BANLIST.append(chain[0])
+                    ags += chain
+                
+                with multiprocessing.Pool(processes=num_processes) as pool:
+                    pool.starmap(
+                        multiprocessing_wrapper_script_08, 
+                        [
+                            (
+                                ag_list, 
+                                experiment_id,
+                                run_name,
+                                input_data_dir,
+                                sample_data_source,
+                                sample_train_val,
+                                sample_test,
+                                batch_size,
+                                model,
+                                hidden_dim,
+                                epochs,
+                                learning_rate,
+                            )
+                            for ag_list in ags
+                        ],
+                    )
+
+            except KeyboardInterrupt as error:
+                logging.info("KeyboardInterrupt")
+                break
