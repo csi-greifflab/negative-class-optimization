@@ -197,3 +197,36 @@ def construct_dataset_atom_combinations(
         valid_combinations.append((list(ag_pos_atom), list(ag_neg_atom)))
 
     return valid_combinations
+
+
+class AbsolutDataset3:
+    """Dataset for modelling antigen binding classifiers."""
+
+    def __init__(self):
+        self.df = AbsolutDataset3.get_binding_matrix()
+        self.antigens = AbsolutDataset3.get_antigens()
+        self.df_wide = AbsolutDataset3.convert_to_wide_format(self.df, self.antigens)
+
+    @staticmethod
+    def convert_to_wide_format(df, antigens: List[str]):
+        """Converts Absolut Dataset 3 format to wide format.
+        """    
+        df_wide = pd.DataFrame.from_records(
+            data=df["binding_profile"].apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))}).to_list(),
+        )
+        assert all(df_wide.sum(axis=1) == df["num_binding_ags"])
+
+        df_wide.index = df["Slide"]
+        return df_wide
+
+    @staticmethod
+    def get_antigens(path = config.DATA_ABSOLUT_DATASET3_AGLIST):
+        with open(path, "r") as f:
+            antigens = f.read().splitlines()
+        return antigens
+
+    @staticmethod
+    def get_binding_matrix(path = config.DATA_ABSOLUT_DATASET3_BINDINGMTX):
+        df = pd.read_csv(path, sep='\t', header=None)
+        df.columns = ["Slide", "num_binding_ags", "binding_profile"]
+        return df

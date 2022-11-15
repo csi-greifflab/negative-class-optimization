@@ -25,6 +25,7 @@ Usage:
     script_01_build_datasets.py pairwise
     script_01_build_datasets.py 1_vs_all
     script_01_build_datasets.py download_absolut
+    script_01_build_datasets.py absolut_processed_multiclass
 
 Options:
     -h --help   Show help.
@@ -93,3 +94,41 @@ if __name__ == "__main__":
 
     elif arguments["download_absolut"]:
         utils.download_absolut()
+    
+    elif arguments["absolut_processed_multiclass"]:
+        out_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
+        
+        ds3 = datasets.AbsolutDataset3()
+        df_global = preprocessing.convert_wide_to_global(ds3.df_wide)
+        num_closed_ags = config.NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3
+        ags_shuffled = utils.shuffle_antigens(ds3.antigens)
+        ags_closed = ags_shuffled[:num_closed_ags]
+        ags_open = ags_shuffled[num_closed_ags:]
+        
+        (
+            df_train_val, 
+            df_test_closed_exclusive, 
+            df_test_open_exclusive,
+        ) = preprocessing.openset_datasplit_from_global_stable(
+            df_global=df_global,
+            openset_antigens=ags_open,
+        )
+
+        dfs = {
+            "df_train_val": df_train_val,
+            "df_test_closed_exclusive": df_test_closed_exclusive,
+            "df_test_open_exclusive": df_test_open_exclusive,
+        }
+
+        metadata = {
+            "df_train_val__shape": df_train_val.shape,
+            "df_test_closed_exclusive__shape": df_test_closed_exclusive.shape,
+            "df_test_open_exclusive__shape": df_test_open_exclusive.shape,
+        }
+
+        df_train_val.to_csv(out_dir / "df_train_val.tsv", sep='\t')
+        df_test_closed_exclusive.to_csv(out_dir / "df_test_closed_exclusive.tsv", sep='\t')
+        df_test_open_exclusive.to_csv(out_dir / "df_test_open_exclusive.tsv", sep='\t')
+
+        with open(out_dir / "build_metadata.json", "w+") as fh:
+            json.dump(metadata, fh)

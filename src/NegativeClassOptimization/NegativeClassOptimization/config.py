@@ -27,7 +27,9 @@ PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
 DATA_ABSOLUT_DIR = DATA_BASE_PATH / "Absolut/data"
 DATA_ABSOLUT_DOI = DATA_BASE_PATH / "Absolut/toc_doi10.11582_2021.00063.csv"
-DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_ABSOLUT_DIR / "processed/multiclass"
+DATA_ABSOLUT_DATASET3_AGLIST = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/ListAntigens142.txt"
+DATA_ABSOLUT_DATASET3_BINDINGMTX = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/Treated142.txt"
+DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/multiclass"
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
                     'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
@@ -46,6 +48,8 @@ ANTIGENS = [
 ]
 ANTIGENS_CLOSEDSET = ['1FBI', '1NSN', '1OB1', '1WEJ', '3VRL', '5E94']
 ANTIGENS_OPENSET = ['1ADQ', '1H0D', '2YPV', '3RAJ']
+
+NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3 = 102
 
 GLOBAL_CDR3_LEN_DISTR = {
     15: 0.17861142857142856,

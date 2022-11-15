@@ -118,6 +118,24 @@ def antigens_from_dataset_path(dataset_path: Path) -> List[str]:
     )
 
 
+def shuffle_antigens(antigens: List[str], seed: int = config.SEED) -> List[str]:
+    """Shuffle antigens.
+
+    Args:
+        antigens (List[str]): antigens to shuffle.
+        seed (int, optional): Defaults to config.SEED.
+
+    Returns:
+        List[str]: shuffled antigens.
+    """    
+    from numpy.random import default_rng
+    assert seed in {config.SEED}, "Only the default seed is supported."
+    rng = default_rng(seed=seed)
+    antigens_shuffled = antigens[:]
+    rng.shuffle(antigens_shuffled)
+    return antigens_shuffled
+
+
 def build_global_dataset(
     dataset_path: Path,
     remove_ag_slide_duplicates = True,

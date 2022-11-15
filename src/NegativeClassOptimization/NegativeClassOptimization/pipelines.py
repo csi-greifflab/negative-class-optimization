@@ -123,6 +123,9 @@ class MulticlassPipeline(DataPipeline):
                     "test_metrics": test_metrics,
                     "open_metrics": open_metrics,
                 })
+            
+            if self.save_model_mlflow:
+                mlflow.pytorch.log_model(model, f"pytorch_model_epoch_{t+1}")
 
         if self.log_mlflow:
             utils.mlflow_log_params_online_metrics(online_metrics)

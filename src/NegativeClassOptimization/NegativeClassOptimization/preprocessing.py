@@ -230,6 +230,25 @@ def arr_from_list_series(s: pd.Series):
     return np.stack(s, axis=0)
 
 
+def sample_df_deterministically(df, sample, num_buckets = 16384) -> pd.DataFrame:
+    """Wrapper to generalize deterministic sampling of a dataframe.
+
+    Args:
+        df (_type_): dataframe to sample from.
+        sample (_type_): number of samples to take.
+        num_buckets (int, optional): Defaults to 16384.
+
+    Returns:
+        pd.DataFrame: deterministically sampled dataframe.
+    """    
+    assert "Slide" in df.columns, "df must have a column named `Slide`."
+    return sample_train_val(
+        df_train_val = df, 
+        sample_train = sample, 
+        num_buckets = num_buckets,
+        )
+
+
 def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
     """Deterministic sampling of train_val based on hashing.
 
@@ -273,7 +292,7 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
         logger.exception(error)
         raise
     logger.warning("Resetting the index of df_train_val.")
-    return df_train_val.reset_index(drop=True)  # not resetting index yields index error in Dataset and DataLoader.
+    return df_train_val.reset_index(drop=True)  # not resetting index can yield index error in Dataset and DataLoader.
 
 
 def preprocess_data_for_pytorch_multiclass(
@@ -378,6 +397,9 @@ def openset_datasplit_from_global_stable(
     Returns:
         df_train_val, df_test_closed_exclusive, df_test_open_exclusive
     """
+    assert set(["Antigen", "Slide", "Slide_farmhash_mod_10"]).issubset(set(df_global.columns)), (
+        "df_global must have columns Antigen, Slide and Slide_farmhash_mod_10."
+    )
     mask_ = df_global["Antigen"].isin(openset_antigens)
     df_closed = df_global.loc[~mask_].copy()
     df_open = df_global.loc[mask_].copy()
@@ -395,3 +417,23 @@ def openset_datasplit_from_global_stable(
             .isin(df_train_val["Slide"])
         ]
     return df_train_val, df_test_closed_exclusive, df_test_open_exclusive
+
+
+def convert_wide_to_global(df_wide):
+    """Convert wide format Absolut binding data to global format (one row per antigen),
+    which was used until now.
+
+    Args:
+        df_wide (_type_): index is `Slide` sequence, columns are antigens, 
+        values are 0/1 if antigen is bound or not.
+
+    Returns:
+        _type_: global format `Slide` binding data.
+    """    
+    df = df_wide.copy()
+    df.reset_index(inplace=True)
+    df = df.melt(id_vars=["Slide"], var_name="Antigen", value_name="Binding")
+    df = df.loc[df["Binding"] == 1]
+    df = df.drop(columns=["Binding"])
+    df["Slide_farmhash_mod_10"] = df["Slide"].apply(farmhash_mod_10)
+    return df
