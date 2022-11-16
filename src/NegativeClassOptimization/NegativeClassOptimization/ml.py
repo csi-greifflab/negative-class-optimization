@@ -94,7 +94,7 @@ class MulticlassSN10(SN10):
         self.linear_2 = nn.Linear(10, num_classes)
 
         # Cross-entropy loss expects raw, not softmax
-        self.final = nn.Identity()
+        # self.final = nn.Identity()
         self.softmax = nn.Softmax(dim=1)
     
     def forward(
@@ -168,6 +168,17 @@ class MulticlassSNN(MulticlassSN10):
     def __init__(self, hidden_dim: int, num_classes: int):
         super().__init__(num_classes=num_classes)
         self.linear_2 = nn.Linear(hidden_dim, num_classes)
+
+
+class MultilabelSN10(MulticlassSN10):
+    """Generalizes `MulticlassSN10` to a multilabel problem.
+    Basically, we just need to change:
+    - softmax -> sigmoid
+    - the loss function CrossEntropy -> BCE.
+    """
+    def __init__(self, num_classes: int):
+        super().__init__(num_classes=num_classes)
+        self.softmax = nn.Sigmoid()
 
 
 AVAILABLE_MODELS = [SN10, MulticlassSN10]
