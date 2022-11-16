@@ -174,14 +174,15 @@ def preprocess_data_for_pytorch_binary(
 
     if scale_onehot:
 
-        arr_from_series = lambda s: np.stack(s, axis=0)
+        train_onehot_stack = arr_from_list_series(df_train_val["Slide_onehot"])
+        test_onehot_stack = arr_from_list_series(df_test_closed["Slide_onehot"])
 
-        train_onehot_stack = arr_from_series(df_train_val["Slide_onehot"])
-        test_onehot_stack = arr_from_series(df_test_closed["Slide_onehot"])
         scaler = StandardScaler()
         scaler.fit(train_onehot_stack)
         df_train_val["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
         df_test_closed["Slide_onehot"] = scaler.transform(test_onehot_stack).tolist()
+    else:
+        scaler = None
 
     df_train_val["X"] = df_train_val["Slide_onehot"]
     df_train_val["y"] = df_train_val["binds_a_pos_ag"]
@@ -195,26 +196,66 @@ def preprocess_data_for_pytorch_binary(
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
     if has_openset:
-        df_test_open = onehot_encode_df(df_test_open)
-        if scale_onehot:
-            openset_onehot_stack = arr_from_series(df_test_open["Slide_onehot"])
-            df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
-        df_test_open["X"] = df_test_open["Slide_onehot"]
-        df_test_open["y"] = 0
-        openset_data = datasets.BinaryDataset(df_test_open)
-        openset_loader = DataLoader(openset_data, batch_size=batch_size, shuffle=False)
+        
+        openset_data, openset_loader = construct_open_dataset_loader(
+            df_test_open, 
+            batch_size, 
+            scaler=scaler,
+            )
+
         return (train_data, test_data, openset_data, train_loader, test_loader, openset_loader)
     else:
         return (train_data, test_data, train_loader, test_loader)
 
 
-def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
+def construct_open_dataset_loader(
+    df_test_open, 
+    batch_size, 
+    scaler=None
+    ):
+    df_test_open = df_test_open.reset_index(drop=True)
+    df_test_open = onehot_encode_df(df_test_open)
+    if scaler is not None:
+        openset_onehot_stack = arr_from_list_series(df_test_open["Slide_onehot"])
+        df_test_open["Slide_onehot"] = scaler.transform(openset_onehot_stack).tolist()
+    df_test_open["X"] = df_test_open["Slide_onehot"]
+    df_test_open["y"] = 0
+    openset_data = datasets.BinaryDataset(df_test_open)
+    openset_loader = DataLoader(openset_data, batch_size=batch_size, shuffle=True)
+    return openset_data, openset_loader
+
+
+def arr_from_list_series(s: pd.Series): 
+    """Convert to 2D array from series of lists."""    
+    return np.stack(s, axis=0)
+
+
+def sample_df_deterministically(df, sample, num_buckets = 16384) -> pd.DataFrame:
+    """Wrapper to generalize deterministic sampling of a dataframe.
+
+    Args:
+        df (_type_): dataframe to sample from.
+        sample (_type_): number of samples to take.
+        num_buckets (int, optional): Defaults to 16384.
+
+    Returns:
+        pd.DataFrame: deterministically sampled dataframe.
+    """    
+    assert "Slide" in df.columns, "df must have a column named `Slide`."
+    return sample_train_val(
+        df_train_val = df, 
+        sample_train = sample, 
+        num_buckets = num_buckets,
+        )
+
+
+def sample_train_val(df_train_val, sample_train, num_buckets = 2*16384):
     """Deterministic sampling of train_val based on hashing.
 
     Args:
         df_train_val (_type_): _description_
         sample_train (_type_): _description_
-        num_buckets (int, optional): _description_. Defaults to 16384.
+        num_buckets (int, optional): _description_. Defaults to 2*16384.
 
     Raises:
         OverflowError: _description_
@@ -241,17 +282,17 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
                     ].copy()
                 )
             logger.info(
-                f"Sampling df_train_val (nrows={nrows})"
-                f" and sample_train={sample_train} => "
+                f"Sampling df_df (nrows={nrows})"
+                f" and sample={sample_train} => "
                 f"{df_train_val.shape[0]}"
                 )
         else:
-            raise OverflowError(f"sample_train={sample_train} > train_val nrows={nrows}.")
+            raise OverflowError()
     except OverflowError as error:
         logger.exception(error)
         raise
     logger.warning("Resetting the index of df_train_val.")
-    return df_train_val.reset_index(drop=True)  # not resetting index yields index error in Dataset and DataLoader.
+    return df_train_val.reset_index(drop=True)  # not resetting index can yield index error in Dataset and DataLoader.
 
 
 def preprocess_data_for_pytorch_multiclass(
@@ -306,6 +347,47 @@ def preprocess_data_for_pytorch_multiclass(
     return (train_data, test_data, train_loader, test_loader)
 
 
+def preprocess_df_for_multiclass(
+    df,
+    ags: List[str],
+    scaler = None,
+    encoder = None,
+    sample = None,
+    sample_per_ag = None,
+    sample_per_ag_seed = config.SEED,
+    ):
+    
+    df = df.loc[df["Antigen"].isin(ags)].copy()
+
+    df = remove_duplicates_for_multiclass(df)    
+    
+    if sample_per_ag is not None:
+        try:
+            df = df.groupby("Antigen").sample(sample_per_ag, random_state=sample_per_ag_seed)
+        except ValueError as e:
+            print(e)
+            print(df["Antigen"].value_counts())
+            raise
+    elif sample is not None:
+        df = sample_train_val(df, sample)
+
+    df = onehot_encode_df(df)
+
+    arr = arr_from_list_series(df["Slide_onehot"])
+    if scaler is None:
+        scaler = StandardScaler()
+        scaler.fit(arr)
+    df["X"] = scaler.transform(arr).tolist()
+
+    if encoder is None:
+        antigens = df["Antigen"].unique().tolist()
+        encoder = LabelEncoder().fit(antigens)
+
+    df["y"] = encoder.transform(df["Antigen"])
+    df = df[["X", "y"]]
+    return df, scaler, encoder
+
+
 def farmhash_mod_10(seq: str) -> int:
     return farmhash.hash64(seq) % 10
 
@@ -325,6 +407,9 @@ def openset_datasplit_from_global_stable(
     Returns:
         df_train_val, df_test_closed_exclusive, df_test_open_exclusive
     """
+    assert set(["Antigen", "Slide", "Slide_farmhash_mod_10"]).issubset(set(df_global.columns)), (
+        "df_global must have columns Antigen, Slide and Slide_farmhash_mod_10."
+    )
     mask_ = df_global["Antigen"].isin(openset_antigens)
     df_closed = df_global.loc[~mask_].copy()
     df_open = df_global.loc[mask_].copy()
@@ -342,3 +427,23 @@ def openset_datasplit_from_global_stable(
             .isin(df_train_val["Slide"])
         ]
     return df_train_val, df_test_closed_exclusive, df_test_open_exclusive
+
+
+def convert_wide_to_global(df_wide):
+    """Convert wide format Absolut binding data to global format (one row per antigen),
+    which was used until now.
+
+    Args:
+        df_wide (_type_): index is `Slide` sequence, columns are antigens, 
+        values are 0/1 if antigen is bound or not.
+
+    Returns:
+        _type_: global format `Slide` binding data.
+    """    
+    df = df_wide.copy()
+    df.reset_index(inplace=True)
+    df = df.melt(id_vars=["Slide"], var_name="Antigen", value_name="Binding")
+    df = df.loc[df["Binding"] == 1]
+    df = df.drop(columns=["Binding"])
+    df["Slide_farmhash_mod_10"] = df["Slide"].apply(farmhash_mod_10)
+    return df

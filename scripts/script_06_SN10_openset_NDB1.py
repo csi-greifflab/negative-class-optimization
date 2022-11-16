@@ -8,6 +8,7 @@ import NegativeClassOptimization.config as config
 import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.visualisations as vis
 import numpy as np
 import pandas as pd
@@ -122,7 +123,7 @@ def run_main_06(
         })
 
     
-    processed_dfs: dict = utils.load_processed_dataframes(
+    processed_dfs: dict = ml.DataPipeline.load_processed_dataframes(
         sample=sample
         )
     
@@ -144,7 +145,7 @@ def run_main_06(
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ml.SN10().to(device)
     online_metrics = ml.train_for_ndb1(
-        epochs, 
+        epochs,
         learning_rate, 
         train_loader, 
         test_loader, 
@@ -155,21 +156,7 @@ def run_main_06(
         weight_decay=weight_decay,
         )
     logger.info("Model trained.")
-    for i, epoch_metrics in enumerate(online_metrics):
-        epoch = i+1
-        mlflow.log_metrics(
-                {
-                    "train_loss": epoch_metrics["train_losses"][-1],
-                    "test_loss": epoch_metrics["test_metrics"]["test_loss"],
-                    "test_acc": epoch_metrics["test_metrics"]["accuracy"],
-                    "closed_roc_auc": epoch_metrics["test_metrics"]["roc_auc_closed"],
-                    "closed_recall": epoch_metrics["test_metrics"]["recall_closed"],
-                    "closed_precision": epoch_metrics["test_metrics"]["precision_closed"],
-                    "closed_f1": epoch_metrics["test_metrics"]["f1_closed"],
-                    "open_roc_auc": epoch_metrics["open_metrics"]["roc_auc_open"],
-                }, 
-                step=epoch
-            )
+    utils.mlflow_log_params_online_metrics(online_metrics)
 
     eval_metrics = ml.evaluate_on_closed_and_open_testsets(open_loader, test_loader, model)
     mlflow.log_dict(
@@ -200,7 +187,7 @@ def run_main_06(
             "N_open": len(open_loader.dataset),
         }
     fig_abs_logit_distr, ax_abs_logit_distr = vis.plot_abs_logit_distr(
-            eval_metrics, 
+            eval_metrics["open"], 
             metadata=metadata,
         )
     mlflow.log_figure(fig_abs_logit_distr, "fig_abs_logit_distr.png")

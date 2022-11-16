@@ -1,0 +1,602 @@
+2022-10-20 23:44:27,460 1389213 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,467 1389211 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,470 1389206 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,478 1389214 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,499 1389202 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,506 1389198 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,515 1389195 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,517 1389208 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,534 1389209 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,545 1389205 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,555 1389201 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,557 1389197 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,668 1389199 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,669 1389203 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,678 1389212 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,688 1389200 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,709 1389204 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,712 1389207 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,726 1389196 run_main_08 INFO Start run_main_08
+2022-10-20 23:44:27,728 1389210 run_main_08 INFO Start run_main_08
+2022-10-20 23:45:03,039 1389206 run_main_08 INFO Start run_main_08
+2022-10-20 23:45:03,570 1389201 run_main_08 INFO Start run_main_08
+2022-10-20 23:45:04,450 1389196 run_main_08 INFO Start run_main_08
+2022-10-20 23:45:05,998 1389211 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,020 1390650 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,036 1390656 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,041 1390658 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,060 1390641 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,067 1390645 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,079 1390652 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,088 1390655 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,104 1390640 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,111 1390654 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,121 1390643 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,131 1390649 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,159 1390651 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,162 1390642 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,176 1390646 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,184 1390653 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,198 1390648 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,201 1390644 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,216 1390647 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,225 1390657 run_main_08 INFO Start run_main_08
+2022-10-20 23:46:44,240 1390659 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:17,494 1390642 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:18,375 1390651 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:18,387 1390642 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:18,924 1390651 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:19,203 1390649 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:19,898 1390649 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:21,240 1390654 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:21,813 1390654 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:23,576 1390659 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:24,087 1390644 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:24,123 1390659 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:24,535 1390656 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:24,867 1390644 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:25,200 1390656 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:31,312 1390647 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:31,534 1390641 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:31,950 1390641 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:31,991 1390647 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:33,102 1390653 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:33,743 1390653 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:34,467 1390650 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:34,978 1390657 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:35,024 1390650 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:35,174 1390643 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:35,381 1390646 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:47:35,714 1390657 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:35,772 1390643 run_main_08 INFO Start run_main_08
+2022-10-20 23:47:35,933 1390646 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,540 1391893 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,542 1391894 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,546 1391890 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,547 1391861 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,581 1391868 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,584 1391883 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,590 1391859 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,590 1391877 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,623 1391895 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,629 1391888 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,636 1391891 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,642 1391880 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,664 1391874 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,672 1391856 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,677 1391896 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,683 1391892 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,708 1391889 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,715 1391886 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,718 1391871 run_main_08 INFO Start run_main_08
+2022-10-20 23:48:52,724 1391864 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:26,413 1391861 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:27,012 1391861 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:28,022 1391890 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:28,490 1391890 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:28,521 1391896 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:29,013 1391896 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:29,423 1391868 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:29,875 1391889 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:29,897 1391868 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:30,378 1391889 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:38,061 1391888 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:38,294 1391874 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:38,635 1391888 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:38,784 1391874 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:40,115 1391864 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:40,668 1391864 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:42,396 1391883 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:42,815 1391892 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:42,958 1391883 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:43,404 1391892 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:43,664 1391880 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:44,398 1391880 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:44,668 1391871 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:45,450 1391871 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:46,648 1391856 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:46,795 1391893 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:47,166 1391859 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:47,303 1391894 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:47,450 1391856 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:47,533 1391893 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:47,826 1391891 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:47,865 1391859 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:48,064 1391894 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:48,326 1391891 run_main_08 INFO Start run_main_08
+2022-10-20 23:49:50,422 1391886 run_main_08 INFO Performing train sampling: 70000
+2022-10-20 23:49:50,945 1391886 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,675 1393784 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,678 1393786 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,678 1393785 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,679 1393789 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,724 1393780 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,724 1393776 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,726 1393777 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,731 1393775 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,769 1393778 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,770 1393783 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,774 1393781 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,774 1393773 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,812 1393774 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,813 1393771 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,816 1393772 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,817 1393779 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,854 1393787 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,856 1393770 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,858 1393788 run_main_08 INFO Start run_main_08
+2022-10-20 23:51:04,859 1393782 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:50,989 1790552 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:50,992 1790563 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:50,997 1790553 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:50,997 1790558 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,030 1790564 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,036 1790554 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,039 1790556 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,042 1790549 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,072 1790551 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,079 1790546 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,080 1790547 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,085 1790548 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,111 1790550 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,121 1790545 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,130 1790562 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,139 1790561 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,150 1790557 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,165 1790560 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,174 1790559 run_main_08 INFO Start run_main_08
+2022-10-20 23:56:51,180 1790555 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,268 1800324 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,270 1800319 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,272 1800312 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,274 1800318 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,314 1800314 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,314 1800313 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,315 1800307 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,315 1800325 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,355 1800322 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,358 1800320 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,358 1800321 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,359 1800316 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,399 1800317 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,400 1800326 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,401 1800315 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,402 1800310 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,441 1800308 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,443 1800309 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,444 1800311 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:32,445 1800323 run_main_08 INFO Start run_main_08
+2022-10-20 23:58:34,211 1800324 sample_train_val INFO Sampling df_train_val (nrows=158666) and sample_train=10000 => 9990
+2022-10-20 23:58:34,212 1800324 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,395 1800325 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=10000 => 9981
+2022-10-20 23:58:34,396 1800325 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,511 1800323 sample_train_val INFO Sampling df_train_val (nrows=111703) and sample_train=10000 => 9964
+2022-10-20 23:58:34,512 1800323 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,543 1800313 sample_train_val INFO Sampling df_train_val (nrows=106284) and sample_train=10000 => 10014
+2022-10-20 23:58:34,544 1800313 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,687 1800320 sample_train_val INFO Sampling df_train_val (nrows=111117) and sample_train=10000 => 10056
+2022-10-20 23:58:34,688 1800320 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,825 1800318 sample_train_val INFO Sampling df_train_val (nrows=105245) and sample_train=10000 => 10098
+2022-10-20 23:58:34,826 1800318 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,837 1800307 sample_train_val INFO Sampling df_train_val (nrows=144626) and sample_train=10000 => 10099
+2022-10-20 23:58:34,838 1800307 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,863 1800317 sample_train_val INFO Sampling df_train_val (nrows=132113) and sample_train=10000 => 9988
+2022-10-20 23:58:34,864 1800317 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,877 1800315 sample_train_val INFO Sampling df_train_val (nrows=141135) and sample_train=10000 => 10058
+2022-10-20 23:58:34,877 1800315 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,937 1800316 sample_train_val INFO Sampling df_train_val (nrows=106484) and sample_train=10000 => 10045
+2022-10-20 23:58:34,937 1800316 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,962 1800326 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=10000 => 9997
+2022-10-20 23:58:34,963 1800326 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,973 1800314 sample_train_val INFO Sampling df_train_val (nrows=133885) and sample_train=10000 => 9965
+2022-10-20 23:58:34,974 1800314 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:34,994 1800312 sample_train_val INFO Sampling df_train_val (nrows=160449) and sample_train=10000 => 10041
+2022-10-20 23:58:34,995 1800312 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,035 1800311 sample_train_val INFO Sampling df_train_val (nrows=108799) and sample_train=10000 => 9909
+2022-10-20 23:58:35,035 1800311 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,147 1800310 sample_train_val INFO Sampling df_train_val (nrows=140377) and sample_train=10000 => 9962
+2022-10-20 23:58:35,148 1800310 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,201 1800319 sample_train_val INFO Sampling df_train_val (nrows=105699) and sample_train=10000 => 10014
+2022-10-20 23:58:35,202 1800319 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,239 1800322 sample_train_val INFO Sampling df_train_val (nrows=139926) and sample_train=10000 => 10061
+2022-10-20 23:58:35,240 1800322 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,267 1800321 sample_train_val INFO Sampling df_train_val (nrows=115042) and sample_train=10000 => 10104
+2022-10-20 23:58:35,267 1800321 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,340 1800308 sample_train_val INFO Sampling df_train_val (nrows=110865) and sample_train=10000 => 9996
+2022-10-20 23:58:35,340 1800308 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-20 23:58:35,411 1800309 sample_train_val INFO Sampling df_train_val (nrows=102735) and sample_train=10000 => 9918
+2022-10-20 23:58:35,412 1800309 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:11,803 1881308 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:11,804 1881306 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:11,811 1881316 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:11,812 1881287 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,204 1881310 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,205 1881312 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,207 1881309 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,209 1881298 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,248 1881311 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,249 1881307 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,252 1881314 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,255 1881291 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,291 1881281 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,292 1881304 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,297 1881313 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,300 1881284 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,335 1881294 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,336 1881315 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,343 1881301 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:12,343 1881317 run_main_08 INFO Start run_main_08
+2022-10-21 00:01:13,770 1881314 sample_train_val INFO Sampling df_train_val (nrows=111703) and sample_train=10000 => 9964
+2022-10-21 00:01:13,770 1881314 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:13,778 1881317 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=10000 => 9997
+2022-10-21 00:01:13,779 1881317 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:13,970 1881316 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=10000 => 9981
+2022-10-21 00:01:13,971 1881316 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:14,285 1881315 sample_train_val INFO Sampling df_train_val (nrows=158666) and sample_train=10000 => 9990
+2022-10-21 00:01:14,286 1881315 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:14,348 1881310 sample_train_val INFO Sampling df_train_val (nrows=105699) and sample_train=10000 => 10014
+2022-10-21 00:01:14,348 1881310 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:14,478 1881301 sample_train_val INFO Sampling df_train_val (nrows=106284) and sample_train=10000 => 10014
+2022-10-21 00:01:14,479 1881301 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,426 1881284 sample_train_val INFO Sampling df_train_val (nrows=110865) and sample_train=10000 => 9996
+2022-10-21 00:01:15,426 1881284 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,592 1881311 sample_train_val INFO Sampling df_train_val (nrows=111117) and sample_train=10000 => 10056
+2022-10-21 00:01:15,592 1881311 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,605 1881287 sample_train_val INFO Sampling df_train_val (nrows=102735) and sample_train=10000 => 9918
+2022-10-21 00:01:15,606 1881287 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,623 1881298 sample_train_val INFO Sampling df_train_val (nrows=160449) and sample_train=10000 => 10041
+2022-10-21 00:01:15,623 1881298 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,632 1881307 sample_train_val INFO Sampling df_train_val (nrows=106484) and sample_train=10000 => 10045
+2022-10-21 00:01:15,633 1881307 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,637 1881312 sample_train_val INFO Sampling df_train_val (nrows=115042) and sample_train=10000 => 10104
+2022-10-21 00:01:15,637 1881312 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,642 1881309 sample_train_val INFO Sampling df_train_val (nrows=105245) and sample_train=10000 => 10098
+2022-10-21 00:01:15,642 1881309 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,678 1881294 sample_train_val INFO Sampling df_train_val (nrows=108799) and sample_train=10000 => 9909
+2022-10-21 00:01:15,678 1881294 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,687 1881308 sample_train_val INFO Sampling df_train_val (nrows=132113) and sample_train=10000 => 9988
+2022-10-21 00:01:15,687 1881308 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,719 1881291 sample_train_val INFO Sampling df_train_val (nrows=140377) and sample_train=10000 => 9962
+2022-10-21 00:01:15,719 1881291 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,720 1881306 sample_train_val INFO Sampling df_train_val (nrows=141135) and sample_train=10000 => 10058
+2022-10-21 00:01:15,720 1881306 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,766 1881281 sample_train_val INFO Sampling df_train_val (nrows=144626) and sample_train=10000 => 10099
+2022-10-21 00:01:15,766 1881281 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,775 1881313 sample_train_val INFO Sampling df_train_val (nrows=139926) and sample_train=10000 => 10061
+2022-10-21 00:01:15,775 1881313 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:01:15,798 1881304 sample_train_val INFO Sampling df_train_val (nrows=133885) and sample_train=10000 => 9965
+2022-10-21 00:01:15,798 1881304 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:52,868 1904108 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,871 1904085 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,876 1904144 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,877 1904119 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,914 1904142 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,916 1904139 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,920 1904111 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,923 1904136 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,958 1904130 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,961 1904115 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,966 1904095 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:52,967 1904127 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,003 1904105 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,005 1904123 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,011 1904091 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,011 1904088 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,058 1904098 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,058 1904101 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,063 1904133 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:53,066 1904147 run_main_08 INFO Start run_main_08
+2022-10-21 00:02:54,829 1904119 sample_train_val INFO Sampling df_train_val (nrows=132113) and sample_train=10000 => 9988
+2022-10-21 00:02:54,829 1904119 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,105 1904108 sample_train_val INFO Sampling df_train_val (nrows=133885) and sample_train=10000 => 9965
+2022-10-21 00:02:55,105 1904108 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,123 1904136 sample_train_val INFO Sampling df_train_val (nrows=139926) and sample_train=10000 => 10061
+2022-10-21 00:02:55,124 1904136 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,183 1904088 sample_train_val INFO Sampling df_train_val (nrows=110865) and sample_train=10000 => 9996
+2022-10-21 00:02:55,183 1904088 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,192 1904139 sample_train_val INFO Sampling df_train_val (nrows=111703) and sample_train=10000 => 9964
+2022-10-21 00:02:55,192 1904139 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,266 1904123 sample_train_val INFO Sampling df_train_val (nrows=105245) and sample_train=10000 => 10098
+2022-10-21 00:02:55,267 1904123 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,365 1904085 sample_train_val INFO Sampling df_train_val (nrows=144626) and sample_train=10000 => 10099
+2022-10-21 00:02:55,366 1904085 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,430 1904147 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=10000 => 9997
+2022-10-21 00:02:55,431 1904147 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,436 1904101 sample_train_val INFO Sampling df_train_val (nrows=160449) and sample_train=10000 => 10041
+2022-10-21 00:02:55,437 1904101 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,453 1904098 sample_train_val INFO Sampling df_train_val (nrows=108799) and sample_train=10000 => 9909
+2022-10-21 00:02:55,453 1904098 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,457 1904144 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=10000 => 9981
+2022-10-21 00:02:55,458 1904144 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,507 1904105 sample_train_val INFO Sampling df_train_val (nrows=106284) and sample_train=10000 => 10014
+2022-10-21 00:02:55,507 1904105 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,563 1904115 sample_train_val INFO Sampling df_train_val (nrows=106484) and sample_train=10000 => 10045
+2022-10-21 00:02:55,564 1904115 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,588 1904127 sample_train_val INFO Sampling df_train_val (nrows=105699) and sample_train=10000 => 10014
+2022-10-21 00:02:55,589 1904127 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,656 1904133 sample_train_val INFO Sampling df_train_val (nrows=115042) and sample_train=10000 => 10104
+2022-10-21 00:02:55,657 1904133 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,683 1904095 sample_train_val INFO Sampling df_train_val (nrows=140377) and sample_train=10000 => 9962
+2022-10-21 00:02:55,684 1904095 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,695 1904091 sample_train_val INFO Sampling df_train_val (nrows=102735) and sample_train=10000 => 9918
+2022-10-21 00:02:55,696 1904091 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,697 1904142 sample_train_val INFO Sampling df_train_val (nrows=158666) and sample_train=10000 => 9990
+2022-10-21 00:02:55,697 1904142 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,754 1904130 sample_train_val INFO Sampling df_train_val (nrows=111117) and sample_train=10000 => 10056
+2022-10-21 00:02:55,754 1904130 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:02:55,760 1904111 sample_train_val INFO Sampling df_train_val (nrows=141135) and sample_train=10000 => 10058
+2022-10-21 00:02:55,815 1904111 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:40,124 1904130 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:41,862 1904130 sample_train_val INFO Sampling df_train_val (nrows=136688) and sample_train=10000 => 9943
+2022-10-21 00:09:41,862 1904130 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:44,005 1904115 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:45,023 1904105 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:45,258 1904133 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:46,066 1904115 sample_train_val INFO Sampling df_train_val (nrows=114574) and sample_train=10000 => 10019
+2022-10-21 00:09:46,066 1904115 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:47,078 1904105 sample_train_val INFO Sampling df_train_val (nrows=113194) and sample_train=10000 => 10102
+2022-10-21 00:09:47,079 1904105 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:47,214 1904133 sample_train_val INFO Sampling df_train_val (nrows=161578) and sample_train=10000 => 10102
+2022-10-21 00:09:47,214 1904133 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:47,393 1904123 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:48,304 1904139 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:49,484 1904123 sample_train_val INFO Sampling df_train_val (nrows=108006) and sample_train=10000 => 9933
+2022-10-21 00:09:49,484 1904123 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:50,017 1904139 sample_train_val INFO Sampling df_train_val (nrows=132942) and sample_train=10000 => 10007
+2022-10-21 00:09:50,018 1904139 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:54,241 1904095 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:55,291 1904108 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:55,801 1904095 sample_train_val INFO Sampling df_train_val (nrows=143734) and sample_train=10000 => 10105
+2022-10-21 00:09:55,802 1904095 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:56,680 1904108 sample_train_val INFO Sampling df_train_val (nrows=113391) and sample_train=10000 => 10059
+2022-10-21 00:09:56,680 1904108 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:09:56,697 1904098 run_main_08 INFO Start run_main_08
+2022-10-21 00:09:58,896 1904098 sample_train_val INFO Sampling df_train_val (nrows=138278) and sample_train=10000 => 10160
+2022-10-21 00:09:58,897 1904098 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:02,807 1904091 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:04,289 1904088 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:04,878 1904091 sample_train_val INFO Sampling df_train_val (nrows=186644) and sample_train=10000 => 9999
+2022-10-21 00:10:04,878 1904091 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:05,407 1904101 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:05,666 1904088 sample_train_val INFO Sampling df_train_val (nrows=110108) and sample_train=10000 => 10057
+2022-10-21 00:10:05,666 1904088 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:06,934 1904147 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:07,280 1904101 sample_train_val INFO Sampling df_train_val (nrows=165968) and sample_train=10000 => 10126
+2022-10-21 00:10:07,280 1904101 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:08,606 1904119 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:08,945 1904147 sample_train_val INFO Sampling df_train_val (nrows=141213) and sample_train=10000 => 10013
+2022-10-21 00:10:08,945 1904147 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:10,587 1904119 sample_train_val INFO Sampling df_train_val (nrows=134727) and sample_train=10000 => 10068
+2022-10-21 00:10:10,587 1904119 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:10,856 1904127 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:12,132 1904085 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:12,792 1904142 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:12,818 1904127 sample_train_val INFO Sampling df_train_val (nrows=109365) and sample_train=10000 => 9962
+2022-10-21 00:10:12,818 1904127 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:13,518 1904085 sample_train_val INFO Sampling df_train_val (nrows=133638) and sample_train=10000 => 10063
+2022-10-21 00:10:13,518 1904085 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:14,149 1904142 sample_train_val INFO Sampling df_train_val (nrows=110995) and sample_train=10000 => 10110
+2022-10-21 00:10:14,149 1904142 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:21,035 1904136 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:21,332 1904111 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:22,590 1904111 sample_train_val INFO Sampling df_train_val (nrows=105603) and sample_train=10000 => 9906
+2022-10-21 00:10:22,590 1904111 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:22,641 1904144 run_main_08 INFO Start run_main_08
+2022-10-21 00:10:22,927 1904136 sample_train_val INFO Sampling df_train_val (nrows=137859) and sample_train=10000 => 9906
+2022-10-21 00:10:22,927 1904136 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:10:24,279 1904144 sample_train_val INFO Sampling df_train_val (nrows=109245) and sample_train=10000 => 10026
+2022-10-21 00:10:24,279 1904144 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:16:31,050 1904123 run_main_08 INFO Start run_main_08
+2022-10-21 00:16:32,965 1904123 sample_train_val INFO Sampling df_train_val (nrows=139356) and sample_train=10000 => 10101
+2022-10-21 00:16:32,966 1904123 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 00:16:33,066 1904115 run_main_08 INFO Start run_main_08
+2022-10-21 00:16:35,023 1904115 sample_train_val INFO Sampling df_train_val (nrows=166707) and sample_train=10000 => 9994
+2022-10-21 00:16:35,023 1904115 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:06:59,079 2531659 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,080 2531652 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,081 2531643 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,084 2531650 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,132 2531656 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,134 2531647 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,141 2531646 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,172 2531655 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,173 2531644 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,183 2531648 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,211 2531661 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,218 2531657 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,223 2531653 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,253 2531654 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,259 2531651 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,263 2531662 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,294 2531645 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,299 2531649 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,302 2531658 run_main_08 INFO Start run_main_08
+2022-10-21 11:06:59,472 2531660 run_main_08 INFO Start run_main_08
+2022-10-21 11:07:01,325 2531643 sample_train_val INFO Sampling df_train_val (nrows=144626) and sample_train=10000 => 10099
+2022-10-21 11:07:01,325 2531643 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,340 2531659 sample_train_val INFO Sampling df_train_val (nrows=111703) and sample_train=10000 => 9964
+2022-10-21 11:07:01,341 2531652 sample_train_val INFO Sampling df_train_val (nrows=106484) and sample_train=10000 => 10045
+2022-10-21 11:07:01,341 2531659 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,341 2531652 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,349 2531645 sample_train_val INFO Sampling df_train_val (nrows=102735) and sample_train=10000 => 9918
+2022-10-21 11:07:01,350 2531645 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,527 2531650 sample_train_val INFO Sampling df_train_val (nrows=133885) and sample_train=10000 => 9965
+2022-10-21 11:07:01,527 2531650 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,658 2531654 sample_train_val INFO Sampling df_train_val (nrows=105245) and sample_train=10000 => 10098
+2022-10-21 11:07:01,659 2531654 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,672 2531661 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=10000 => 9981
+2022-10-21 11:07:01,673 2531661 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,707 2531649 sample_train_val INFO Sampling df_train_val (nrows=106284) and sample_train=10000 => 10014
+2022-10-21 11:07:01,707 2531649 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,742 2531656 sample_train_val INFO Sampling df_train_val (nrows=111117) and sample_train=10000 => 10056
+2022-10-21 11:07:01,743 2531656 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,866 2531644 sample_train_val INFO Sampling df_train_val (nrows=110865) and sample_train=10000 => 9996
+2022-10-21 11:07:01,867 2531644 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,884 2531648 sample_train_val INFO Sampling df_train_val (nrows=160449) and sample_train=10000 => 10041
+2022-10-21 11:07:01,885 2531648 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,902 2531657 sample_train_val INFO Sampling df_train_val (nrows=115042) and sample_train=10000 => 10104
+2022-10-21 11:07:01,904 2531657 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,925 2531655 sample_train_val INFO Sampling df_train_val (nrows=105699) and sample_train=10000 => 10014
+2022-10-21 11:07:01,926 2531655 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,950 2531653 sample_train_val INFO Sampling df_train_val (nrows=132113) and sample_train=10000 => 9988
+2022-10-21 11:07:01,950 2531653 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:01,982 2531662 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=10000 => 9997
+2022-10-21 11:07:01,982 2531662 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:02,001 2531651 sample_train_val INFO Sampling df_train_val (nrows=141135) and sample_train=10000 => 10058
+2022-10-21 11:07:02,001 2531651 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:02,037 2531660 sample_train_val INFO Sampling df_train_val (nrows=158666) and sample_train=10000 => 9990
+2022-10-21 11:07:02,037 2531660 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:02,115 2531658 sample_train_val INFO Sampling df_train_val (nrows=139926) and sample_train=10000 => 10061
+2022-10-21 11:07:02,115 2531658 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:02,176 2531647 sample_train_val INFO Sampling df_train_val (nrows=108799) and sample_train=10000 => 9909
+2022-10-21 11:07:02,176 2531647 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:07:02,262 2531646 sample_train_val INFO Sampling df_train_val (nrows=140377) and sample_train=10000 => 9962
+2022-10-21 11:07:02,263 2531646 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:18:57,556 2531645 run_main_08 INFO Start run_main_08
+2022-10-21 11:18:59,668 2531645 sample_train_val INFO Sampling df_train_val (nrows=136688) and sample_train=10000 => 9943
+2022-10-21 11:18:59,668 2531645 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:12,143 2531644 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:14,161 2531644 sample_train_val INFO Sampling df_train_val (nrows=114574) and sample_train=10000 => 10019
+2022-10-21 11:19:14,161 2531644 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:14,443 2531654 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:16,380 2531654 sample_train_val INFO Sampling df_train_val (nrows=113194) and sample_train=10000 => 10102
+2022-10-21 11:19:16,381 2531654 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:17,822 2531659 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:19,821 2531659 sample_train_val INFO Sampling df_train_val (nrows=161578) and sample_train=10000 => 10102
+2022-10-21 11:19:19,822 2531659 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:34,145 2531657 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:34,146 2531656 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:36,036 2531657 sample_train_val INFO Sampling df_train_val (nrows=132942) and sample_train=10000 => 10007
+2022-10-21 11:19:36,037 2531657 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:36,191 2531656 sample_train_val INFO Sampling df_train_val (nrows=108006) and sample_train=10000 => 9933
+2022-10-21 11:19:36,192 2531656 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:36,670 2531662 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:38,874 2531662 sample_train_val INFO Sampling df_train_val (nrows=143734) and sample_train=10000 => 10105
+2022-10-21 11:19:38,875 2531662 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:41,480 2531652 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:43,534 2531652 sample_train_val INFO Sampling df_train_val (nrows=113391) and sample_train=10000 => 10059
+2022-10-21 11:19:43,535 2531652 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:49,790 2531647 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:50,147 2531649 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:50,426 2531653 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:51,708 2531647 sample_train_val INFO Sampling df_train_val (nrows=138278) and sample_train=10000 => 10160
+2022-10-21 11:19:51,709 2531647 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:51,835 2531653 sample_train_val INFO Sampling df_train_val (nrows=110108) and sample_train=10000 => 10057
+2022-10-21 11:19:51,835 2531653 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:52,038 2531649 sample_train_val INFO Sampling df_train_val (nrows=186644) and sample_train=10000 => 9999
+2022-10-21 11:19:52,039 2531649 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:19:57,496 2531655 run_main_08 INFO Start run_main_08
+2022-10-21 11:19:59,439 2531655 sample_train_val INFO Sampling df_train_val (nrows=165968) and sample_train=10000 => 10126
+2022-10-21 11:19:59,497 2531655 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:10,356 2531650 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:11,600 2531646 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:12,031 2531650 sample_train_val INFO Sampling df_train_val (nrows=141213) and sample_train=10000 => 10013
+2022-10-21 11:20:12,032 2531650 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:12,664 2531651 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:13,621 2531646 sample_train_val INFO Sampling df_train_val (nrows=134727) and sample_train=10000 => 10068
+2022-10-21 11:20:13,622 2531646 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:14,542 2531651 sample_train_val INFO Sampling df_train_val (nrows=109365) and sample_train=10000 => 9962
+2022-10-21 11:20:14,542 2531651 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:19,415 2531648 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:19,812 2531643 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:21,641 2531648 sample_train_val INFO Sampling df_train_val (nrows=133638) and sample_train=10000 => 10063
+2022-10-21 11:20:21,642 2531648 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:21,705 2531643 sample_train_val INFO Sampling df_train_val (nrows=110995) and sample_train=10000 => 10110
+2022-10-21 11:20:21,705 2531643 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:30,675 2531660 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:30,958 2531661 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:32,539 2531660 sample_train_val INFO Sampling df_train_val (nrows=137859) and sample_train=10000 => 9906
+2022-10-21 11:20:32,539 2531660 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:32,771 2531661 sample_train_val INFO Sampling df_train_val (nrows=105603) and sample_train=10000 => 9906
+2022-10-21 11:20:32,772 2531661 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:20:33,122 2531658 run_main_08 INFO Start run_main_08
+2022-10-21 11:20:34,856 2531658 sample_train_val INFO Sampling df_train_val (nrows=109245) and sample_train=10000 => 10026
+2022-10-21 11:20:34,856 2531658 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:31:34,596 2531644 run_main_08 INFO Start run_main_08
+2022-10-21 11:31:36,885 2531644 sample_train_val INFO Sampling df_train_val (nrows=139356) and sample_train=10000 => 10101
+2022-10-21 11:31:36,885 2531644 sample_train_val WARNING Resetting the index of df_train_val.
+2022-10-21 11:31:59,429 2531654 run_main_08 INFO Start run_main_08
+2022-10-21 11:32:01,517 2531654 sample_train_val INFO Sampling df_train_val (nrows=166707) and sample_train=10000 => 9994
+2022-10-21 11:32:01,517 2531654 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:48:48,803 807093 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:48:48,820 807092 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:48:50,014 807092 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=1000 => 1091
+2022-11-10 18:48:50,015 807092 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:48:50,102 807093 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=1000 => 1030
+2022-11-10 18:48:50,102 807093 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:59:28,999 817345 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:59:29,007 817344 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 18:59:30,181 817344 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 18:59:30,181 817344 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 18:59:30,245 817345 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 18:59:30,245 817345 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:01:11,584 819787 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:01:11,593 819786 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:01:12,757 819786 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:01:12,757 819786 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:01:12,881 819787 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:01:12,881 819787 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:05:57,394 830853 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:05:57,417 830852 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:05:58,654 830853 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:05:58,654 830853 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:05:58,835 830852 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:05:58,835 830852 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:12:06,728 832907 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:12:06,732 832906 multiprocessing_wrapper_script_08 INFO Start run_main_08
+2022-11-10 19:12:07,960 832907 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=3000 => 3024
+2022-11-10 19:12:07,960 832907 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:12:08,048 832906 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=3000 => 3093
+2022-11-10 19:12:08,049 832906 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:19:28,954 843950 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:19:28,954 843950 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:19:28,957 843949 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:19:28,957 843949 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:19:30,106 843949 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:19:30,107 843949 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:19:30,207 843950 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:19:30,207 843950 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:22:07,265 845581 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:22:07,265 845581 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:22:07,272 845582 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:22:07,272 845582 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:22:08,407 845581 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:22:08,408 845581 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:22:08,586 845582 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:22:08,587 845582 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:25:10,616 847286 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:25:10,616 847286 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:25:10,624 847287 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:25:10,624 847287 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:25:12,272 847286 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:25:12,272 847286 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:25:12,347 847287 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:25:12,347 847287 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:35:26,840 848392 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:35:26,841 848392 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:35:26,843 848393 multiprocessing_wrapper_script_08 INFO run_name='test'
+2022-11-10 19:35:26,843 848393 multiprocessing_wrapper_script_08 INFO Start multiprocessing_wrapper_script_08
+2022-11-10 19:35:28,058 848392 sample_train_val INFO Sampling df_train_val (nrows=106961) and sample_train=500 => 556
+2022-11-10 19:35:28,059 848392 sample_train_val WARNING Resetting the index of df_train_val.
+2022-11-10 19:35:28,147 848393 sample_train_val INFO Sampling df_train_val (nrows=168884) and sample_train=500 => 502
+2022-11-10 19:35:28,147 848393 sample_train_val WARNING Resetting the index of df_train_val.

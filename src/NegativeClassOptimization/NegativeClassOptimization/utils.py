@@ -4,6 +4,7 @@ and check the initial dataset files.
 """
 
 from dataclasses import dataclass
+from itertools import chain
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 import random
@@ -12,6 +13,7 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 import torch
+import mlflow
 
 import NegativeClassOptimization.config as config
 
@@ -116,6 +118,57 @@ def antigens_from_dataset_path(dataset_path: Path) -> List[str]:
     )
 
 
+def shuffle_antigens(antigens: List[str], seed: int = config.SEED) -> List[str]:
+    """Shuffle antigens.
+
+    Args:
+        antigens (List[str]): antigens to shuffle.
+        seed (int, optional): Defaults to config.SEED.
+
+    Returns:
+        List[str]: shuffled antigens.
+    """    
+    from numpy.random import default_rng
+    assert seed in {config.SEED}, "Only the default seed is supported."
+    rng = default_rng(seed=seed)
+    antigens_shuffled = antigens[:]
+    rng.shuffle(antigens_shuffled)
+    return antigens_shuffled
+
+
+def generate_ag_set_chain(
+    antigens,
+    ag_set_sizes: List[int],
+    seed_ban_list: Optional[List[List[str]]] = None,
+    ) -> List[List[str]]:
+    """Generate antigen set chains.
+
+    Args:
+        antigens (_type_): _description_
+        ag_set_sizes (List[int]): _description_
+        seed_ban_list (Optional[List[List[str]]], optional): List of seed sets to exclude. Defaults to None.
+
+    Returns:
+        List[List[str]]: _description_
+    """    
+    ag_sets_chain = []
+    for size in ag_set_sizes:
+        if len(ag_sets_chain) == 0:
+            while True:
+                ag_set = sorted(np.random.choice(antigens, size=size, replace=False))
+                if (seed_ban_list is None) or (ag_set not in seed_ban_list):
+                    break
+        else:
+            last_set = ag_sets_chain[-1]
+            increment = size - len(last_set)
+            ag_set = sorted(np.random.choice(list(set(antigens) - set(last_set)), size=increment, replace=False))
+            ag_set = sorted(last_set + ag_set)    
+        ag_sets_chain.append(ag_set)
+    
+    assert list(map(len, ag_sets_chain)) == ag_set_sizes, "ag_set_sizes not correct"
+    return ag_sets_chain
+
+
 def build_global_dataset(
     dataset_path: Path,
     remove_ag_slide_duplicates = True,
@@ -206,3 +259,57 @@ def load_processed_dataframes(
         "test_closed_exclusive": load_df("df_test_closed_exclusive.tsv"),
         "test_open_exclusive": load_df("df_test_open_exclusive.tsv"),
     }
+
+
+def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
+    for i, epoch_metrics in enumerate(online_metrics):
+        epoch = i+1
+        try:
+            mlflow.log_metrics(
+                    process_epoch_metrics(epoch_metrics),
+                    step=epoch
+                )
+        except TypeError as e:
+            print(f"TypeError: {e}")
+            print(epoch_metrics)
+
+
+def process_epoch_metrics(epoch_metrics: dict) -> dict:
+    metrics = {}
+    metrics["train_loss"] = epoch_metrics["train_losses"][-1]
+    metrics_iter = chain(
+        epoch_metrics["test_metrics"].items(),
+        epoch_metrics["open_metrics"].items(),
+    )
+    for metric, val in metrics_iter:
+        if type(val) != np.ndarray:
+            metrics[metric] = val
+        
+    return metrics
+
+
+def download_absolut(
+    out_dir: Path = config.DATA_ABSOLUT_DIR,
+    doi_csv: Path = config.DATA_ABSOLUT_DOI,
+) -> None:
+    """Download Absolut raw data (https://ns9999k.webs.sigma2.no/10.11582_2021.00063).
+
+    Args:
+        out_dir (Path, optional): output directory. Defaults to config.DATA_ABSOLUT_DIR.
+        doi_csv (Path, optional): path to csv with filepaths (as obtained from Norwegian database website). Defaults to config.DATA_ABSOLUT_DOI.
+    """
+    from urllib import request
+
+    df = pd.read_csv(doi_csv, header=None)
+    url_paths: List[str] = df.iloc[:, 1].to_list()
+    
+    URL = "https://ns9999k.webs.sigma2.no/10.11582_2021.00063"
+    for url_path in url_paths:
+        print(f"Processing {url_path=}")
+        url = URL + url_path[1:]
+        filepath = url_path.split("AbsolutOnline/")[1]
+        filepath = Path(out_dir) / filepath
+        
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents=True)
+        request.urlretrieve(url, filename=str(filepath))

@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, List
 from itertools import combinations, product
+from NegativeClassOptimization import utils
 
 import numpy as np
 import pandas as pd
@@ -138,6 +139,7 @@ class BinaryDataset(Dataset):
 
     def __init__(self, df):
         self.df = df
+        self.process_y_tensor = lambda t: t.reshape((1)).type(torch.float)
 
     def __len__(self):
         return self.df.shape[0]
@@ -146,26 +148,17 @@ class BinaryDataset(Dataset):
         return (
             torch.tensor(self.df.loc[idx, "X"]).reshape(
                 (1, -1)).type(torch.float),
-            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.float),
+            self.process_y_tensor(torch.tensor(self.df.loc[idx, "y"])),
         )
 
 
-class MulticlassDataset(Dataset):
+class MulticlassDataset(BinaryDataset):
     """Pytorch dataset for modelling antigen binding multiclass classifiers.
     """
 
     def __init__(self, df):
-        self.df = df
-
-    def __len__(self):
-        return self.df.shape[0]
-
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.df.loc[idx, "X"]).reshape(
-                (1, -1)).type(torch.float),
-            torch.tensor(self.df.loc[idx, "y"]).reshape((1)).type(torch.uint8),
-        )
+        super().__init__(df)
+        self.process_y_tensor = lambda t: t.reshape(-1).type(torch.long)
 
 
 def construct_dataset_atoms(
@@ -205,3 +198,42 @@ def construct_dataset_atom_combinations(
         valid_combinations.append((list(ag_pos_atom), list(ag_neg_atom)))
 
     return valid_combinations
+
+
+class AbsolutDataset3:
+    """Dataset for modelling antigen binding classifiers."""
+
+    def __init__(self):
+        self.df = AbsolutDataset3.get_binding_matrix()
+        self.antigens = AbsolutDataset3.get_antigens()
+        self.df_wide = AbsolutDataset3.convert_to_wide_format(self.df, self.antigens)
+
+    @staticmethod
+    def convert_to_wide_format(df, antigens: List[str]):
+        """Converts Absolut Dataset 3 format to wide format.
+        """    
+        df_wide = pd.DataFrame.from_records(
+            data=df["binding_profile"].apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))}).to_list(),
+        )
+        assert all(df_wide.sum(axis=1) == df["num_binding_ags"])
+
+        df_wide.index = df["Slide"]
+        return df_wide
+
+    @staticmethod
+    def get_antigens(path = config.DATA_ABSOLUT_DATASET3_AGLIST):
+        with open(path, "r") as f:
+            antigens = f.read().splitlines()
+        return antigens
+    
+    @staticmethod
+    def get_closed_antigens(processed_path = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR):
+        dfs = utils.load_processed_dataframes(processed_path)
+        df_train_val = dfs["train_val"]
+        return sorted(set(df_train_val["Antigen"]))
+
+    @staticmethod
+    def get_binding_matrix(path = config.DATA_ABSOLUT_DATASET3_BINDINGMTX):
+        df = pd.read_csv(path, sep='\t', header=None)
+        df.columns = ["Slide", "num_binding_ags", "binding_profile"]
+        return df

@@ -9,6 +9,7 @@ import NegativeClassOptimization.config as config
 import NegativeClassOptimization.ml as ml
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
+import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.visualisations as vis
 import numpy as np
 import pandas as pd
@@ -179,7 +180,7 @@ def run_main_06b(
             }
 
             fig_abs_logit_distr, ax_abs_logit_distr = vis.plot_abs_logit_distr(
-                eval_metrics,
+                eval_metrics["open"],
                 metadata=metadata,
             )
             mlflow.log_figure(fig_abs_logit_distr, "fig_abs_logit_distr.png")
@@ -221,7 +222,7 @@ def run_main_06b(
 
 
 def construct_loaders_06b(farmhash_mod_10_val_mask, ag_pos, ag_neg, train_batch_size=64):
-    processed_dfs: dict = utils.load_processed_dataframes()
+    processed_dfs: dict = ml.DataPipeline.load_processed_dataframes()
     _train_val_loader, test_loader, open_loader = construct_loaders_06(
         processed_dfs,
         ag_pos,
