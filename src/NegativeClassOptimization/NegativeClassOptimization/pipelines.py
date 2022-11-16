@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import mlflow
 import numpy as np
@@ -45,6 +46,8 @@ class MulticlassPipeline(DataPipeline):
         sample_data_source: Optional[int] = None,
         sample_train_val: Optional[int] = None,
         sample_test: Optional[int] = None,
+        sample_per_ag_train: Optional[int] = None,
+        sample_per_ag_test: Optional[int] = None,
     ):
 
         dfs = MulticlassPipeline.load_processed_dataframes(
@@ -52,15 +55,25 @@ class MulticlassPipeline(DataPipeline):
             sample = sample_data_source,
         )
 
+        print(
+            f'Dataframe sizes: {dfs["train_val"].shape=} | '
+            f'{dfs["test_closed_exclusive"].shape=} | '
+            f'{dfs["test_open_exclusive"].shape=}'
+        )
+
         df_train = dfs["train_val"]
         df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(
             df_train, 
             ags, 
-            sample=sample_train_val
+            sample_per_ag=sample_per_ag_train,
             )
         
         if self.log_mlflow:
-            mlflow.log_params({"encoder_classes": "__".join(encoder.classes_)})
+            encoder_str = "__".join(encoder.classes_)
+            if len(encoder_str) <= 500:
+                mlflow.log_params({"encoder_classes": encoder_str})
+            else:
+                mlflow.log_params({"encoder_classes": "TOO_LONG"})
         
         df_test = dfs["test_closed_exclusive"]
         df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
@@ -68,7 +81,7 @@ class MulticlassPipeline(DataPipeline):
             ags,
             scaler,
             encoder,
-            sample=sample_test,
+            sample_per_ag=sample_per_ag_test,
             )
 
         _, train_loader = ml.construct_dataset_loader_multiclass(df_train, batch_size)
@@ -90,6 +103,9 @@ class MulticlassPipeline(DataPipeline):
         self.ags = ags
         self.sample_data_source = sample_data_source
         self.sample_train_val = sample_train_val
+        self.sample_test = sample_test
+        self.sample_per_ag_train = sample_per_ag_train
+        self.sample_per_ag_test = sample_per_ag_test
         self.batch_size = batch_size
         self.dfs = dfs
         self.df_train = df_train
@@ -127,14 +143,14 @@ class MulticlassPipeline(DataPipeline):
                 })
             
             if self.save_model_mlflow:
-                mlflow.pytorch.log_model(model, f"pytorch_model_epoch_{t+1}")
+                mlflow.pytorch.log_model(model, f"models/pytorch_model_epoch_{t+1}")
 
         if self.log_mlflow:
             mlflow.log_params({"model_num_params": sum(p.numel() for p in model.parameters())})
             utils.mlflow_log_params_online_metrics(online_metrics)
         
         if self.save_model_mlflow:
-            mlflow.pytorch.log_model(model, "pytorch_model")
+            mlflow.pytorch.log_model(model, "models/pytorch_model")
 
         self.model = model
         self.loss_fn = loss_fn

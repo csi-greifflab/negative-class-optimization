@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, List
 from itertools import combinations, product
+from NegativeClassOptimization import utils
 
 import numpy as np
 import pandas as pd
@@ -224,6 +225,12 @@ class AbsolutDataset3:
         with open(path, "r") as f:
             antigens = f.read().splitlines()
         return antigens
+    
+    @staticmethod
+    def get_closed_antigens(processed_path = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR):
+        dfs = utils.load_processed_dataframes(processed_path)
+        df_train_val = dfs["train_val"]
+        return sorted(set(df_train_val["Antigen"]))
 
     @staticmethod
     def get_binding_matrix(path = config.DATA_ABSOLUT_DATASET3_BINDINGMTX):

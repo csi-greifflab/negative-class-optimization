@@ -35,8 +35,8 @@ def multiprocessing_wrapper_script_08(
     run_name,
     input_data_dir,
     sample_data_source,
-    sample_train_val,
-    sample_test,
+    sample_per_ag_train,
+    sample_per_ag_test,
     batch_size,
     model,
     hidden_dim,
@@ -52,7 +52,7 @@ def multiprocessing_wrapper_script_08(
     with mlflow.start_run(
         experiment_id=experiment_id, 
         run_name=run_name, 
-        description=" vs ".join(ags),
+        description="__".join(ags),
         tags={"mlflow.runName": run_name},
         ):
 
@@ -71,11 +71,10 @@ def multiprocessing_wrapper_script_08(
             "momentum": 0.9,
             "weight_decay": 0,
             "batch_size": batch_size,
-            "ags": "__".join(ags),
             "k": len(ags),
-            "sample": None,
-            "sample_train": sample_train_val,
-            "sample_test": sample_test,
+            "sample_data_source": sample_data_source,
+            "sample_per_ag_train": sample_per_ag_train,
+            "sample_per_ag_test": sample_per_ag_test,
         })
 
         pipeline = pipelines.MulticlassPipeline(
@@ -88,8 +87,8 @@ def multiprocessing_wrapper_script_08(
             ags=ags,
             batch_size=batch_size,
             sample_data_source=sample_data_source,
-            sample_train_val=sample_train_val,
-            sample_test=sample_test,
+            sample_per_ag_train=sample_per_ag_train,
+            sample_per_ag_test=sample_per_ag_test,
         )
 
         if model == "SN10_MULTICLASS":

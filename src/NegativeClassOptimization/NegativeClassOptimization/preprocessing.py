@@ -249,13 +249,13 @@ def sample_df_deterministically(df, sample, num_buckets = 16384) -> pd.DataFrame
         )
 
 
-def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
+def sample_train_val(df_train_val, sample_train, num_buckets = 2*16384):
     """Deterministic sampling of train_val based on hashing.
 
     Args:
         df_train_val (_type_): _description_
         sample_train (_type_): _description_
-        num_buckets (int, optional): _description_. Defaults to 16384.
+        num_buckets (int, optional): _description_. Defaults to 2*16384.
 
     Raises:
         OverflowError: _description_
@@ -282,8 +282,8 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 16384):
                     ].copy()
                 )
             logger.info(
-                f"Sampling df_train_val (nrows={nrows})"
-                f" and sample_train={sample_train} => "
+                f"Sampling df_df (nrows={nrows})"
+                f" and sample={sample_train} => "
                 f"{df_train_val.shape[0]}"
                 )
         else:
@@ -353,12 +353,22 @@ def preprocess_df_for_multiclass(
     scaler = None,
     encoder = None,
     sample = None,
+    sample_per_ag = None,
+    sample_per_ag_seed = config.SEED,
     ):
     
     df = df.loc[df["Antigen"].isin(ags)].copy()
 
     df = remove_duplicates_for_multiclass(df)    
-    if sample is not None:
+    
+    if sample_per_ag is not None:
+        try:
+            df = df.groupby("Antigen").sample(sample_per_ag, random_state=sample_per_ag_seed)
+        except ValueError as e:
+            print(e)
+            print(df["Antigen"].value_counts())
+            raise
+    elif sample is not None:
         df = sample_train_val(df, sample)
 
     df = onehot_encode_df(df)
