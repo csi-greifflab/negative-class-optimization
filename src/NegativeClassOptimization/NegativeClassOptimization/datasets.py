@@ -208,6 +208,26 @@ class AbsolutDataset3:
         self.antigens = AbsolutDataset3.get_antigens()
         self.df_wide = AbsolutDataset3.convert_to_wide_format(self.df, self.antigens)
 
+        # self._build_splits()
+
+    # def _build_splits(self):
+    #     self.splits_open_closed = {}
+    #     for seed in range(1, 5):
+    #         self.splits_open_closed[seed] = AbsolutDataset3.split_open_closed(
+    #             self.antigens, 
+    #             num_open=40, 
+    #             seed=seed
+    #             )
+    
+    # def get_closed_open_antigen_split(self, seed=1):
+        # return self.splits_open_closed[seed]
+
+    @staticmethod
+    def split_open_closed(antigens: List[str], num_open: int, seed: int):
+        shuffled = utils.shuffle_antigens(antigens, seed=seed)
+        num_closed = len(antigens) - num_open
+        return shuffled[:num_closed], shuffled[num_closed:]
+
     @staticmethod
     def convert_to_wide_format(df, antigens: List[str]):
         """Converts Absolut Dataset 3 format to wide format.

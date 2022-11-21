@@ -138,6 +138,7 @@ if __name__ == "__main__":
             "df_train_val__shape": df_train_val.shape,
             "df_test_closed_exclusive__shape": df_test_closed_exclusive.shape,
             "df_test_open_exclusive__shape": df_test_open_exclusive.shape,
+            "ags_closed": represented_antigens,
         }
 
         df_train_val.to_csv(out_dir / "df_train_val.tsv", sep='\t')

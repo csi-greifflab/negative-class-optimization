@@ -2,7 +2,7 @@
 Preprocessing and transforms.
 """
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 
 import farmhash
 import numpy as np
@@ -287,6 +287,7 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 2*16384):
                 f"{df_train_val.shape[0]}"
                 )
         else:
+            print(f"{df_train_val.shape=} | {sample_train=}")
             raise OverflowError()
     except OverflowError as error:
         logger.exception(error)
@@ -393,9 +394,11 @@ def farmhash_mod_10(seq: str) -> int:
 
 
 def openset_datasplit_from_global_stable(
-    df_global: pd.DataFrame, 
+    df_global: pd.DataFrame,
     openset_antigens: List[str] = config.ANTIGENS_OPENSET,
-    farmhash_mod_10_test_mask: int = config.FARMHASH_MOD_10_TEST_MASK,
+    farmhash_mod_10_test_mask: Union[int, List[int]] = config.FARMHASH_MOD_10_TEST_MASK,
+    closedset_antigens: Optional[List[str]] = None,
+    sample_closed: Optional[int] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """From a global dataset get a train_val, an exclusive closed test
     and an exclusive open test dataset.
@@ -410,16 +413,41 @@ def openset_datasplit_from_global_stable(
     assert set(["Antigen", "Slide", "Slide_farmhash_mod_10"]).issubset(set(df_global.columns)), (
         "df_global must have columns Antigen, Slide and Slide_farmhash_mod_10."
     )
-    mask_ = df_global["Antigen"].isin(openset_antigens)
-    df_closed = df_global.loc[~mask_].copy()
-    df_open = df_global.loc[mask_].copy()
-    df_test_open_exclusive = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])].copy()
+    
+    df_global.reset_index(inplace=True)
+
+    if openset_antigens is not None:
+        mask_ = df_global["Antigen"].isin(openset_antigens)
+    else:
+        mask_ = pd.Series([False for i in range(df_global.shape[0])])
+
+    if closedset_antigens is None:
+        df_closed = df_global.loc[~mask_].copy()
+    else:
+        df_closed = df_global.loc[(~mask_) & (df_global["Antigen"].isin(closedset_antigens))].copy()
+    
+    if openset_antigens is not None:
+        df_open = df_global.loc[mask_].copy()
+        df_test_open_exclusive = df_open.loc[~df_open["Slide"].isin(df_closed["Slide"])].copy()
+    else:
+        df_test_open_exclusive = None
+    
+    if sample_closed is not None:
+        df_closed = sample_train_val(df_closed, sample_closed)
         
+
     df_closed["Slide_farmhash_mod_10"] = list(map(
             farmhash_mod_10,
             df_closed["Slide"]
         ))
-    test_mask = df_closed["Slide_farmhash_mod_10"] == farmhash_mod_10_test_mask
+    
+    if type(farmhash_mod_10_test_mask) == int:
+        test_mask = df_closed["Slide_farmhash_mod_10"] == farmhash_mod_10_test_mask
+    elif type(farmhash_mod_10_test_mask) == list:
+        test_mask = df_closed["Slide_farmhash_mod_10"].isin(farmhash_mod_10_test_mask)
+    else:
+        raise ValueError()
+    
     df_train_val = df_closed.loc[~test_mask].copy()
     df_test_closed_exclusive = df_closed.loc[test_mask].copy()
     df_test_closed_exclusive = df_test_closed_exclusive.loc[

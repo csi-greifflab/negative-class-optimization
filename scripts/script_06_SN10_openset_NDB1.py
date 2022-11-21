@@ -106,6 +106,7 @@ def run_main_06(
 
     logger = logging.getLogger()
 
+## PREPROCESSING
     ag_pos = resolve_ag_type(ag_pos)
     ag_neg = resolve_ag_type(ag_neg)
 
@@ -142,6 +143,7 @@ def run_main_06(
             "N_open": len(open_loader.dataset),
         })
 
+## Model
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ml.SN10().to(device)
     online_metrics = ml.train_for_ndb1(

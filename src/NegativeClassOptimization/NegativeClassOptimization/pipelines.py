@@ -1,10 +1,11 @@
+from itertools import combinations
 import logging
 from pathlib import Path
 import mlflow
 import numpy as np
 from typing import List, Optional
 from sklearn import metrics
-from NegativeClassOptimization import config, ml, utils, preprocessing, visualisations
+from NegativeClassOptimization import config, datasets, ml, utils, preprocessing, visualisations
 
 
 class DataPipeline:
@@ -20,6 +21,42 @@ class DataPipeline:
             dir_path, 
             sample,
         )
+
+
+class BinaryClassPipeline(DataPipeline):
+    """Organized workflow for binary classification. 
+    Started with script 06c.
+    """
+
+    def __init__(self) -> None:
+        pass
+    
+
+    def step_1_process_data(
+        self,
+        ):
+        """Process data for binary classification.
+        """
+        pass
+
+
+    def step_2_train_model(self):
+        """Train model for binary classification.
+        """
+        pass
+
+
+    def step_3_evaluate_model(self):
+        """Evaluate model for binary classification.
+        """
+        pass
+
+
+    def step_4_visualize(self):
+        """Visualize model for binary classification.
+        """
+        pass
+
 
 
 class MulticlassPipeline(DataPipeline):
@@ -208,7 +245,6 @@ class MulticlassPipeline(DataPipeline):
             mlflow.log_dict(report, "classification_report.json")
         
         self.eval_metrics = eval_metrics
-
         self.is_step_3_complete = True
     
 
@@ -236,3 +272,42 @@ class MulticlassPipeline(DataPipeline):
         
         self.is_step_4_complete = True
 
+
+class NDB1_Assymetry_from_Absolut_Builder:
+    
+    def __init__(self, ags_closed, dataset = None) -> None:
+        self.ags_c = ags_closed
+        if dataset:
+            self.dataset = dataset
+        else:
+            self.dataset = datasets.AbsolutDataset3()
+        
+        self.step_01_done = False
+
+
+    def step_01_select_random_pairs(self, num_ag_pairs: int):
+        rng = np.random.default_rng(seed=config.SEED)
+        ag_pairs = list(map(tuple, rng.choice(
+            list(combinations(self.ags_c, 2)), 
+            size=num_ag_pairs,
+            replace=False
+        ).tolist()))
+        self.ag_pairs = ag_pairs
+        self.step_01_done = True
+
+
+    def step_02_convert_to_global_format(self):
+        assert self.step_01_done == True
+        
+        frames = {}
+        for ag_pair in self.ag_pairs:
+            df_pair = self.dataset.df_wide[list(ag_pair)].copy()
+            
+            # only keep slide which bind to exactly one of the two antigens
+            df_pair = df_pair.loc[df_pair.sum(axis=1) == 1]
+
+            df_pair = preprocessing.convert_wide_to_global(df_pair)
+            frames[ag_pair] = df_pair
+
+        self.frames = frames
+        self.step_02_done = True
