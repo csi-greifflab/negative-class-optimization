@@ -5,9 +5,9 @@
 
 import multiprocessing
 from NegativeClassOptimization import config, datasets, ml, pipelines, preprocessing, utils, visualisations
+import torch
 import mlflow
 import numpy as np
-
 from script_06_SN10_openset_NDB1 import resolve_ag_type
 
 
@@ -19,7 +19,7 @@ NUM_REPLICATES_PER_SPLIT = 5
 NUM_TEST_KEYS = 3
 
 experiment_id = 8
-run_name = "dev-v0.1.2-2"
+run_name = "dev-v0.1.2-3"
 num_samples_closed = 30000
 num_samples_open = 10000
 batch_size = 64
@@ -130,6 +130,7 @@ def multiprocessing_wrapper_script_06c(
         })
 
         ### 
+        torch.manual_seed(params["replicate"])
         model = ml.SN10().to("cpu")
         online_metrics = ml.train_for_ndb1(
             epochs,
@@ -160,8 +161,6 @@ def multiprocessing_wrapper_script_06c(
                 'open_recall' :eval_metrics["open"]["recall_open"],
                 'open_precision' :eval_metrics["open"]["precision_open"],
                 'open_f1' :eval_metrics["open"]["f1_open"],
-                'open_fpr_abs_logit_model' :eval_metrics["open"]["fpr_abs_logit_model"],
-                'open_fpr_naive_model' :eval_metrics["open"]["fpr_naive_model"],
             }
         )
 
