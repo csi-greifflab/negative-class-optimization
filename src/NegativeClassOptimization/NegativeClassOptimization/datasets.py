@@ -161,6 +161,13 @@ class MulticlassDataset(BinaryDataset):
         self.process_y_tensor = lambda t: t.reshape(-1).type(torch.long)
 
 
+class MultilabelDataset(BinaryDataset):
+
+    def __init__(self, df):
+        super().__init__(df)
+        self.process_y_tensor = lambda t: t.reshape((1, -1)).type(torch.long)
+
+
 def construct_dataset_atoms(
     antigens: List[str]
     ) -> List[List[str]]:

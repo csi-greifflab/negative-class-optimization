@@ -105,12 +105,7 @@ class MulticlassPipeline(DataPipeline):
             sample_per_ag=sample_per_ag_train,
             )
         
-        if self.log_mlflow:
-            encoder_str = "__".join(encoder.classes_)
-            if len(encoder_str) <= 500:
-                mlflow.log_params({"encoder_classes": encoder_str})
-            else:
-                mlflow.log_params({"encoder_classes": "TOO_LONG"})
+        self._log_encoder(encoder)
         
         df_test = dfs["test_closed_exclusive"]
         df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
@@ -271,6 +266,88 @@ class MulticlassPipeline(DataPipeline):
             mlflow.log_figure(fig_confusion_matrices, "fig_confusion_matrices.png")
         
         self.is_step_4_complete = True
+
+
+    def _log_encoder(self, encoder):
+        if self.log_mlflow:
+            encoder_str = "__".join(encoder.classes_)
+            if len(encoder_str) <= 500:
+                mlflow.log_params({"encoder_classes": encoder_str})
+            else:
+                mlflow.log_params({"encoder_classes": "TOO_LONG"})
+
+
+class MultilabelPipeline(MulticlassPipeline):
+
+    def step_1_process_data(self,
+        input_data_dir: Path,
+        ags: List[str],
+        batch_size: int,
+        sample_data_source: Optional[int] = None,
+        sample_train_val: Optional[int] = None,
+        sample_test: Optional[int] = None,
+        sample_per_ag_train: Optional[int] = None,
+        sample_per_ag_test: Optional[int] = None,
+        ):
+
+        dfs = MulticlassPipeline.load_processed_dataframes(
+            dir_path = input_data_dir,
+            sample = sample_data_source,
+        )
+
+        df_train = dfs["train_val"]
+        df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(
+            df_train, 
+            ags, 
+            sample_per_ag=sample_per_ag_train,
+            )
+        
+        df_test = dfs["test_closed_exclusive"]
+        df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
+            df_test,
+            ags,
+            scaler,
+            encoder,
+            sample_per_ag=sample_per_ag_test,
+            )
+
+        self._log_encoder(encoder)
+
+        _, train_loader = ml.construct_dataset_loader_multiclass(df_train, batch_size)
+        _, test_loader = ml.construct_dataset_loader_multiclass(df_test, batch_size)
+        _, open_loader = preprocessing.construct_open_dataset_loader(
+            dfs["test_open_exclusive"],
+            batch_size=batch_size,
+            scaler=scaler
+            )
+
+        if self.log_mlflow:
+            mlflow.log_params({
+                "N_train": len(train_loader.dataset),
+                "N_closed": len(test_loader.dataset),
+                "N_open": len(open_loader.dataset),
+            })
+        
+        self.input_data_dir = input_data_dir
+        self.ags = ags
+        self.sample_data_source = sample_data_source
+        self.sample_train_val = sample_train_val
+        self.sample_test = sample_test
+        self.sample_per_ag_train = sample_per_ag_train
+        self.sample_per_ag_test = sample_per_ag_test
+        self.batch_size = batch_size
+        self.dfs = dfs
+        self.df_train = df_train
+        self.df_test = df_test
+        self.encoder = encoder
+        self.scaler = scaler
+        self.train_loader = train_loader
+        self.test_loader = test_loader
+        self.open_loader = open_loader
+
+        self.is_step_1_complete = True
+
+        raise NotImplementedError()
 
 
 class NDB1_Assymetry_from_Absolut_Builder:

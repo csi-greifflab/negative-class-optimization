@@ -44,7 +44,7 @@ def multiprocessing_wrapper_script_08(
     learning_rate,
     ):
 
-    assert model in {"SN10_MULTICLASS", "SNN_MULTICLASS"}
+    assert model in {"SN10_MULTICLASS", "SNN_MULTICLASS", "SNN_MULTILABEL"}
 
     # run_name issue, next version should work
     #  https://github.com/mlflow/mlflow/issues/7217
@@ -93,11 +93,14 @@ def multiprocessing_wrapper_script_08(
 
         if model == "SN10_MULTICLASS":
             model = ml.MulticlassSN10(num_classes=len(ags))
+            loss_fn = nn.CrossEntropyLoss()
             assert hidden_dim is None
         elif model == "SNN_MULTICLASS":
             model = ml.MulticlassSNN(hidden_dim=40, num_classes=len(ags))
-            assert type(hidden_dim) == int
-        loss_fn = nn.CrossEntropyLoss()
+            loss_fn = nn.CrossEntropyLoss()
+        elif model == "SNN_MULTILABEL":
+            model = ml.MultilabelSNN(hidden_dim=40, num_classes=len(ags))
+            loss_fn = nn.BCELoss()
         optimizer = ml.construct_optimizer(
             optimizer_type="Adam",
             learning_rate=learning_rate,

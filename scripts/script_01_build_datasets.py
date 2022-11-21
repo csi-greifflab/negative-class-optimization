@@ -26,6 +26,7 @@ Usage:
     script_01_build_datasets.py 1_vs_all
     script_01_build_datasets.py download_absolut
     script_01_build_datasets.py absolut_processed_multiclass
+    script_01_build_datasets.py absolut_processed_multilabel
 
 Options:
     -h --help   Show help.
@@ -33,6 +34,52 @@ Options:
 """
 
 logging.basicConfig(level=logging.DEBUG)
+
+
+def get_closed_open_antigens(ds3):
+    num_closed_ags = config.NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3
+    ags_shuffled = utils.shuffle_antigens(ds3.antigens)
+    ags_closed = ags_shuffled[:num_closed_ags]
+    ags_open = ags_shuffled[num_closed_ags:]
+    return ags_closed, ags_open
+
+
+def process_downstream_and_save(out_dir, ags_open, df_wide):
+    df_global = preprocessing.convert_wide_to_global(df_wide)
+        
+    (
+            df_train_val, 
+            df_test_closed_exclusive, 
+            df_test_open_exclusive,
+        ) = preprocessing.openset_datasplit_from_global_stable(
+            df_global=df_global,
+            openset_antigens=ags_open,
+        )
+
+    ag_counts = df_train_val["Antigen"].value_counts()
+    represented_antigens = ag_counts.loc[ag_counts > 1000].index.tolist()
+    df_train_val = df_train_val.loc[df_train_val["Antigen"].isin(represented_antigens)].copy()
+    df_test_closed_exclusive = df_test_closed_exclusive.loc[df_test_closed_exclusive["Antigen"].isin(represented_antigens)].copy()
+
+    # dfs = {
+    #         "df_train_val": df_train_val,
+    #         "df_test_closed_exclusive": df_test_closed_exclusive,
+    #         "df_test_open_exclusive": df_test_open_exclusive,
+    #     }
+
+    metadata = {
+        "df_train_val__shape": df_train_val.shape,
+        "df_test_closed_exclusive__shape": df_test_closed_exclusive.shape,
+        "df_test_open_exclusive__shape": df_test_open_exclusive.shape,
+        "ags_closed": represented_antigens,
+    }
+
+    df_train_val.to_csv(out_dir / "df_train_val.tsv", sep='\t')
+    df_test_closed_exclusive.to_csv(out_dir / "df_test_closed_exclusive.tsv", sep='\t')
+    df_test_open_exclusive.to_csv(out_dir / "df_test_open_exclusive.tsv", sep='\t')
+
+    with open(out_dir / "build_metadata.json", "w+") as fh:
+        json.dump(metadata, fh)
 
 
 if __name__ == "__main__":
@@ -95,55 +142,21 @@ if __name__ == "__main__":
     elif arguments["download_absolut"]:
         utils.download_absolut()
     
-    elif arguments["absolut_processed_multiclass"]:
-        out_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
+    elif arguments["absolut_processed_multiclass"] or arguments["absolut_processed_multilabel"]:
         
         ds3 = datasets.AbsolutDataset3()
+        ags_closed, ags_open = get_closed_open_antigens(ds3)
         
-        num_closed_ags = config.NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3
-        ags_shuffled = utils.shuffle_antigens(ds3.antigens)
-        ags_closed = ags_shuffled[:num_closed_ags]
-        ags_open = ags_shuffled[num_closed_ags:]
-                
-        # Filter for unimodal binding and exclusive open set and closed sets.
         df_wide = ds3.df_wide
         mask_c = (df_wide[ags_closed].sum(axis=1) >= 1) & (df_wide[ags_open].sum(axis=1) == 0)
         mask_o = (df_wide[ags_closed].sum(axis=1) == 0) & (df_wide[ags_open].sum(axis=1) >= 1)
-        mask_unimodal = df_wide.sum(axis=1) == 1
-        df_wide = df_wide.loc[(mask_unimodal & mask_c) | (mask_unimodal & mask_o)].copy()
+        if arguments["absolut_processed_multiclass"]:
+            # Filter for unimodal binding and exclusive open set and closed sets.
+            mask_unimodal = df_wide.sum(axis=1) == 1
+            df_wide = df_wide.loc[(mask_unimodal & mask_c) | (mask_unimodal & mask_o)].copy()
+            out_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
+        elif arguments["absolut_processed_multilabel"]:
+            df_wide = df_wide.loc[(mask_c) | (mask_o)].copy()
+            out_dir = config.DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR
 
-        df_global = preprocessing.convert_wide_to_global(df_wide)
-        
-        (
-            df_train_val, 
-            df_test_closed_exclusive, 
-            df_test_open_exclusive,
-        ) = preprocessing.openset_datasplit_from_global_stable(
-            df_global=df_global,
-            openset_antigens=ags_open,
-        )
-
-        ag_counts = df_train_val["Antigen"].value_counts()
-        represented_antigens = ag_counts.loc[ag_counts > 1000].index.tolist()
-        df_train_val = df_train_val.loc[df_train_val["Antigen"].isin(represented_antigens)].copy()
-        df_test_closed_exclusive = df_test_closed_exclusive.loc[df_test_closed_exclusive["Antigen"].isin(represented_antigens)].copy()
-
-        dfs = {
-            "df_train_val": df_train_val,
-            "df_test_closed_exclusive": df_test_closed_exclusive,
-            "df_test_open_exclusive": df_test_open_exclusive,
-        }
-
-        metadata = {
-            "df_train_val__shape": df_train_val.shape,
-            "df_test_closed_exclusive__shape": df_test_closed_exclusive.shape,
-            "df_test_open_exclusive__shape": df_test_open_exclusive.shape,
-            "ags_closed": represented_antigens,
-        }
-
-        df_train_val.to_csv(out_dir / "df_train_val.tsv", sep='\t')
-        df_test_closed_exclusive.to_csv(out_dir / "df_test_closed_exclusive.tsv", sep='\t')
-        df_test_open_exclusive.to_csv(out_dir / "df_test_open_exclusive.tsv", sep='\t')
-
-        with open(out_dir / "build_metadata.json", "w+") as fh:
-            json.dump(metadata, fh)
+        process_downstream_and_save(out_dir, ags_open, df_wide)

@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple, Union
 import farmhash
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler, MultiLabelBinarizer
 from torch.utils.data import DataLoader, Dataset
 
 import NegativeClassOptimization.config as config
@@ -48,7 +48,7 @@ def onehot_encode(
 
 def onehot_encode_df(
     df, 
-    encoder = get_one_hot_aa_encoder()
+    encoder = get_one_hot_aa_encoder(),
     )-> np.array:
     """Encode a dataframe with `Slide` as onehot
 
@@ -271,7 +271,7 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 2*16384):
             slide_hash_colname = f"Slide_farmhash_mod_{num_buckets}"
             df_train_val[slide_hash_colname] = list(map(
                     lambda s: farmhash.hash64(s) % num_buckets,
-                    df_train_val["Slide"]
+                    df_train_val["Slide"].values.reshape(-1).tolist()
                 ))
             sampling_frac = sample_train / nrows
             num_buckets_to_sample = np.round(sampling_frac * num_buckets)
@@ -291,6 +291,10 @@ def sample_train_val(df_train_val, sample_train, num_buckets = 2*16384):
             raise OverflowError()
     except OverflowError as error:
         logger.exception(error)
+        raise
+    except TypeError as error:
+        logger.exception(error)
+        print(df_train_val.head(2))
         raise
     logger.warning("Resetting the index of df_train_val.")
     return df_train_val.reset_index(drop=True)  # not resetting index can yield index error in Dataset and DataLoader.
@@ -357,11 +361,10 @@ def preprocess_df_for_multiclass(
     sample_per_ag = None,
     sample_per_ag_seed = config.SEED,
     ):
-    
-    df = df.loc[df["Antigen"].isin(ags)].copy()
 
-    df = remove_duplicates_for_multiclass(df)    
-    
+    df = df.loc[df["Antigen"].isin(ags)].copy()
+    df = remove_duplicates_for_multiclass(df)
+
     if sample_per_ag is not None:
         try:
             df = df.groupby("Antigen").sample(sample_per_ag, random_state=sample_per_ag_seed)
@@ -372,13 +375,7 @@ def preprocess_df_for_multiclass(
     elif sample is not None:
         df = sample_train_val(df, sample)
 
-    df = onehot_encode_df(df)
-
-    arr = arr_from_list_series(df["Slide_onehot"])
-    if scaler is None:
-        scaler = StandardScaler()
-        scaler.fit(arr)
-    df["X"] = scaler.transform(arr).tolist()
+    df, scaler = preprocess_X(df, ags, scaler, sample, sample_per_ag, sample_per_ag_seed)
 
     if encoder is None:
         antigens = df["Antigen"].unique().tolist()
@@ -387,6 +384,73 @@ def preprocess_df_for_multiclass(
     df["y"] = encoder.transform(df["Antigen"])
     df = df[["X", "y"]]
     return df, scaler, encoder
+
+
+def preprocess_df_for_multilabel(
+    df,
+    ags: List[str],
+    scaler = None,
+    encoder = None,
+    sample = None,
+    sample_per_ag = None,
+    sample_per_ag_seed = config.SEED,
+    ):
+
+    df = df.loc[df["Antigen"].isin(ags)].copy()
+
+    if sample_per_ag is not None:
+        try:
+            df = df.groupby("Antigen").sample(sample_per_ag, random_state=sample_per_ag_seed)
+        except ValueError as e:
+            print(e)
+            print(df["Antigen"].value_counts())
+            raise
+    elif sample is not None:
+        df = sample_train_val(df, sample)
+
+    df = (
+        df.groupby("Slide", as_index=False)
+        [["Antigen", "Slide_farmhash_mod_10"]]
+        .apply(
+            lambda df_: (
+                sorted(df_["Antigen"]), 
+                df_["Slide_farmhash_mod_10"].iloc[0]
+                )
+        ).reset_index()
+    )
+    df.columns = [col[0] for col in df.columns]
+
+    df, scaler = preprocess_X(
+        df, 
+        scaler, 
+        )    
+
+    multilabel_list: List[List[str]] = df["Antigen"].values.reshape(-1).tolist()
+    if encoder is None:
+        encoder = MultiLabelBinarizer().fit(multilabel_list)
+    # df['y'] = list(map(lambda x: encoder.transform(x), multilabel_list))
+    # df['y'] = encoder.transform(multilabel_list)
+    df['y'] = [arr for arr in encoder.transform(multilabel_list)]
+
+    return df, scaler, encoder
+
+
+def preprocess_X(
+    df,
+    scaler=None, 
+    ):
+
+    df = onehot_encode_df(df)
+
+    arr = arr_from_list_series(df["Slide_onehot"])
+    if scaler is None:
+        scaler = StandardScaler()
+        scaler.fit(arr)
+    
+    scaled_arr = scaler.transform(arr)
+
+    df["X"] = scaled_arr.tolist()
+    return df, scaler
 
 
 def farmhash_mod_10(seq: str) -> int:
@@ -434,13 +498,13 @@ def openset_datasplit_from_global_stable(
     
     if sample_closed is not None:
         df_closed = sample_train_val(df_closed, sample_closed)
-        
 
-    df_closed["Slide_farmhash_mod_10"] = list(map(
+    if "Slide_farmhash_mod_10" not in df_closed.columns:
+        df_closed["Slide_farmhash_mod_10"] = list(map(
             farmhash_mod_10,
             df_closed["Slide"]
         ))
-    
+
     if type(farmhash_mod_10_test_mask) == int:
         test_mask = df_closed["Slide_farmhash_mod_10"] == farmhash_mod_10_test_mask
     elif type(farmhash_mod_10_test_mask) == list:

@@ -18,6 +18,8 @@ from sklearn import metrics
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
+
 from captum.attr import IntegratedGradients
 
 import mlflow
@@ -96,6 +98,8 @@ class MulticlassSN10(SN10):
         # Cross-entropy loss expects raw, not softmax
         # self.final = nn.Identity()
         self.softmax = nn.Softmax(dim=1)
+
+        self.num_classes = num_classes
     
     def forward(
         self,
@@ -167,21 +171,48 @@ class MulticlassSNN(MulticlassSN10):
     """    
     def __init__(self, hidden_dim: int, num_classes: int):
         super().__init__(num_classes=num_classes)
+        self.linear_1 = nn.Linear(11*20, hidden_dim)
         self.linear_2 = nn.Linear(hidden_dim, num_classes)
+        self.hidden_dim = hidden_dim
 
 
-class MultilabelSN10(MulticlassSN10):
+class MultilabelSNN(MulticlassSNN):
     """Generalizes `MulticlassSN10` to a multilabel problem.
     Basically, we just need to change:
     - softmax -> sigmoid
     - the loss function CrossEntropy -> BCE.
+
+    We also need custom evaluation metrics.
+
     """
-    def __init__(self, num_classes: int):
-        super().__init__(num_classes=num_classes)
-        self.softmax = nn.Sigmoid()
+
+    def __init__(self, hidden_dim: int, num_classes: int):
+        super().__init__(hidden_dim=hidden_dim, num_classes=num_classes)
+        self.softmax = nn.Identity()
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        y_test_pred_prob = self(x_test).detach().numpy()
+        y_test_pred = y_test_pred_prob.round()
+        # metrics.multilabel_confusion_matrix(y_test, y_test_pred),
+        return {
+            "multilabel_fraction": ((y_test == 1.0).sum(axis=1) == 1).sum().item() / y_test.shape[0],
+            **{
+                f"{str(func).split(' ')[1].split('_')[0]}_{str(avg_type)}_closed": func(
+                    y_test,
+                    y_test_pred,
+                    average=avg_type
+                    )
+                for func in {
+                    metrics.f1_score, 
+                    metrics.precision_score, 
+                    metrics.recall_score,
+                    }
+                for avg_type in {"micro", "macro", "weighted", None}
+            },
+        }
 
 
-AVAILABLE_MODELS = [SN10, MulticlassSN10]
+AVAILABLE_MODELS = [SN10, MulticlassSN10, MulticlassSNN, MultilabelSNN]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -255,7 +286,14 @@ def compute_loss(model, loss_fn, X, y):
     if type(loss_fn) == nn.CrossEntropyLoss:
         loss = loss_fn(model(X), y.reshape(-1))
     elif type(loss_fn) == nn.BCELoss:
-        loss = loss_fn(model(X), y)
+        if model.num_classes is not None:
+            y_hat = model(X)
+            # y = F.one_hot(y, num_classes=model.num_classes).reshape(y_hat.shape)
+            loss = loss_fn(y_hat, y.type(torch.float))
+        else:
+            # binary case
+            loss = loss_fn(model(X), y)
+
     else:
         raise NotImplementedError(f"{loss_fn=} not implemented.")
     return loss
