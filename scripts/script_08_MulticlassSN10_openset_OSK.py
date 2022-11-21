@@ -77,10 +77,16 @@ def multiprocessing_wrapper_script_08(
             "sample_per_ag_test": sample_per_ag_test,
         })
 
-        pipeline = pipelines.MulticlassPipeline(
-            log_mlflow=True,
-            save_model_mlflow=True
-        )
+        if model.split("_")[-1] == "MULTICLASS":
+            pipeline = pipelines.MulticlassPipeline(
+                log_mlflow=True,
+                save_model_mlflow=True
+            )
+        elif model.split("_")[-1] == "MULTILABEL":
+            pipeline = pipelines.MultilabelPipeline(
+                log_mlflow=True,
+                save_model_mlflow=True
+            )
 
         pipeline.step_1_process_data(
             input_data_dir=input_data_dir,

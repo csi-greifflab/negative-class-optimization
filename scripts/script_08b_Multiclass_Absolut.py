@@ -13,14 +13,14 @@ TEST = True
 
 experiment_id = 9
 run_name = "dev-0.1.2-0"
-input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
+input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR
 sample_data_source = None
-sample_per_ag_train = 1000
+sample_per_ag_train = 100
 sample_per_ag_test = None
 batch_size = 64
 model = "SNN_MULTILABEL"
 hidden_dim = None
-epochs = 50
+epochs = 2
 learning_rate = 0.001
 num_processes = 20
 
