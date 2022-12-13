@@ -213,7 +213,7 @@ class MulticlassPipeline(DataPipeline):
 
             mlflow.log_metrics(
                 {
-                    k1: v1.tolist() for k1, v1 in eval_metrics["closed"].items() if type(v1) != np.ndarray
+                    k1: v1 for k1, v1 in eval_metrics["closed"].items() if type(v1) not in (np.ndarray, list)
                 }
             )
             # Instead of mlflow.log_metrics(eval_metrics["open"])
@@ -231,13 +231,14 @@ class MulticlassPipeline(DataPipeline):
             # Other artifacts
             x_test, y_test = ml.Xy_from_loader(self.test_loader)
             y_test_pred = self.model.predict(x_test)
-            report: dict = metrics.classification_report(
-                y_test, 
-                y_test_pred,
-                target_names=self.encoder.classes_,
-                output_dict=True
-                )
-            mlflow.log_dict(report, "classification_report.json")
+            ## 
+            # report: dict = metrics.classification_report(
+            #     y_test, 
+            #     y_test_pred,
+            #     target_names=self.encoder.classes_,
+            #     output_dict=True
+            #     )
+            # mlflow.log_dict(report, "classification_report.json")
         
         self.eval_metrics = eval_metrics
         self.is_step_3_complete = True
@@ -255,15 +256,23 @@ class MulticlassPipeline(DataPipeline):
             },
             )
         
-        fig_confusion_matrices, _ = visualisations.plot_confusion(
-            cm=self.eval_metrics["closed"]["confusion_matrix_closed"],
-            cm_normed=self.eval_metrics["closed"]["confusion_matrix_normed_closed"],
-            class_names=self.encoder.classes_,
-        )
+        try:
+            fig_confusion_matrices, _ = visualisations.plot_confusion(
+                cm=self.eval_metrics["closed"]["confusion_matrix_closed"],
+                cm_normed=self.eval_metrics["closed"]["confusion_matrix_normed_closed"],
+                class_names=self.encoder.classes_,
+            )
+        except KeyError as error:
+            print(error)
+            pass
+
 
         if self.log_mlflow:
-            mlflow.log_figure(fig_abs_logit_distr, "fig_abs_logit_distr.png")
-            mlflow.log_figure(fig_confusion_matrices, "fig_confusion_matrices.png")
+            try:
+                mlflow.log_figure(fig_abs_logit_distr, "fig_abs_logit_distr.png")
+                mlflow.log_figure(fig_confusion_matrices, "fig_confusion_matrices.png")
+            except:
+                pass
         
         self.is_step_4_complete = True
 
@@ -296,14 +305,14 @@ class MultilabelPipeline(MulticlassPipeline):
         )
 
         df_train = dfs["train_val"]
-        df_train, scaler, encoder = preprocessing.preprocess_df_for_multiclass(
+        df_train, scaler, encoder = preprocessing.preprocess_df_for_multilabel(
             df_train, 
             ags, 
             sample_per_ag=sample_per_ag_train,
             )
         
         df_test = dfs["test_closed_exclusive"]
-        df_test, _, _ = preprocessing.preprocess_df_for_multiclass(
+        df_test, _, _ = preprocessing.preprocess_df_for_multilabel(
             df_test,
             ags,
             scaler,
@@ -313,8 +322,8 @@ class MultilabelPipeline(MulticlassPipeline):
 
         self._log_encoder(encoder)
 
-        _, train_loader = ml.construct_dataset_loader_multiclass(df_train, batch_size)
-        _, test_loader = ml.construct_dataset_loader_multiclass(df_test, batch_size)
+        _, train_loader = ml.construct_dataset_loader(df_train, batch_size, dataset_class=datasets.MultilabelDataset)
+        _, test_loader = ml.construct_dataset_loader(df_test, batch_size, dataset_class=datasets.MultilabelDataset)
         _, open_loader = preprocessing.construct_open_dataset_loader(
             dfs["test_open_exclusive"],
             batch_size=batch_size,
@@ -346,8 +355,6 @@ class MultilabelPipeline(MulticlassPipeline):
         self.open_loader = open_loader
 
         self.is_step_1_complete = True
-
-        raise NotImplementedError()
 
 
 class NDB1_Assymetry_from_Absolut_Builder:

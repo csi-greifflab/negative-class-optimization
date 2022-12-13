@@ -8,12 +8,14 @@ from itertools import chain
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 import random
+import re
 import uuid
 from typing import Optional, List
 import numpy as np
 import pandas as pd
 import torch
 import mlflow
+import requests
 
 import NegativeClassOptimization.config as config
 
@@ -313,3 +315,51 @@ def download_absolut(
         if not filepath.parent.exists():
             filepath.parent.mkdir(parents=True)
         request.urlretrieve(url, filename=str(filepath))
+
+
+def extract_antigens_from_string(liststring: str) -> List[str]:
+    regex_pattern = r"[A-Z0-9]+"
+    return re.findall(
+        regex_pattern,
+        liststring
+    )
+
+
+class MlflowAPI:
+    """Class to interact with mlflow API.
+    """    
+
+    def __init__(self):
+        self.URL = "http://10.40.3.22:5000/api/2.0/mlflow/runs/search"
+        self.response = None
+
+
+    def mlflow_request(self, experiment_id: str, run_name: Optional[str] = None):
+        self.response = requests.post(
+            self.URL,
+                json={
+                    "experiment_ids": [experiment_id],
+                    "filter": f'tags."mlflow.runName" = "{run_name}" and attributes.status = "FINISHED"',
+                },
+            ).json()
+        return self.response
+
+
+    def build_mlflow_results_df(self):
+        
+        assert self.response is not None
+
+        def build_record_from_mlflow_record(mlflow_record_data: dict) -> dict:
+            record = {}
+            for mlflow_record in (*mlflow_record_data["params"], *mlflow_record_data["metrics"], *mlflow_record_data["tags"]):
+                record[mlflow_record["key"]] = mlflow_record["value"]
+            return record
+        
+        mlflow_records = [self.response["runs"][idx]["data"] for idx in range(len(self.response["runs"]))]
+        df = pd.DataFrame.from_records(
+            map(
+                build_record_from_mlflow_record,
+                mlflow_records,
+                )
+        )
+        return df

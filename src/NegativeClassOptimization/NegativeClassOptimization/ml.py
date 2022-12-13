@@ -198,7 +198,7 @@ class MultilabelSNN(MulticlassSNN):
             "multilabel_fraction": ((y_test == 1.0).sum(axis=1) == 1).sum().item() / y_test.shape[0],
             **{
                 f"{str(func).split(' ')[1].split('_')[0]}_{str(avg_type)}_closed": func(
-                    y_test,
+                    y_test.reshape((-1, self.num_classes)),
                     y_test_pred,
                     average=avg_type
                     )
@@ -260,10 +260,11 @@ def test_loop(loader, model, loss_fn) -> dict:
     }
 
     x_test, y_test = Xy_from_loader(loader=loader)
-    closed_metrics = compute_metrics_closed_testset(model, x_test, y_test)
+    closed_metrics: dict = compute_metrics_closed_testset(model, x_test, y_test)
 
+    acc_closed = closed_metrics.get('acc_closed', np.nan)
     print(
-        f"Test Error: \n Acc: {100*closed_metrics['acc_closed']:.1f} Avg loss: {test_loss:>8f} \n"
+        f"Test Error: \n Acc: {100*acc_closed:.1f} Avg loss: {test_loss:>8f} \n"
     )
 
     return {
@@ -289,7 +290,7 @@ def compute_loss(model, loss_fn, X, y):
         if model.num_classes is not None:
             y_hat = model(X)
             # y = F.one_hot(y, num_classes=model.num_classes).reshape(y_hat.shape)
-            loss = loss_fn(y_hat, y.type(torch.float))
+            loss = loss_fn(y_hat, y.reshape(y_hat.shape).type(torch.float))
         else:
             # binary case
             loss = loss_fn(model(X), y)
@@ -318,6 +319,20 @@ def construct_dataset_loader_multiclass(
     batch_size: int = 64,
     ):
     dataset = datasets.MulticlassDataset(df.reset_index(drop=True))
+    loader = DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+    return dataset, loader
+
+
+def construct_dataset_loader(
+    df: pd.DataFrame,
+    batch_size: int = 64,
+    dataset_class = datasets.MulticlassDataset,
+    ):
+    dataset = dataset_class(df.reset_index(drop=True))
     loader = DataLoader(
         dataset=dataset,
         batch_size=batch_size,
