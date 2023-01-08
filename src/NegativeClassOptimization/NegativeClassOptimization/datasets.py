@@ -236,9 +236,11 @@ class AbsolutDataset3:
         return shuffled[:num_closed], shuffled[num_closed:]
 
     @staticmethod
-    def convert_to_wide_format(df, antigens: List[str]):
+    def convert_to_wide_format(df, antigens: Optional[List[str]] = None):
         """Converts Absolut Dataset 3 format to wide format.
         """    
+        if antigens is None:
+            antigens = AbsolutDataset3.get_antigens()
         df_wide = pd.DataFrame.from_records(
             data=df["binding_profile"].apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))}).to_list(),
         )
