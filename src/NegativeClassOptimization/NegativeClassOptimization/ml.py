@@ -67,14 +67,24 @@ class SN10(nn.Module):
         x: torch.Tensor,
         ) -> torch.Tensor:
         return self.forward(x, return_logits=False).round()
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
-        y_test_logits = self.forward_logits(x_test).detach().numpy().reshape(-1)
-        y_test_pred = self.forward(x_test).detach().numpy().reshape(-1).round()
+        return SN10.compute_metrics_closed_testset_static(self, x_test, y_test)
+
+    @staticmethod
+    def compute_metrics_closed_testset_static(model, x_test, y_test):
+        y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
+        y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
         y_test_true = y_test.detach().numpy().reshape(-1)
         binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
-        roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)
-        avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
+        
+        try:
+            roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)    
+            avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
+        except ValueError:
+            roc_auc_closed = np.nan
+            avg_precision_closed = np.nan
+        
         metrics_closed = {
                 "y_test_logits": y_test_logits,
                 "y_test_pred": y_test_pred,
@@ -212,7 +222,60 @@ class MultilabelSNN(MulticlassSNN):
         }
 
 
-AVAILABLE_MODELS = [SN10, MulticlassSN10, MulticlassSNN, MultilabelSNN]
+class CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        # ConvNet Calculator
+        # https://madebyollin.github.io/convnet-calculator/
+
+        # input: 11(W) x 20(H) x 1(#C)
+
+        self.conv1 = nn.Conv2d(
+            in_channels=1, 
+            out_channels=5,  # filter count
+            kernel_size=3,  # filter size
+        ) # -> 9(W) x 18(H) x 5(#C)
+
+        self.pool = nn.MaxPool2d(
+            kernel_size=2,  # filter size 
+            stride=2,
+        ) # -> 4(W) x 9(H) x 5(#C)
+        
+        self.conv2 = nn.Conv2d(
+            in_channels=5, 
+            out_channels=3,  # filter count
+            kernel_size=3,
+        )  # -> 2(W) x 7(H) x 3(#C) 
+        
+        self.fc1 = nn.Linear(9, 10)
+        self.fc2 = nn.Linear(10, 1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x, forward_logits=False):
+        x = self.conv1(x)
+        x = self.pool(F.relu(x))
+        x = self.conv2(x)
+        x = self.pool(F.relu(x))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        if forward_logits:
+            return x
+        else:
+            x = self.sigmoid(x)
+            return x
+    
+    def forward_logits(self, x):
+        return self.forward(x, forward_logits=True)
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        x_test_cnn = x_test.reshape((-1, 1, 11, 20))
+        return SN10.compute_metrics_closed_testset_static(self, x_test_cnn, y_test)
+
+
+AVAILABLE_MODELS = [SN10, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -249,9 +312,10 @@ def test_loop(loader, model, loss_fn) -> dict:
         model (nn.Model)
         loss_fn (Callable)
     """
+
     assert type(model) in AVAILABLE_MODELS, (
         f"Model class {type(model)} not recognized."
-        )
+    )
 
     test_loss = compute_avg_test_loss(loader, model, loss_fn)
 
@@ -287,13 +351,20 @@ def compute_loss(model, loss_fn, X, y):
     if type(loss_fn) == nn.CrossEntropyLoss:
         loss = loss_fn(model(X), y.reshape(-1))
     elif type(loss_fn) == nn.BCELoss:
-        if model.num_classes is not None:
+        has_num_classes = hasattr(model, "num_classes")
+        if has_num_classes:
             y_hat = model(X)
             # y = F.one_hot(y, num_classes=model.num_classes).reshape(y_hat.shape)
             loss = loss_fn(y_hat, y.reshape(y_hat.shape).type(torch.float))
         else:
             # binary case
-            loss = loss_fn(model(X), y)
+
+            if hasattr(model, "conv1"):
+                # hack for CNN
+                X_pred = model(X.reshape(-1, 1, 11, 20))
+                loss = loss_fn(X_pred, y)
+            else:
+                loss = loss_fn(model(X), y)
 
     else:
         raise NotImplementedError(f"{loss_fn=} not implemented.")

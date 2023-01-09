@@ -325,6 +325,20 @@ def extract_antigens_from_string(liststring: str) -> List[str]:
     )
 
 
+def num_trainable_params(model) -> int:
+    """Get number of trainable parameters in pytorch model.
+
+    Args:
+        model (nn.Module): pytorch model
+
+    Returns:
+        int: number of trainable parameters.
+    """    
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    num_params = sum([np.prod(p.size()) for p in model_parameters])
+    return num_params
+
+
 class MlflowAPI:
     """Class to interact with mlflow API.
     """    
