@@ -147,6 +147,9 @@ def preprocess_data_for_pytorch_binary(
 
     # TODO: check references and test.
 
+    if not isinstance(ag_pos, list):
+        raise TypeError("ag_pos must be a list.")
+
     if not scale_onehot:
         warnings.warn("Not scaling onehot.")
 

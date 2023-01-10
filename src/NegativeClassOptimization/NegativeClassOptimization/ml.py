@@ -5,6 +5,7 @@ Includes models, datasets and data loaders.
 
 
 from argparse import ArgumentError
+import math
 from pathlib import Path
 from tkinter import Y
 from typing import List, Optional, Tuple, Union
@@ -95,6 +96,22 @@ class SN10(nn.Module):
             }
         
         return metrics_closed
+
+
+
+class SNN(SN10):
+
+    def __init__(self, num_hidden_units: int):
+        super().__init__()
+        self.linear_1 = nn.Linear(11*20, num_hidden_units)
+        self.linear_2 = nn.Linear(num_hidden_units, 1)
+
+    def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.flatten(x)
+        x = self.linear_1(x)
+        x = self.activation(x)
+        logits = self.linear_2(x)
+        return logits
 
 
 class MulticlassSN10(SN10):
@@ -223,7 +240,13 @@ class MultilabelSNN(MulticlassSNN):
 
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(
+        self,
+        conv1_num_filters=5,
+        conv1_filter_size=3,
+        conv2_num_filters=3,
+        conv2_filter_size=3,
+        ):
         super().__init__()
         
         # ConvNet Calculator
@@ -233,22 +256,31 @@ class CNN(nn.Module):
 
         self.conv1 = nn.Conv2d(
             in_channels=1, 
-            out_channels=5,  # filter count
-            kernel_size=3,  # filter size
-        ) # -> 9(W) x 18(H) x 5(#C)
+            out_channels=conv1_num_filters,  # filter count
+            kernel_size=conv1_filter_size,  # filter size
+        )
+        conv1_out_w = math.floor((11-conv1_filter_size)/1 + 1)
+        conv1_out_h = math.floor((20-conv1_filter_size)/1 + 1)
 
         self.pool = nn.MaxPool2d(
             kernel_size=2,  # filter size 
             stride=2,
-        ) # -> 4(W) x 9(H) x 5(#C)
+        )
+        pool1_out_w = math.floor((conv1_out_w-2)/2 + 1)
+        pool1_out_h = math.floor((conv1_out_h-2)/2 + 1)
         
         self.conv2 = nn.Conv2d(
-            in_channels=5, 
-            out_channels=3,  # filter count
-            kernel_size=3,
-        )  # -> 2(W) x 7(H) x 3(#C) 
-        
-        self.fc1 = nn.Linear(9, 10)
+            in_channels=conv1_num_filters, 
+            out_channels=conv2_num_filters,  # filter count
+            kernel_size=conv2_filter_size,
+        )
+        conv2_out_w = math.floor((pool1_out_w-conv2_filter_size)/1 + 1)
+        conv2_out_h = math.floor((pool1_out_h-conv2_filter_size)/1 + 1)
+
+        pool2_out_w = math.floor((conv2_out_w-2)/2 + 1)
+        pool2_out_h = math.floor((conv2_out_h-2)/2 + 1)
+        fc1_in_features = pool2_out_w * pool2_out_h * conv2_num_filters
+        self.fc1 = nn.Linear(fc1_in_features, 10)
         self.fc2 = nn.Linear(10, 1)
         self.sigmoid = nn.Sigmoid()
 
@@ -275,7 +307,105 @@ class CNN(nn.Module):
         return SN10.compute_metrics_closed_testset_static(self, x_test_cnn, y_test)
 
 
-AVAILABLE_MODELS = [SN10, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN]
+class Transformer(nn.Module):
+    """
+    Text classifier based on a pytorch TransformerEncoder.
+    """
+
+    def __init__(
+        self,
+        vocab_size, 
+        d_model,
+        nhead=8,
+        dim_feedforward=2048,
+        num_layers=6,
+        dropout=0.1,
+        activation="relu",
+        classifier_dropout=0.1,
+        ):
+
+        super().__init__()
+
+        assert d_model % nhead == 0, "nheads must divide evenly into d_model"
+
+        self.emb = nn.Embedding(vocab_size, d_model)
+
+        self.pos_encoder = PositionalEncoding(
+            d_model=d_model,
+            dropout=dropout,
+            vocab_size=vocab_size,
+        )
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_layers,
+        )
+        self.classifier = nn.Linear(d_model, 1)
+        self.d_model = d_model
+
+    def forward(self, x, return_logits=False):
+        """Forward loop.
+
+        Args:
+            x (nn.Tensor): Input tensor of shape (batch_size, seq_len, vocab_size)
+        """
+        x = self.emb(x) * math.sqrt(self.d_model)
+        x = self.pos_encoder(x)
+        x = self.transformer_encoder(x)
+
+        x = x.mean(dim=1)
+        x = self.classifier(x)
+        if return_logits:
+            return x
+        else:
+            x = nn.Sigmoid()(x)
+            return x
+    
+    def forward_logits(self, x):
+        return self.forward(x, return_logits=True)
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        # The transformation below is specific for the transformer
+        #  but is manually applied in loss computation and here. This is
+        #  not ideal, but it works for now. Will have to be redesigned.
+        #  Same for CNN.
+        x_test_transformer = x_test.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11)
+        return SN10.compute_metrics_closed_testset_static(self, x_test_transformer, y_test)
+
+
+class PositionalEncoding(nn.Module):
+    """
+    https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+    """
+
+    def __init__(self, d_model, vocab_size=5000, dropout=0.1):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(vocab_size, d_model)
+        position = torch.arange(0, vocab_size, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float()
+            * (-math.log(10000.0) / d_model)
+        )
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+        self.register_buffer("pe", pe)
+
+
+    def forward(self, x):
+        x = x + self.pe[:, : x.size(1), :]
+        return self.dropout(x)
+
+
+AVAILABLE_MODELS = [SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -362,6 +492,10 @@ def compute_loss(model, loss_fn, X, y):
             if hasattr(model, "conv1"):
                 # hack for CNN
                 X_pred = model(X.reshape(-1, 1, 11, 20))
+                loss = loss_fn(X_pred, y)
+            elif hasattr(model, "transformer_encoder"):
+                # hack for Transformer
+                X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))
                 loss = loss_fn(X_pred, y)
             else:
                 loss = loss_fn(model(X), y)
@@ -507,7 +641,12 @@ def train_for_ndb1(
         losses = train_loop(train_loader, model, loss_fn, optimizer)
         # 2 lines below replace with evaluate_on_closed_and_open_testsets
         test_metrics = test_loop(test_loader, model, loss_fn)
-        open_metrics = openset_loop(open_loader, test_loader, model)
+        
+        if open_loader is not None:
+            open_metrics = openset_loop(open_loader, test_loader, model)
+        else:
+            open_metrics = {}
+        
         online_metrics_per_epoch.append({
             "train_losses": losses,
             "test_metrics": test_metrics,
@@ -547,7 +686,7 @@ def compute_metrics_closed_testset(model, x_test, y_test):
     return metrics_closed
 
 
-def compute_metrics_open_testset(model, x_open, x_test):
+def compute_metrics_open_testset(model, x_open, x_test) -> dict:
     """Compute metrics for the open test set.
 
     Args:
@@ -624,11 +763,14 @@ def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
     """
     assert hasattr(model, "forward_logits")
 
-    x, y = Xy_from_loader(open_loader)
     x_test, y_test = Xy_from_loader(test_loader)
-
-    metrics_open = compute_metrics_open_testset(model, x, x_test)
     metrics_closed = compute_metrics_closed_testset(model, x_test, y_test)
+    
+    if open_loader is not None:
+        x, y = Xy_from_loader(open_loader)
+        metrics_open = compute_metrics_open_testset(model, x, x_test)
+    else:
+        metrics_open = {}
 
     eval_metrics = {
         "open": metrics_open,
