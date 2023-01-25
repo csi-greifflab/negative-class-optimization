@@ -72,6 +72,34 @@ def get_antigen_label_encoder() -> LabelEncoder:
     return label_encoder
 
 
+def load_embedder(embedder_type: str):
+    """Load embedders from bio_embeddings.
+
+    Args:
+        embedder_type (str)
+
+    Raises:
+        NotImplementedError
+        ValueError
+
+    Returns:
+        Embedder
+    """    
+    if embedder_type == "ESM1b":
+        from bio_embeddings.embed import ESM1bEmbedder
+        return ESM1bEmbedder(model_file=str(config.DATA_EMB_DIR / "esm1b/esm1b_t33_650M_UR50S.pt"))
+    elif embedder_type == "ProtTransT5XLU50":
+        from bio_embeddings.embed import ProtTransT5XLU50Embedder
+        return ProtTransT5XLU50Embedder(model_directory=str(config.DATA_EMB_DIR / "prottrans_t5_xl_u50"))
+    elif embedder_type == "Half_ProtTransT5XLU50":
+        raise NotImplementedError(
+            "Half_ProtTransT5XLU50 not implemented yet, "
+            "need to research the difference from ProtTransT5XLU50."
+            )
+    else:
+        raise ValueError(f"Unknown embedder type: {embedder_type}.")
+
+
 def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.DataFrame:
     """Remove `Slide` duplicates for datasets for binary classifiers.
     An important step in preparing data training and evaluation. 

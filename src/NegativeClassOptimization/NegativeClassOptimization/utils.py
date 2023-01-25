@@ -263,6 +263,23 @@ def load_processed_dataframes(
     }
 
 
+def load_sample_binary_dataset(
+    ag_pos = "3VRL", 
+    ag_neg = "1ADQ", 
+    num_samples = 20000,
+    ):
+    df = load_global_dataframe()
+    df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+    df = df.drop_duplicates(["Slide"])
+
+    df = df.sample(n=num_samples, random_state=42)
+    df = df.sample(frac=1, random_state=42)
+
+    df_train = df.iloc[:int(num_samples*0.8)]
+    df_test = df.iloc[int(num_samples*0.8):]
+    return df_train, df_test
+
+
 def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
     for i, epoch_metrics in enumerate(online_metrics):
         epoch = i+1
