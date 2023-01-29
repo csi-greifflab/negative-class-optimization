@@ -1,17 +1,32 @@
 from itertools import combinations
 import logging
 from pathlib import Path
+import warnings
 import mlflow
 import numpy as np
 from typing import List, Optional
+import pandas as pd
 from sklearn import metrics
 from NegativeClassOptimization import config, datasets, ml, utils, preprocessing, visualisations
+import torch
 
 
 class DataPipeline:
     """Fetch, process and handle data for ML tasks.
     """   
     
+    def __init__(
+        self, 
+        log_mlflow: bool = False, 
+        save_model_mlflow: bool = False,
+        ):
+        self.is_step_1_complete = False
+        self.is_step_2_complete = False
+        self.is_step_3_complete = False
+        self.is_step_4_complete = False
+        self.log_mlflow = log_mlflow
+        self.save_model_mlflow = save_model_mlflow
+
     @staticmethod
     def load_processed_dataframes(
         dir_path = config.DATA_SLACK_1_PROCESSED_DIR,
@@ -21,58 +36,142 @@ class DataPipeline:
             dir_path, 
             sample,
         )
+    
+    @staticmethod
+    def load_global_dataframe(
+        dir_path = config.DATA_SLACK_1_GLOBAL,
+        ) -> pd.DataFrame:
+        return utils.load_global_dataframe(
+            dir_path, 
+        )
 
 
-class BinaryClassPipeline(DataPipeline):
+class BinaryclassPipeline(DataPipeline):
     """Organized workflow for binary classification. 
-    Started with script 06c.
     """
 
-    def __init__(self) -> None:
-        pass
-    
 
     def step_1_process_data(
         self,
+        ag_pos: str,
+        ag_neg: str,
+        N: int,
+        batch_size: int = 64,
+        split_id: int = 0,
         ):
         """Process data for binary classification.
         """
-        pass
+        df = utils.load_1v1_binary_dataset(
+            ag_pos=ag_pos,
+            ag_neg=ag_neg,
+            num_samples=N,
+            )
+        
+        df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
+
+        df_train_val = df.loc[df["Slide_farmhash_mod_10"] != split_id].copy()
+        df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
+        train_data, test_data, train_loader, test_loader = (
+            preprocessing.preprocess_data_for_pytorch_binary(
+                df_train_val=df_train_val,
+                df_test_closed=df_test_closed,
+                ag_pos=[ag_pos],
+                batch_size=batch_size,
+                scale_onehot=False,
+        ))
+
+        if self.log_mlflow:
+            mlflow.log_params({
+                "N_train": len(train_loader.dataset),
+                "N_closed": len(test_loader.dataset),
+            })
+        
+        self.ag_pos = ag_pos
+        self.ag_neg = ag_neg
+        self.N = N
+        self.batch_size = batch_size
+        self.split_id = split_id
+        self.df_train_val = df_train_val
+        self.df_test_closed = df_test_closed
+        self.train_loader = train_loader
+        self.test_loader = test_loader
+
+        self.is_step_1_complete = True
 
 
-    def step_2_train_model(self):
+    def step_2_train_model(
+        self,
+        input_dim = 1024,
+        num_hidden_units = 10,
+        seed_id: int = config.SEED_ID,
+        epochs: int = 50,
+        learning_rate: float = 0.001,
+        optimizer_type = "adam",
+        momentum = 0.9,
+        weight_decay = 0,
+        ):
         """Train model for binary classification.
         """
-        pass
+        torch.manual_seed(seed_id)
+        model = ml.SNN(num_hidden_units, input_dim)
+
+        online_metrics = ml.train_for_ndb1(
+            epochs,
+            learning_rate, 
+            self.train_loader, 
+            self.test_loader, 
+            None,  # open_loader
+            model,
+            optimizer_type=optimizer_type,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            )
+        
+        if self.log_mlflow:
+            utils.mlflow_log_params_online_metrics(online_metrics)
+
+        self.input_dim = input_dim
+        self.num_hidden_units = num_hidden_units
+        self.seed_id = seed_id
+        self.epochs = epochs
+        self.learning_rate = learning_rate
+        self.optimizer_type = optimizer_type
+        self.momentum = momentum
+        self.weight_decay = weight_decay
+
+        self.model = model
+        self.online_metrics = online_metrics
+
+        self.is_step_2_complete = True
 
 
     def step_3_evaluate_model(self):
         """Evaluate model for binary classification.
         """
-        pass
+
+        raise NotImplementedError("Eval metrics as metrics?")
+        eval_metrics = ml.evaluate_on_closed_and_open_testsets(
+            None,  # open_loader 
+            self.test_loader, 
+            self.model)
+
+        if self.log_mlflow:
+            mlflow.log_dict(
+                {
+                    **{k1: v1.tolist() if type(v1) == np.ndarray else v1 for k1, v1 in eval_metrics["closed"].items()},
+                    **{k2: v2.tolist() if type(v2) == np.ndarray else v2 for k2, v2 in eval_metrics["open"].items()},
+                }, 
+                "eval_metrics.json"
+            )
 
 
     def step_4_visualize(self):
         """Visualize model for binary classification.
         """
-        pass
-
+        warnings.warn("Not visualizing for binary classification is setup.")
 
 
 class MulticlassPipeline(DataPipeline):
-
-
-    def __init__(
-        self, 
-        log_mlflow: bool = False, 
-        save_model_mlflow: bool = False,
-    ):
-        self.is_step_1_complete = False
-        self.is_step_2_complete = False
-        self.is_step_3_complete = False
-        self.is_step_4_complete = False
-        self.log_mlflow = log_mlflow
-        self.save_model_mlflow = save_model_mlflow
 
 
     def step_1_process_data(

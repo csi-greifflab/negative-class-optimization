@@ -4,6 +4,8 @@ Preprocessing and transforms.
 import logging
 from typing import List, Optional, Tuple, Union
 import warnings
+import string
+import re
 
 import farmhash
 import numpy as np
@@ -100,6 +102,30 @@ def load_embedder(embedder_type: str):
         raise ValueError(f"Unknown embedder type: {embedder_type}.")
 
 
+def get_vsh8_embedding_matrix():
+    """Get the VSH8 matrix, from the paper :)).
+    """    
+    s_raw = "Ala A   0.15    1.11    1.35    0.92    0.02    0.91    0.36    0.48 Arg R  1.47        1.45        1.24        1.27        1.55        1.47        1.30        0.83 Asn N  0.99        0.00  0.37        0.69  0.55        0.85        0.73  0.80 Asp D  1.15        0.67  0.41  0.01  2.68        1.31        0.03        0.56 Cys C             0.18  1.67  0.46  0.21        0.00        1.20  1.61  0.19 Gln Q  0.96        0.12        0.18        0.16        0.09        0.42  0.20  0.41 Glu E  1.18        0.40        0.10        0.36  2.16  0.17        0.91        0.02 Gly G  0.20  1.53  2.63        2.28  0.53  1.18        2.01  1.34 His H  0.43  0.25        0.37        0.19        0.51        1.28        0.93        0.65 Ile I               1.27  0.14        0.30  1.80        0.30  1.61  0.16  0.13 Leu L             1.36        0.07        0.26  0.80        0.22  1.37        0.08  0.62 Lys K  1.17        0.70        0.70        0.80        1.64        0.67        1.63        0.13 Met M             1.01  0.53        0.43        0.00        0.23        0.10  0.86  0.68 Phe F              1.52        0.61        0.96  0.16        0.25        0.28  1.33  0.20 Pro P              0.22  0.17  0.50        0.05  0.01  1.34  0.19        3.56 Ser S  0.67  0.86  1.07  0.41  0.32        0.27  0.64        0.11 Thr T  0.34  0.51  0.55  1.06  0.06  0.01  0.79        0.39 Trp W             1.50        2.06        1.79        0.75        0.75  0.13  1.01  0.85 Tyr Y             0.61        1.60        1.17        0.73        0.53        0.25  0.96  0.52 Val V             0.76  0.92  0.17  1.91        0.22  1.40  0.24  0.03"
+
+    floats = re.findall(r"[-+]?\d*\.\d+|\d+", s_raw)
+    floats = [float(i) for i in floats]
+
+    aminoacids = re.findall(r" [A-Z] ", s_raw)
+    aminoacids = [s[1] for s in aminoacids]
+
+    vshe8 = {}
+    for i, aa in enumerate(aminoacids):
+        vshe8[aa] = floats[i*8:i*8+8]
+
+    df = pd.DataFrame.from_dict(
+        vshe8, 
+        orient='index',
+        columns = [f"VSHE_{i}" for i in range(1, 9)]
+    )
+
+    return df
+
+
 def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.DataFrame:
     """Remove `Slide` duplicates for datasets for binary classifiers.
     An important step in preparing data training and evaluation. 
@@ -153,7 +179,8 @@ def preprocess_data_for_pytorch_binary(
     df_test_closed,
     ag_pos: List[str],
     batch_size = 64,
-    scale_onehot = True,
+    scale_X = True,
+    encoder_type: str = "onehot",
     df_test_open = None,
     sample_train = None,
 ):
@@ -164,7 +191,7 @@ def preprocess_data_for_pytorch_binary(
         ag_pos (List[str]): list of antigens labeled as positive.
         batch_size (int, optional): Defaults to 64.
         train_frac (float, optional): Defaults to 0.8.
-        scale_onehot
+        scale_X
         df_test_closed
         df_test_open
         sample_train
@@ -178,8 +205,8 @@ def preprocess_data_for_pytorch_binary(
     if not isinstance(ag_pos, list):
         raise TypeError("ag_pos must be a list.")
 
-    if not scale_onehot:
-        warnings.warn("Not scaling onehot.")
+    if not scale_X:
+        warnings.warn("Not scaling X.")
 
     has_openset = df_test_open is not None
     if has_openset:
@@ -196,30 +223,40 @@ def preprocess_data_for_pytorch_binary(
             )
 
     df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
-    df_train_val = onehot_encode_df(df_train_val)
+    df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
     
     if sample_train:
         df_train_val = sample_train_val(df_train_val, sample_train)
 
-    df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
-    df_test_closed = onehot_encode_df(df_test_closed)
+    if encoder_type == "onehot":
+        encoder_func = onehot_encode_df
+        encoder_colname = "Slide_onehot"
+    elif encoder_type == "ProtTransT5XLU50":
+        raise NotImplementedError()
+    elif encoder_type == "ESM1b":
+        raise NotImplementedError()
+    else:
+        raise ValueError(f"encoder_type {encoder_type} not recognized.")
 
-    if scale_onehot:
+    df_train_val = encoder_func(df_train_val)
+    df_train_val["X"] = df_train_val[encoder_colname]
+    df_test_closed = encoder_func(df_test_closed)
+    df_test_closed["X"] = df_test_closed[encoder_colname]
 
-        train_onehot_stack = arr_from_list_series(df_train_val["Slide_onehot"])
-        test_onehot_stack = arr_from_list_series(df_test_closed["Slide_onehot"])
+    df_train_val["y"] = df_train_val["binds_a_pos_ag"]
+    df_test_closed["y"] = df_test_closed["binds_a_pos_ag"]
+
+    if scale_X:
+
+        train_as_mat = arr_from_list_series(df_train_val["X"])
+        test_as_mat = arr_from_list_series(df_test_closed["X"])
 
         scaler = StandardScaler()
-        scaler.fit(train_onehot_stack)
-        df_train_val["Slide_onehot"] = scaler.transform(train_onehot_stack).tolist()
-        df_test_closed["Slide_onehot"] = scaler.transform(test_onehot_stack).tolist()
+        scaler.fit(train_as_mat)
+        df_train_val["X"] = scaler.transform(train_as_mat).tolist()
+        df_test_closed["X"] = scaler.transform(test_as_mat).tolist()
     else:
         scaler = None
-
-    df_train_val["X"] = df_train_val["Slide_onehot"]
-    df_train_val["y"] = df_train_val["binds_a_pos_ag"]
-    df_test_closed["X"] = df_test_closed["Slide_onehot"]
-    df_test_closed["y"] = df_test_closed["binds_a_pos_ag"]
 
     train_data = datasets.BinaryDataset(df_train_val)
     test_data = datasets.BinaryDataset(df_test_closed)

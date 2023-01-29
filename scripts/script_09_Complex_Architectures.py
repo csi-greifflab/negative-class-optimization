@@ -11,8 +11,6 @@ import mlflow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
-import torchvision.transforms as transforms
 
 
 from NegativeClassOptimization import ml
@@ -41,15 +39,20 @@ batch_size = 64
 
 
 def get_data(ag_pos, ag_neg, N):
-    df = utils.load_global_dataframe()
+    # df = utils.load_global_dataframe()
 
-    df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
-    df = df.drop_duplicates(["Slide"])
+    # df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+    # df = df.drop_duplicates(["Slide"])
 
-    df = df.sample(n=N, random_state=42)
-    df = df.sample(frac=1, random_state=42)
+    # df = df.sample(n=N, random_state=42)
+    # df = df.sample(frac=1, random_state=42)
 
-    df.reset_index(drop=True, inplace=True)
+    # df.reset_index(drop=True, inplace=True)
+    df = utils.load_1v1_binary_dataset(
+        ag_pos=ag_pos,
+        ag_neg=ag_neg,
+        num_samples=N,
+    )
     return df
 
 

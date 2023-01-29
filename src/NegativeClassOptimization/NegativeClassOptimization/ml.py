@@ -101,9 +101,11 @@ class SN10(nn.Module):
 
 class SNN(SN10):
 
-    def __init__(self, num_hidden_units: int):
+    def __init__(self, num_hidden_units: int, input_dim: int = 11*20):
         super().__init__()
-        self.linear_1 = nn.Linear(11*20, num_hidden_units)
+        self.num_hidden_units = num_hidden_units
+        self.input_dim = input_dim
+        self.linear_1 = nn.Linear(input_dim, num_hidden_units)
         self.linear_2 = nn.Linear(num_hidden_units, 1)
 
     def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
