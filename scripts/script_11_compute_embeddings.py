@@ -14,7 +14,7 @@ def save_dict_as_pickle(dict_, path):
 
 
 def timeout_handler(signum, frame):
-    raise Exception("Timeout.")
+    raise TimeoutError("Timeout.")
 
 
 def multiprocessing_wrapper_script_11(
@@ -34,11 +34,14 @@ def multiprocessing_wrapper_script_11(
     for slide in slides:
         
         signal.alarm(10*60)
-        emb = embedder.embed(slide)
-        emb_per_prot = embedder.reduce_per_protein(emb)
+        try:
+            emb = embedder.embed(slide)
+            emb_per_prot = embedder.reduce_per_protein(emb)
 
-        slide_embeddings_per_residue[slide] = emb.tolist()
-        slide_embeddings_per_prot[slide] = emb_per_prot.tolist()
+            slide_embeddings_per_residue[slide] = emb.tolist()
+            slide_embeddings_per_prot[slide] = emb_per_prot.tolist()
+        except TimeoutError:
+            logging.error(f"Timeout for slide {slide}.")
         signal.alarm(0)
 
     save_dict_as_pickle(slide_embeddings_per_residue, save_dir / f"slide_embeddings_per_residue_b{batch_number}.pkl")
