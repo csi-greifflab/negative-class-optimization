@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import pickle
+import signal
 from typing import List, Optional
 from joblib import Parallel, delayed
 from NegativeClassOptimization import utils
@@ -10,6 +11,10 @@ from NegativeClassOptimization import preprocessing
 def save_dict_as_pickle(dict_, path):
     with open(path, "wb+") as f:
         pickle.dump(dict_, f)
+
+
+def timeout_handler(signum, frame):
+    raise Exception("Timeout.")
 
 
 def multiprocessing_wrapper_script_11(
@@ -24,14 +29,18 @@ def multiprocessing_wrapper_script_11(
 
     logging.info(f"Computing embeddings for batch {batch_number} with {type(embedder)}.")
 
+    # https://stackoverflow.com/questions/492519/timeout-on-a-function-call
+    signal.signal(signal.SIGALRM, timeout_handler)
     for slide in slides:
         
+        signal.alarm(10*60)
         emb = embedder.embed(slide)
         emb_per_prot = embedder.reduce_per_protein(emb)
 
         slide_embeddings_per_residue[slide] = emb.tolist()
         slide_embeddings_per_prot[slide] = emb_per_prot.tolist()
-    
+        signal.alarm(0)
+
     save_dict_as_pickle(slide_embeddings_per_residue, save_dir / f"slide_embeddings_per_residue_b{batch_number}.pkl")
     save_dict_as_pickle(slide_embeddings_per_prot, save_dir / f"slide_embeddings_per_prot_b{batch_number}.pkl")
 
