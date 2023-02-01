@@ -68,6 +68,55 @@ def onehot_encode_df(
     return df
 
 
+def get_no_degree_paratope(seqAB: str, motifAB: str) -> str:
+    """Represent paratope in simple format without degree of freedom.
+
+    Args:
+        seqAB (str): Ab sequence encoding used in Task4_Merged_Slice_ParaEpi.txt
+        motifAB (str): Ab motif encoding used in Task4_Merged_Slice_ParaEpi.txt
+
+    Returns:
+        str: simplified no-degree representation.
+    """        
+    simple_paratope = motifAB
+    prev_char = None
+    for i, char in enumerate(seqAB):
+        if not char.isdigit():
+            simple_paratope = simple_paratope.replace("X", char, 1)
+
+    simple_paratope = simple_paratope.replace("*", "")
+    simple_paratope = simple_paratope.replace("--", "-")
+
+    simple_paratope_no_deg = ""
+    for char in simple_paratope:
+        if char.isdigit():
+            pass
+        else:
+            simple_paratope_no_deg += char
+
+    return simple_paratope_no_deg
+
+
+def onehot_encode_paratope(paratope: str) -> np.ndarray:
+    """One hot encode paratope.
+
+    Args:
+        paratope (str): paratope string obtained from get_no_degree_paratope.
+
+    Returns:
+        np.ndarray: one hot encoded paratope (1 x L*20).
+    """    
+    encodings = []
+    for char in paratope:
+        if char == "-":
+            enc = np.zeros(20)
+        else:
+            enc = onehot_encode(char)
+        encodings.append(enc)
+
+    return np.stack(encodings, axis=0).reshape(1, -1)
+
+
 def get_antigen_label_encoder() -> LabelEncoder:
     label_encoder = LabelEncoder()
     label_encoder.fit(config.ANTIGENS_CLOSEDSET)
