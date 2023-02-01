@@ -6,6 +6,7 @@ from typing import List, Optional
 from joblib import Parallel, delayed
 from NegativeClassOptimization import utils
 from NegativeClassOptimization import preprocessing
+import tqdm
 
 
 def save_dict_as_pickle(dict_, path):
@@ -31,7 +32,7 @@ def multiprocessing_wrapper_script_11(
 
     # https://stackoverflow.com/questions/492519/timeout-on-a-function-call
     signal.signal(signal.SIGALRM, timeout_handler)
-    for slide in slides:
+    for slide in tqdm.tqdm(slides):
         
         signal.alarm(10*60)
         try:
@@ -69,24 +70,48 @@ if __name__ == "__main__":
     for i in range(0, len(slides), NUM_SEQ_PER_BATCH):
         slide_lists.append(slides[i : i + NUM_SEQ_PER_BATCH])
 
+    # Sequential version
     logging.info("Computing embeddings for ProtTransT5XLU50.")
     pt_embedder = preprocessing.load_embedder("ProtTransT5XLU50")
-    Parallel(n_jobs=10)(
-        delayed(multiprocessing_wrapper_script_11)(
-            slides, 
-            pt_embedder, 
+    for i, slides in enumerate(tqdm.tqdm(slide_lists)):
+        logging.info(f"Batch {i+1}: {len(slides)} sequences.")
+        multiprocessing_wrapper_script_11(
+            slides,
+            pt_embedder,
             Path("data/slack_1/global/embeddings/ProtTransT5XLU50"),
             i+1,
-            ) for i, slides in enumerate(slide_lists)
-    )
-
+        )
+    
     logging.info("Computing embeddings for ESMB1b.")
     esm1b_embedder = preprocessing.load_embedder("ESM1b")
-    Parallel(n_jobs=10)(
-        delayed(multiprocessing_wrapper_script_11)(
-            slides, 
-            esm1b_embedder, 
-            Path("data/slack_1/global/embeddings/ESM1b"),
+    for i, slides in enumerate(tqdm.tqdm(slide_lists)):
+        logging.info(f"Batch {i+1}: {len(slides)} sequences.")
+        multiprocessing_wrapper_script_11(
+            slides,
+            esm1b_embedder,
+            Path("data/slack_1/global/embeddings/ESM1"),
             i+1,
-            ) for i, slides in enumerate(slide_lists)
-    )
+        )
+
+    # Parallel version - too much memory consumption
+    # logging.info("Computing embeddings for ProtTransT5XLU50.")
+    # pt_embedder = preprocessing.load_embedder("ProtTransT5XLU50")
+    # Parallel(n_jobs=10)(
+    #     delayed(multiprocessing_wrapper_script_11)(
+    #         slides, 
+    #         pt_embedder, 
+    #         Path("data/slack_1/global/embeddings/ProtTransT5XLU50"),
+    #         i+1,
+    #         ) for i, slides in enumerate(slide_lists)
+    # )
+
+    # logging.info("Computing embeddings for ESMB1b.")
+    # esm1b_embedder = preprocessing.load_embedder("ESM1b")
+    # Parallel(n_jobs=10)(
+    #     delayed(multiprocessing_wrapper_script_11)(
+    #         slides, 
+    #         esm1b_embedder, 
+    #         Path("data/slack_1/global/embeddings/ESM1b"),
+    #         i+1,
+    #         ) for i, slides in enumerate(slide_lists)
+    # )
