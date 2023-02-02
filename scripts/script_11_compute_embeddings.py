@@ -89,7 +89,7 @@ if __name__ == "__main__":
         multiprocessing_wrapper_script_11(
             slides,
             esm1b_embedder,
-            Path("data/slack_1/global/embeddings/ESM1"),
+            Path("data/slack_1/global/embeddings/ESM1b"),
             i+1,
         )
 

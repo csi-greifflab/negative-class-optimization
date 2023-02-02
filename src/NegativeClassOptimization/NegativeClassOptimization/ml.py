@@ -21,7 +21,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
-from captum.attr import IntegratedGradients
+from captum.attr import IntegratedGradients, DeepLift
 
 import mlflow
 
@@ -548,16 +548,29 @@ def construct_dataset_loader(
     return dataset, loader
 
 
-def compute_integratedgradients_attribution(data: Dataset, model: nn.Module) -> List[Tuple[np.array, float]]:
+def compute_integratedgradients_attribution(
+    data: Dataset, 
+    model: nn.Module,
+    attribution_method: str,
+    baseline_choice: str,
+    ) -> List[Tuple[np.array, float]]:
     """Compute Integrated Gradients attribution for a model on a dataset.
 
     Args:
         data (Dataset)
         model (nn.Module)
+        attribution_method (str)
+        baseline_choice (str)
 
     Returns: list of tuples containing attributions and approximation errors (for integration).
     """
-    ig = IntegratedGradients(model)
+    
+    if attribution_method == "integratedgradients":
+        ig = IntegratedGradients(model)
+    elif attribution_method == "deeplift":
+        ig = DeepLift(model)
+    else:
+        raise ValueError(f"{attribution_method=} not recognized.")
 
     inputs = tuple(map(
         lambda pair: pair[0].reshape((-1, 11*20)),
