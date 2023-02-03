@@ -96,17 +96,28 @@ class BinaryclassPipeline(DataPipeline):
                 "N_closed": len(test_loader.dataset),
             })
 
+            for i in range(3):
+                uid = utils.get_uid()
+                if len(list(config.TMP_DIR.glob(f"*{uid}*tsv"))) == 0:
+                    break
+                else:
+                    if i == 2:
+                        raise ValueError("Could not find unique uid.")
+                    else:
+                        continue
+            
+
             train_data.df.to_csv(
-                config.TMP_DIR / "train_dataset.tsv", 
+                config.TMP_DIR / f"{uid}_train_dataset.tsv", 
                 sep='\t',
                 index=False)
-            mlflow.log_artifact(config.TMP_DIR / "train_dataset.tsv", "dataset/train_dataset.tsv")
+            mlflow.log_artifact(config.TMP_DIR / f"{uid}_train_dataset.tsv", "dataset/train_dataset.tsv")
 
             test_data.df.to_csv(
-                config.TMP_DIR / "test_dataset.tsv", 
+                config.TMP_DIR / f"{uid}_test_dataset.tsv", 
                 sep='\t',
                 index=False)
-            mlflow.log_artifact(config.TMP_DIR / "test_dataset.tsv", "dataset/test_dataset.tsv")
+            mlflow.log_artifact(config.TMP_DIR / f"{uid}_test_dataset.tsv", "dataset/test_dataset.tsv")
 
         self.ag_pos = ag_pos
         self.ag_neg = ag_neg

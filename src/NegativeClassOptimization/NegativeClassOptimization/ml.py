@@ -416,20 +416,46 @@ class Attributor:
         model: nn.Module,
         type: str = "deep_lift",  # "integrated_gradients"
         baseline_type: str = "shuffle",  # "zero"
+        compute_on: str = "expits",  # "logits"
+        name: Optional[str] = None,
         ):
         
         self.model = model
+        self.compute_on = compute_on
 
         if type == "deep_lift":
-            self.attributor = DeepLift(model)
+            self.attributor_class = DeepLift
         elif type == "integrated_gradients":
-            self.attributor = IntegratedGradients(model)
+            self.attributor_class = IntegratedGradients
         else:
             raise ValueError(f"Unknown attributor type {type}")
+
+        if compute_on == "expits":
+            self.attributor = self.attributor_class(model)
+        elif compute_on == "logits":
+            # https://github.com/pytorch/captum/issues/678
+            class LogitWrapper(nn.Module):
+                def __init__(self, model):
+                    super().__init__()  # mandatory
+                    self.model = model
+                def forward(self, *args):
+                    return self.model.forward_logits(*args)
+            
+            wrapper = LogitWrapper(model)
+            self.attributor = self.attributor_class(wrapper)
+        else:
+            raise ValueError(f"Unknown compute_on type {compute_on}")
 
         if baseline_type not in ["shuffle", "zero"]:
             raise ValueError(f"Unknown baseline type {baseline_type}")
         self.baseline_type = baseline_type
+
+        if name is None:
+            self.name = f"{type}__{compute_on}__{baseline_type}"
+        else:
+            self.name = name
+        
+
 
     def __call__(
         self,
@@ -448,30 +474,39 @@ class Attributor:
         self,
         X: torch.tensor,
         return_err: bool = False,
+        return_baseline: bool = False,
         ):
         """Compute attributions for a given input using Integrated Gradients.
         """
         assert X.shape == (1, 220), f"Expected input shape (1, 220), got {X.shape}"
         
         if type(self.attributor) == IntegratedGradients:
+            baseline = self.compute_baseline(X)
             attribution, err = self.attributor.attribute(
                 inputs=X,
-                baselines=self.compute_baseline(X),
+                baselines=baseline,
                 method="gausslegendre",
                 n_steps=100,
                 return_convergence_delta=True,
             )
         elif type(self.attributor) == DeepLift:
+            baseline = self.compute_baseline(X)
             attribution, err = self.attributor.attribute(
                 inputs=X,
-                baselines=self.compute_baseline(X),
+                baselines=baseline,
                 return_convergence_delta=True,
             )
-        
-        if return_err:
-            return attribution, err
-        else:
+
+        if (not return_err) and (not return_baseline):
             return attribution
+        else:
+            res = [attribution]
+            if return_err:
+                res.append(err)
+            if return_baseline:
+                res.append(baseline)
+            return tuple(res)
+
 
     def attribute_dataset(
         self,
@@ -485,14 +520,13 @@ class Attributor:
         Returns: list of tuples containing attributions and approximation errors (for integration).
         """
 
-        inputs = tuple(map(
-            lambda pair: pair[0].reshape((-1, 11*20)),
-            DataLoader(data, batch_size=1, shuffle=False)
-        ))
-
+        indexes = data._get_indexes()
         records = []
-        for input in inputs:
-            attributions, approximation_error = self.attribute(input, return_err=True)
+        for index in indexes:
+            attributions, approximation_error = self.attribute(
+                data[index][0], 
+                return_err=True
+                )
             records.append((attributions, approximation_error))
         return records
 
@@ -500,7 +534,7 @@ class Attributor:
         if self.baseline_type == "shuffle":
             baseline = Attributor.compute_onehot_baseline_by_shuffling(X.reshape(11, 20)).reshape((1, 11*20))
         elif self.baseline_type == "zero":
-            baseline = 0
+            baseline = torch.zeros(X.shape)
         return baseline
 
     @staticmethod

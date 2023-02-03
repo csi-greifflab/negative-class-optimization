@@ -151,6 +151,9 @@ class BinaryDataset(Dataset):
             self.process_y_tensor(torch.tensor(self.df.loc[idx, "y"])),
         )
 
+    def _get_indexes(self):
+        return self.df.index.values
+
 
 class MulticlassDataset(BinaryDataset):
     """Pytorch dataset for modelling antigen binding multiclass classifiers.

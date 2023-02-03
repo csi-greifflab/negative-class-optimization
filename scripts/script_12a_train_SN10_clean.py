@@ -93,7 +93,7 @@ if __name__ == "__main__":
             "test",
             ag_perms[0][0],
             ag_perms[0][1],
-            sample_train=1000,
+            sample_train=10000,
         )
     
     else:    

@@ -365,6 +365,14 @@ def num_trainable_params(model) -> int:
     return num_params
 
 
+def get_uid() -> str:
+    """Get unique id.
+
+    Returns:
+        str: unique id of length 8
+    """    
+    return str(uuid.uuid4())[:8]
+
 class MlflowAPI:
     """Class to interact with mlflow API.
     """    
@@ -403,3 +411,8 @@ class MlflowAPI:
                 )
         )
         return df
+    
+
+    def list_artifacts(self):
+        URL = "http://10.40.3.22:5000/api/2.0/mlflow/artifacts/list"
+        
