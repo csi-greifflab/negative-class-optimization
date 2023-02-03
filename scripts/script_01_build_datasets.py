@@ -21,6 +21,7 @@ docopt_doc = """Build datasets.
 
 Usage:
     script_01_build_datasets.py global
+    script_01_build_datasets.py add_farmhash_mod_10_to_global
     script_01_build_datasets.py processed
     script_01_build_datasets.py pairwise
     script_01_build_datasets.py 1_vs_all
@@ -100,7 +101,20 @@ if __name__ == "__main__":
     
     antigens = sorted(df_global["Antigen"].unique().tolist())
 
-    if arguments["pairwise"]:
+    if arguments["add_farmhash_mod_10_to_global"]:
+        df_global["Slide_farmhash_mod_10"] = (
+            df_global["Slide"].apply(
+                lambda x: preprocessing.farmhash_mod_10(x)
+            )
+        )
+
+        dir_ = config.DATA_SLACK_1_GLOBAL.parent
+        basename = config.DATA_SLACK_1_GLOBAL.stem
+        df_global.to_csv(
+            dir_ / f"{basename}_farmhashed.tsv", 
+            sep='\t')
+
+    elif arguments["pairwise"]:
         logging.info("Building pairwise datasets")
         for ag1, ag2 in combinations(antigens, 2):
             logging.info(f"Building pairwise dataset: {ag1} vs {ag2}")

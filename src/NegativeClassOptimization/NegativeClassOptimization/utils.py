@@ -229,7 +229,13 @@ def build_random_dataset(
 
 
 def load_global_dataframe(path = config.DATA_SLACK_1_GLOBAL):
-    return pd.read_csv(path, sep='\t', dtype={"Antigen": str}).iloc[:, 1:]
+    dir_ = path.parent
+    basename = path.stem
+    farmhashed_path = dir_ / f"{basename}_farmhashed.tsv"
+    if (farmhashed_path).exists():
+        return pd.read_csv(farmhashed_path, sep='\t', dtype={"Antigen": str})
+    else:
+        return pd.read_csv(path, sep='\t', dtype={"Antigen": str}).iloc[:, 1:]
 
 
 def load_processed_dataframes(
@@ -266,13 +272,18 @@ def load_processed_dataframes(
 def load_1v1_binary_dataset(
     ag_pos = "3VRL", 
     ag_neg = "1ADQ", 
-    num_samples = 20000,
+    num_samples: Optional[int] = 20000,
+    drop_duplicates = True,
     ):
     df = load_global_dataframe()
     df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
-    df = df.drop_duplicates(["Slide"])
+    
+    if drop_duplicates:
+        df = df.drop_duplicates(["Slide"])
 
-    df = df.sample(n=num_samples, random_state=42)
+    if num_samples is not None:
+        df = df.sample(n=num_samples, random_state=42)
+    
     df = df.sample(frac=1, random_state=42)
 
     return df

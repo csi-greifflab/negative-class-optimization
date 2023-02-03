@@ -189,6 +189,9 @@ def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.Data
         pd.DataFrame: df with 2 columns suitable for modelling: `Slide` and `binds_a_pos_ag`.
     """
 
+    if type(ag_pos[0]) != str:
+        raise TypeError(f"ag_pos must be a list of strings: {ag_pos=}")
+
     def infer_antigen_from_duplicate_list(
         antigens: List[str], 
         pos_antigens: List[str],
@@ -274,7 +277,7 @@ def preprocess_data_for_pytorch_binary(
     df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
     df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
     
-    if sample_train:
+    if sample_train is not None:
         df_train_val = sample_train_val(df_train_val, sample_train)
 
     if encoder_type == "onehot":

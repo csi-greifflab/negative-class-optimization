@@ -32,6 +32,9 @@ DATA_ABSOLUT_DATASET3_BINDINGMTX = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11
 DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/multiclass"
 DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR = DATA_BASE_PATH / "Absolut/processed/multilabel"
 
+TMP_DIR = DATA_BASE_PATH / "tmp"
+TMP_DIR.mkdir(exist_ok=True)
+
 DATA_EMB_DIR = DATA_BASE_PATH / "embeddings"
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',

@@ -705,6 +705,7 @@ def train_for_ndb1(
     optimizer_type: str,
     momentum: float = 0,
     weight_decay: float = 0,
+    callback_on_model_end_epoch: callable = None,
     ) -> List[dict]:
     """Train model for the NDB1 problem formalization.
 
@@ -728,6 +729,8 @@ def train_for_ndb1(
         weight_decay, 
         model
         )
+    if callback_on_model_end_epoch is None:
+        callback_on_model_end_epoch = lambda x, t: None
 
     online_metrics_per_epoch = []
     for t in range(epochs):
@@ -746,6 +749,9 @@ def train_for_ndb1(
             "test_metrics": test_metrics,
             "open_metrics": open_metrics,
         })
+
+        callback_on_model_end_epoch(model, t)
+
     return online_metrics_per_epoch
 
 

@@ -50,12 +50,12 @@ class BinaryclassPipeline(DataPipeline):
     """Organized workflow for binary classification. 
     """
 
-
     def step_1_process_data(
         self,
         ag_pos: str,
         ag_neg: str,
-        N: int,
+        N: Optional[int] = None,
+        sample_train: Optional[int] = None,
         batch_size: int = 64,
         split_id: int = 0,
         ):
@@ -65,9 +65,12 @@ class BinaryclassPipeline(DataPipeline):
             ag_pos=ag_pos,
             ag_neg=ag_neg,
             num_samples=N,
+            drop_duplicates=False,
             )
         
-        df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
+        if "Slide_farmhash_mod_10" not in df.columns:
+            warnings.warn("Slide_farmhash_mod_10 not in df.columns. Adding it now.")
+            df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
 
         df_train_val = df.loc[df["Slide_farmhash_mod_10"] != split_id].copy()
         df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
@@ -77,15 +80,34 @@ class BinaryclassPipeline(DataPipeline):
                 df_test_closed=df_test_closed,
                 ag_pos=[ag_pos],
                 batch_size=batch_size,
-                scale_onehot=False,
+                scale_X=False,
+                sample_train=sample_train,
         ))
 
         if self.log_mlflow:
             mlflow.log_params({
+                "ag_pos": ag_pos,
+                "ag_neg": ag_neg,
+                "sample_train": sample_train,
+                "batch_size": batch_size,
+                "split_id": split_id,
+
                 "N_train": len(train_loader.dataset),
                 "N_closed": len(test_loader.dataset),
             })
-        
+
+            train_data.df.to_csv(
+                config.TMP_DIR / "train_dataset.tsv", 
+                sep='\t',
+                index=False)
+            mlflow.log_artifact(config.TMP_DIR / "train_dataset.tsv", "dataset/train_dataset.tsv")
+
+            test_data.df.to_csv(
+                config.TMP_DIR / "test_dataset.tsv", 
+                sep='\t',
+                index=False)
+            mlflow.log_artifact(config.TMP_DIR / "test_dataset.tsv", "dataset/test_dataset.tsv")
+
         self.ag_pos = ag_pos
         self.ag_neg = ag_neg
         self.N = N
@@ -101,12 +123,12 @@ class BinaryclassPipeline(DataPipeline):
 
     def step_2_train_model(
         self,
-        input_dim = 1024,
+        input_dim = 220,
         num_hidden_units = 10,
-        seed_id: int = config.SEED_ID,
+        seed_id: int = 0,
         epochs: int = 50,
         learning_rate: float = 0.001,
-        optimizer_type = "adam",
+        optimizer_type = "Adam",
         momentum = 0.9,
         weight_decay = 0,
         ):
@@ -114,6 +136,11 @@ class BinaryclassPipeline(DataPipeline):
         """
         torch.manual_seed(seed_id)
         model = ml.SNN(num_hidden_units, input_dim)
+
+        if self.save_model_mlflow:
+            callback_on_model_end_epoch = lambda model, epoch: mlflow.pytorch.log_model(model, f"models/trained_model_epoch_{epoch}")
+        else:
+            callback_on_model_end_epoch = None
 
         online_metrics = ml.train_for_ndb1(
             epochs,
@@ -125,10 +152,24 @@ class BinaryclassPipeline(DataPipeline):
             optimizer_type=optimizer_type,
             momentum=momentum,
             weight_decay=weight_decay,
+            callback_on_model_end_epoch=callback_on_model_end_epoch,
             )
         
         if self.log_mlflow:
+            mlflow.log_params({
+                "input_dim": input_dim,
+                "num_hidden_units": num_hidden_units,
+                "seed_id": seed_id,
+                "epochs": epochs,
+                "learning_rate": learning_rate,
+                "optimizer_type": optimizer_type,
+                "momentum": momentum,
+                "weight_decay": weight_decay,
+            })
             utils.mlflow_log_params_online_metrics(online_metrics)
+
+        if self.save_model_mlflow:
+            mlflow.pytorch.log_model(model, "models/trained_model")
 
         self.input_dim = input_dim
         self.num_hidden_units = num_hidden_units
@@ -148,8 +189,6 @@ class BinaryclassPipeline(DataPipeline):
     def step_3_evaluate_model(self):
         """Evaluate model for binary classification.
         """
-
-        raise NotImplementedError("Eval metrics as metrics?")
         eval_metrics = ml.evaluate_on_closed_and_open_testsets(
             None,  # open_loader 
             self.test_loader, 
@@ -163,12 +202,13 @@ class BinaryclassPipeline(DataPipeline):
                 }, 
                 "eval_metrics.json"
             )
+        self.eval_metrics = eval_metrics
 
 
     def step_4_visualize(self):
         """Visualize model for binary classification.
         """
-        warnings.warn("Not visualizing for binary classification is setup.")
+        warnings.warn("No visualization for binary classification is setup.")
 
 
 class MulticlassPipeline(DataPipeline):
