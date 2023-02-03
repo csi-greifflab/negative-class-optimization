@@ -407,6 +407,127 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
+class Attributor:
+    """Class for computing attributions for a given model.
+    """
+
+    def __init__(
+        self, 
+        model: nn.Module,
+        type: str = "deep_lift",  # "integrated_gradients"
+        baseline_type: str = "shuffle",  # "zero"
+        ):
+        
+        self.model = model
+
+        if type == "deep_lift":
+            self.attributor = DeepLift(model)
+        elif type == "integrated_gradients":
+            self.attributor = IntegratedGradients(model)
+        else:
+            raise ValueError(f"Unknown attributor type {type}")
+
+        if baseline_type not in ["shuffle", "zero"]:
+            raise ValueError(f"Unknown baseline type {baseline_type}")
+        self.baseline_type = baseline_type
+
+    def __call__(
+        self,
+        X: Union[torch.tensor, Dataset], 
+        return_err: bool = False,
+        ):
+        
+        if type(X) == Dataset:
+            return self.attribute_dataset(X, return_err)
+        elif type(X) == torch.Tensor:
+            return self.attribute(X, return_err)
+        else:
+            raise ValueError(f"Unknown input type {type(X)}.")
+
+    def attribute(
+        self,
+        X: torch.tensor,
+        return_err: bool = False,
+        ):
+        """Compute attributions for a given input using Integrated Gradients.
+        """
+        assert X.shape == (1, 220), f"Expected input shape (1, 220), got {X.shape}"
+        
+        if type(self.attributor) == IntegratedGradients:
+            attribution, err = self.attributor.attribute(
+                inputs=X,
+                baselines=self.compute_baseline(X),
+                method="gausslegendre",
+                n_steps=100,
+                return_convergence_delta=True,
+            )
+        elif type(self.attributor) == DeepLift:
+            attribution, err = self.attributor.attribute(
+                inputs=X,
+                baselines=self.compute_baseline(X),
+                return_convergence_delta=True,
+            )
+        
+        if return_err:
+            return attribution, err
+        else:
+            return attribution
+
+    def attribute_dataset(
+        self,
+        data: Dataset,
+        ):
+        """Compute Integrated Gradients attribution for a model on a dataset.
+
+        Args:
+            data (Dataset)
+
+        Returns: list of tuples containing attributions and approximation errors (for integration).
+        """
+
+        inputs = tuple(map(
+            lambda pair: pair[0].reshape((-1, 11*20)),
+            DataLoader(data, batch_size=1, shuffle=False)
+        ))
+
+        records = []
+        for input in inputs:
+            attributions, approximation_error = self.attribute(input, return_err=True)
+            records.append((attributions, approximation_error))
+        return records
+
+    def compute_baseline(self, X: torch.tensor):
+        if self.baseline_type == "shuffle":
+            baseline = Attributor.compute_onehot_baseline_by_shuffling(X.reshape(11, 20)).reshape((1, 11*20))
+        elif self.baseline_type == "zero":
+            baseline = 0
+        return baseline
+
+    @staticmethod
+    def shuffle_rows(tensor: torch.tensor) -> torch.tensor:
+        tensor_shape = tensor.shape
+        tensor = np.copy(tensor)  # create a copy to avoid shuffling the original tensor
+        index = np.arange(tensor.shape[0])
+        np.random.shuffle(index)
+        return torch.tensor(tensor[index,:])
+
+    @staticmethod
+    def compute_onehot_baseline_by_shuffling(
+        onehot_tensor: torch.tensor,
+        num_shuffles: int = 1000,
+        ):
+        """Compute a baseline for one-hot encoded tensor by shuffling the rows
+        and averaging the resulting one-hot encodings.
+        """
+        shuffles = []
+        for _ in range(num_shuffles):
+            shuffles.append(
+                Attributor.shuffle_rows(onehot_tensor)
+            )
+        baseline = sum(shuffles) / num_shuffles
+        return baseline
+
+
 AVAILABLE_MODELS = [SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
 
 
@@ -548,48 +669,6 @@ def construct_dataset_loader(
     return dataset, loader
 
 
-def compute_integratedgradients_attribution(
-    data: Dataset, 
-    model: nn.Module,
-    attribution_method: str,
-    baseline_choice: str,
-    ) -> List[Tuple[np.array, float]]:
-    """Compute Integrated Gradients attribution for a model on a dataset.
-
-    Args:
-        data (Dataset)
-        model (nn.Module)
-        attribution_method (str)
-        baseline_choice (str)
-
-    Returns: list of tuples containing attributions and approximation errors (for integration).
-    """
-    
-    if attribution_method == "integratedgradients":
-        ig = IntegratedGradients(model)
-    elif attribution_method == "deeplift":
-        ig = DeepLift(model)
-    else:
-        raise ValueError(f"{attribution_method=} not recognized.")
-
-    inputs = tuple(map(
-        lambda pair: pair[0].reshape((-1, 11*20)),
-        DataLoader(data, batch_size=1)
-    ))
-
-    records = []
-    for input in inputs:
-        attributions, approximation_error = ig.attribute(
-            inputs=input,
-            baselines=0,
-            n_steps=100,
-            method="gausslegendre",
-            return_convergence_delta=True,
-        )
-        records.append((attributions, approximation_error))
-    return records
-
-
 def construct_optimizer(
     optimizer_type,
     learning_rate,
@@ -623,7 +702,7 @@ def train_for_ndb1(
     test_loader,
     open_loader,
     model,
-    optimizer_type: str = "SGD",
+    optimizer_type: str,
     momentum: float = 0,
     weight_decay: float = 0,
     ) -> List[dict]:
