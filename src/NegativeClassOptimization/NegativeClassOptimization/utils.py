@@ -274,10 +274,27 @@ def load_1v1_binary_dataset(
     ag_neg = "1ADQ", 
     num_samples: Optional[int] = 20000,
     drop_duplicates = True,
+    with_paratopes = False,
     ):
     df = load_global_dataframe()
     df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
     
+    if with_paratopes:
+        df_para = load_paratopes()
+        df_para["Antigen"] = df_para["Label"].str.split("_").str[0]
+        df_para = df_para.loc[
+            df_para["Antigen"].isin(["1ADQ", "3VRL"])
+            ].copy()
+        
+        # Merge on Slide and Antigen, since there are multiple paratopes per slide.
+        df = pd.merge(
+            df, 
+            df_para, 
+            on=("Slide", "Antigen"),
+            how="left",
+            )
+        df = df.iloc[:, 2:]
+
     if drop_duplicates:
         df = df.drop_duplicates(["Slide"])
 
@@ -288,6 +305,25 @@ def load_1v1_binary_dataset(
 
     return df
 
+
+def load_paratopes(
+    path = config.DATA_SLACK_1_PARATOPES,
+    ) -> pd.DataFrame:
+    df_para = pd.read_csv(
+        path, 
+        sep="\t",
+        dtype={"Label": str})
+    
+    df_para = df_para[[
+        "Slide",
+        "Label",
+        "hotspot_ID",
+        "agregatesAGEpitope", 
+        "agregatesABParatope",
+        ]].copy()
+
+    df_para["Antigen"] = df_para["Label"].str.split("_").str[0]
+    return df_para
 
 def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
     for i, epoch_metrics in enumerate(online_metrics):

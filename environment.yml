@@ -39,3 +39,6 @@ dependencies:
       - nbconvert
       - nbdev
       - bio-embeddings[all]
+      # - modisco
+      # - tfmodisco-lite
+      - logomaker

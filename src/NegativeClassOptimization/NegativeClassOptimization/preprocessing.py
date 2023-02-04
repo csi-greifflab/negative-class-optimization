@@ -68,7 +68,7 @@ def onehot_encode_df(
     return df
 
 
-def get_no_degree_paratope(seqAB: str, motifAB: str) -> str:
+def get_no_degree_paratope(agregatesABParatope: str) -> str:
     """Represent paratope in simple format without degree of freedom.
 
     Args:
@@ -78,12 +78,8 @@ def get_no_degree_paratope(seqAB: str, motifAB: str) -> str:
     Returns:
         str: simplified no-degree representation.
     """        
-    simple_paratope = motifAB
-    prev_char = None
-    for i, char in enumerate(seqAB):
-        if not char.isdigit():
-            simple_paratope = simple_paratope.replace("X", char, 1)
-
+    
+    simple_paratope = agregatesABParatope
     simple_paratope = simple_paratope.replace("*", "")
     simple_paratope = simple_paratope.replace("--", "-")
 
@@ -97,11 +93,11 @@ def get_no_degree_paratope(seqAB: str, motifAB: str) -> str:
     return simple_paratope_no_deg
 
 
-def onehot_encode_paratope(paratope: str) -> np.ndarray:
-    """One hot encode paratope.
+def onehot_encode_nodeg_paratope(paratope: str) -> np.ndarray:
+    """One hot encode no degree, simple paratope.
 
     Args:
-        paratope (str): paratope string obtained from get_no_degree_paratope.
+        paratope (str): simple paratope string obtained from get_no_degree_paratope.
 
     Returns:
         np.ndarray: one hot encoded paratope (1 x L*20).
@@ -112,6 +108,33 @@ def onehot_encode_paratope(paratope: str) -> np.ndarray:
             enc = np.zeros(20)
         else:
             enc = onehot_encode(char)
+        encodings.append(enc)
+
+    return np.stack(encodings, axis=0).reshape(1, -1)
+
+
+def onehot_encode_deg_paratope(deg_paratope: str) -> np.ndarray:
+    """One hot encode degree, complex paratope (e.g. A2I3--L2D1W3Y1F4D1V4W3*).
+
+    Args:
+        paratope (str): e.g. A2I3--L2D1W3Y1F4D1V4W3*.
+
+    Returns:
+        np.ndarray: encoded paratope (1 x L*20).
+    """    
+    
+    paratope = deg_paratope
+    paratope = paratope.replace("*", "")
+    
+    encodings = []
+    for i in range(0, len(paratope), 2):
+        char, degree = paratope[i], paratope[i+1]
+
+        if char == "-":
+            assert degree == "-"
+            enc = np.zeros(20)
+        else:
+            enc = onehot_encode(char) * int(degree)
         encodings.append(enc)
 
     return np.stack(encodings, axis=0).reshape(1, -1)

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 
+import logomaker
+
 from NegativeClassOptimization.ml import compute_roc_curve, compute_pr_curve
 
 
@@ -184,3 +186,24 @@ def plot_confusion(
     metrics.ConfusionMatrixDisplay(cm, display_labels=class_names).plot(ax=axs[1])
     axs[1].set_title("Confusion matrix: counts")
     return fig, axs
+
+
+def plot_logo(df_attr: pd.DataFrame, ax=None):
+    assert df_attr.shape == (11, 20)
+    if ax:
+        return logomaker.Logo(
+            df_attr,
+            flip_below=False,
+            fade_below=0.5,
+            shade_below=0.5,
+            figsize=(10,6),
+            ax=ax,
+            )
+    else:
+        return logomaker.Logo(
+            df_attr,
+            flip_below=False,
+            fade_below=0.5,
+            shade_below=0.5,
+            figsize=(10,6),
+            )

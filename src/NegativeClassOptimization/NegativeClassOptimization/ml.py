@@ -417,11 +417,13 @@ class Attributor:
         type: str = "deep_lift",  # "integrated_gradients"
         baseline_type: str = "shuffle",  # "zero"
         compute_on: str = "expits",  # "logits"
+        multiply_by_inputs: bool = True,
         name: Optional[str] = None,
         ):
         
         self.model = model
         self.compute_on = compute_on
+        self.multiply_by_inputs = multiply_by_inputs
 
         if type == "deep_lift":
             self.attributor_class = DeepLift
@@ -431,7 +433,7 @@ class Attributor:
             raise ValueError(f"Unknown attributor type {type}")
 
         if compute_on == "expits":
-            self.attributor = self.attributor_class(model)
+            self.attributor = self.attributor_class(model, multiply_by_inputs=self.multiply_by_inputs)
         elif compute_on == "logits":
             # https://github.com/pytorch/captum/issues/678
             class LogitWrapper(nn.Module):
@@ -442,7 +444,7 @@ class Attributor:
                     return self.model.forward_logits(*args)
             
             wrapper = LogitWrapper(model)
-            self.attributor = self.attributor_class(wrapper)
+            self.attributor = self.attributor_class(wrapper, multiply_by_inputs=self.multiply_by_inputs)
         else:
             raise ValueError(f"Unknown compute_on type {compute_on}")
 
@@ -451,10 +453,9 @@ class Attributor:
         self.baseline_type = baseline_type
 
         if name is None:
-            self.name = f"{type}__{compute_on}__{baseline_type}"
+            self.name = f"{type}__{compute_on}__{baseline_type}__multiply{multiply_by_inputs}"
         else:
             self.name = name
-        
 
 
     def __call__(

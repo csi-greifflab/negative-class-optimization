@@ -32,6 +32,8 @@ DATA_ABSOLUT_DATASET3_BINDINGMTX = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11
 DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/multiclass"
 DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR = DATA_BASE_PATH / "Absolut/processed/multilabel"
 
+DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Task4_Merged_Slice_ParaEpi.txt"
+
 TMP_DIR = DATA_BASE_PATH / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
 
