@@ -10,7 +10,7 @@ from pathlib import Path
 import random
 import re
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union
 import numpy as np
 import pandas as pd
 import torch
@@ -271,19 +271,23 @@ def load_processed_dataframes(
 
 def load_1v1_binary_dataset(
     ag_pos = "3VRL", 
-    ag_neg = "1ADQ", 
+    ag_neg: Union[str, List[str]] = "1ADQ", 
     num_samples: Optional[int] = 20000,
     drop_duplicates = True,
     with_paratopes = False,
     ):
+    
+    if isinstance(ag_neg, str):
+        ag_neg = [ag_neg]
+
     df = load_global_dataframe()
-    df = df.loc[df["Antigen"].isin([ag_pos, ag_neg])].copy()
+    df = df.loc[df["Antigen"].isin([ag_pos, *ag_neg])].copy()
     
     if with_paratopes:
         df_para = load_paratopes()
         df_para["Antigen"] = df_para["Label"].str.split("_").str[0]
         df_para = df_para.loc[
-            df_para["Antigen"].isin(["1ADQ", "3VRL"])
+            df_para["Antigen"].isin([ag_pos, *ag_neg])
             ].copy()
         
         # Merge on Slide and Antigen, since there are multiple paratopes per slide.

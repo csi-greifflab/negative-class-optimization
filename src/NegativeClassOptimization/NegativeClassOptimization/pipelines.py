@@ -4,7 +4,7 @@ from pathlib import Path
 import warnings
 import mlflow
 import numpy as np
-from typing import List, Optional
+from typing import List, Optional, Union
 import pandas as pd
 from sklearn import metrics
 from NegativeClassOptimization import config, datasets, ml, utils, preprocessing, visualisations
@@ -53,7 +53,7 @@ class BinaryclassPipeline(DataPipeline):
     def step_1_process_data(
         self,
         ag_pos: str,
-        ag_neg: str,
+        ag_neg: Union[str, List[str]],
         N: Optional[int] = None,
         sample_train: Optional[int] = None,
         batch_size: int = 64,
@@ -66,6 +66,7 @@ class BinaryclassPipeline(DataPipeline):
             ag_neg=ag_neg,
             num_samples=N,
             drop_duplicates=False,
+            with_paratopes=False,
             )
         
         if "Slide_farmhash_mod_10" not in df.columns:
