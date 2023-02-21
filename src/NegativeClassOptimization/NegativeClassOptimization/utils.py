@@ -5,6 +5,7 @@ and check the initial dataset files.
 
 from dataclasses import dataclass
 from itertools import chain
+import json
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 import random
@@ -16,6 +17,7 @@ import pandas as pd
 import torch
 import mlflow
 import requests
+import zipfile
 
 import NegativeClassOptimization.config as config
 
@@ -70,6 +72,13 @@ def summarize_data_files(path: Path) -> pd.DataFrame:
             "datatype": datatype,
         })
     return pd.DataFrame.from_records(records)
+        
+
+def unzip_file(path, output_path):
+    """Unzip a file to a given path.
+    """
+    with zipfile.ZipFile(path, 'r') as zip_ref:
+        zip_ref.extractall(output_path)
 
 
 @dataclass
@@ -329,6 +338,57 @@ def load_paratopes(
     df_para["Antigen"] = df_para["Label"].str.split("_").str[0]
     return df_para
 
+
+def load_raw_bindings_murine(
+    ag, 
+    base_path=config.DATA_SLACK_1_RAWBINDINGSMURINE
+    ):
+    """Load raw murine binding data for an antigen.
+    """
+    ag_full = [ag_i.name for ag_i in list(base_path.glob("*")) if ag_i.stem.split("_")[0] == ag][0]
+    ag_dir = base_path / f"{ag_full}/{ag_full}"
+    num_files = len(list(ag_dir.glob("*Process*.txt")))
+
+    df = pd.DataFrame()
+    for i in range(1, num_files+1):
+        df_ = pd.read_csv(
+        Path(ag_dir / f"{ag_full}FinalBindings_Process_{i}_Of_{num_files}.txt"),
+        header=1,
+        sep="\t",
+    )
+        df_.sort_values("Energy", ascending=True, inplace=True)
+        df_.drop_duplicates(subset="Slide", keep="first", inplace=True)
+        df = pd.concat([df, df_], axis=0)
+    return df
+
+
+def build_binding_binary_dataset(ag, dataset_type: str, df = None, seed = config.SEED):
+    """Build a binary dataset for a given antigen.
+    """    
+    if df is None:
+        df = load_raw_bindings_murine(ag)
+
+    perc_1 = df["Energy"].quantile(0.01)
+    perc_5 = df["Energy"].quantile(0.05)
+
+    df_pos = df.loc[df["Energy"] <= perc_1].sample(50000, random_state=seed)
+    df_pos["Antigen"] = f"{ag}_high"
+
+    if dataset_type == "high_looser":
+        df_neg = df.loc[(perc_1 < df["Energy"]) & (df["Energy"] <= perc_5)].sample(50000, random_state=seed)
+        df_neg["Antigen"] = f"{ag}_looser"
+    elif dataset_type == "high_95low":
+        df_neg = df.loc[df["Energy"] > perc_5].sample(50000, random_state=seed)
+        df_neg["Antigen"] = f"{ag}_95low"
+    else:
+        raise ValueError(f"Invalid dataset_type: {dataset_type}")
+
+    df_final = pd.concat([df_pos, df_neg], axis=0)
+    df_final = df_final.sample(frac=1).reset_index(drop=True)  # shuffle
+
+    return df_final
+
+
 def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
     for i, epoch_metrics in enumerate(online_metrics):
         epoch = i+1
@@ -413,8 +473,16 @@ def get_uid() -> str:
     """    
     return str(uuid.uuid4())[:8]
 
+
 class MlflowAPI:
     """Class to interact with mlflow API.
+
+    Example:
+    ```
+    api = MlflowAPI()
+    api.mlflow_request(experiment_id="11")
+    df = api.build_mlflow_results_df()
+    ```
     """    
 
     def __init__(self):
@@ -423,11 +491,15 @@ class MlflowAPI:
 
 
     def mlflow_request(self, experiment_id: str, run_name: Optional[str] = None):
+        if run_name is not None:
+            filter = f'tags."mlflow.runName" = "{run_name}" and attributes.status = "FINISHED"'
+        else:
+            filter = 'attributes.status = "FINISHED"'
         self.response = requests.post(
             self.URL,
                 json={
                     "experiment_ids": [experiment_id],
-                    "filter": f'tags."mlflow.runName" = "{run_name}" and attributes.status = "FINISHED"',
+                    "filter": filter,
                 },
             ).json()
         return self.response
@@ -455,4 +527,77 @@ class MlflowAPI:
 
     def list_artifacts(self):
         URL = "http://10.40.3.22:5000/api/2.0/mlflow/artifacts/list"
-        
+
+
+class MLFlowTaskAPI(MlflowAPI):
+    """Helper class to fetch results from MLFlow per task."""
+
+    def get_experiment_and_run(self, task: dict):
+        experiment_id = MLFlowTaskAPI.get_experiment_id(task)
+        # Filter by ag_pos
+        df = self.get_results_and_filter_ag_pos(experiment_id, task["ag_pos"])
+        # Filter by ag_neg for each experiment_id
+        df = self.filter_ag_neg(experiment_id, task["ag_neg"], df)
+        # df is expected to have 1 row at this point
+        run_id = MLFlowTaskAPI.get_run_id(df)
+        return experiment_id, run_id
+
+
+    def get_experiment_id(task):
+        """Given a task specification, fetch experiment_id and run_id"""
+        ag_pos = task["ag_pos"]
+        ag_neg = task["ag_neg"]
+
+        # Resolve binders
+        if "_" in ag_pos and "_" in ag_neg:
+            return "14"
+        elif "_" in ag_pos and "_" not in ag_neg:
+            raise ValueError(f"Unrecognized task: {task}")
+        elif "_" not in ag_pos and "_" in ag_neg:
+            raise ValueError(f"Unrecognized task: {task}")
+        else:
+            if ag_neg == "9":
+                return "13"
+            elif isinstance(ag_neg, tuple) and len(ag_neg) == 2:
+                return "12"
+            else:
+                return "11"
+
+
+    def get_results_and_filter_ag_pos(self, experiment_id, ag_pos):
+        self.mlflow_request(experiment_id)
+        df = self.build_mlflow_results_df()
+        df = df.loc[df["ag_pos"] == ag_pos]
+        return df
+
+
+    def filter_ag_neg(self, experiment_id, ag_neg, df):
+        if experiment_id == "11" or experiment_id == "14":
+            df = df.loc[df["ag_neg"] == ag_neg]
+        elif experiment_id == "12":
+            idxs = []
+            for i, row in df.iterrows():
+                ag_neg_tupl_str = row["ag_neg"]
+                ag_neg_tupl = tuple(
+                ag_neg_tupl_str
+                .replace("(", "")
+                .replace(")", "")
+                .replace("'", "")
+                .split(", ")
+            )
+                if set(ag_neg_tupl) == set(ag_neg):
+                    idxs.append(i)
+            df = df.loc[idxs]        
+        elif experiment_id == "13":
+            pass
+        else:
+            raise ValueError(f"Unrecognized experiment_id: {experiment_id}")
+        return df
+
+
+    def get_run_id(df):
+        assert len(df) == 1, "Expected 1 result"
+        model_history: str = df["mlflow.log-model.history"].values[0]
+        model_history: dict = json.loads(model_history)
+        run_id = model_history[0]["run_id"]
+        return run_id

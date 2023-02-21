@@ -9,12 +9,15 @@ import math
 from pathlib import Path
 from tkinter import Y
 from typing import List, Optional, Tuple, Union
+import warnings
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
+from scipy.stats import rankdata
 
 import torch
 from torch import nn
@@ -416,6 +419,7 @@ class Attributor:
         model: nn.Module,
         type: str = "deep_lift",  # "integrated_gradients"
         baseline_type: str = "shuffle",  # "zero"
+        num_shuffles: int = 10,
         compute_on: str = "expits",  # "logits"
         multiply_by_inputs: bool = True,
         name: Optional[str] = None,
@@ -451,6 +455,7 @@ class Attributor:
         if baseline_type not in ["shuffle", "zero"]:
             raise ValueError(f"Unknown baseline type {baseline_type}")
         self.baseline_type = baseline_type
+        self.num_shuffles = num_shuffles
 
         if name is None:
             self.name = f"{type}__{compute_on}__{baseline_type}__multiply{multiply_by_inputs}"
@@ -481,22 +486,45 @@ class Attributor:
         """
         assert X.shape == (1, 220), f"Expected input shape (1, 220), got {X.shape}"
         
-        if type(self.attributor) == IntegratedGradients:
-            baseline = self.compute_baseline(X)
-            attribution, err = self.attributor.attribute(
-                inputs=X,
-                baselines=baseline,
-                method="gausslegendre",
-                n_steps=100,
-                return_convergence_delta=True,
+        if self.baseline_type == "zero":
+            if type(self.attributor) == IntegratedGradients:
+                attribution, err = self.attributor.attribute(
+                    inputs=X,
+                    baselines=torch.zeros(X.shape),
+                    method="gausslegendre",
+                    n_steps=100,
+                    return_convergence_delta=True,
+                )
+            elif type(self.attributor) == DeepLift:
+                attribution, err = self.attributor.attribute(
+                    inputs=X,
+                    baselines=torch.zeros(X.shape),
+                    return_convergence_delta=True,
+                )
+        
+        elif self.baseline_type == "shuffle":
+            shuffles: List[torch.tensor] = Attributor.get_onehot_shuffles(
+                X,
+                num_shuffles=self.num_shuffles
             )
-        elif type(self.attributor) == DeepLift:
-            baseline = self.compute_baseline(X)
-            attribution, err = self.attributor.attribute(
-                inputs=X,
-                baselines=baseline,
-                return_convergence_delta=True,
-            )
+            attrs = []
+            for baseline in shuffles:
+                if type(self.attributor) == IntegratedGradients:
+                    attribution, err = self.attributor.attribute(
+                        inputs=X,
+                        baselines=baseline,
+                        method="gausslegendre",
+                        n_steps=100,
+                        return_convergence_delta=True,
+                    )
+                elif type(self.attributor) == DeepLift:
+                    attribution, err = self.attributor.attribute(
+                        inputs=X,
+                        baselines=baseline,
+                        return_convergence_delta=True,
+                    )
+                attrs.append(attribution)
+            attribution = torch.mean(torch.stack(attrs), dim=0)
 
         if (not return_err) and (not return_baseline):
             return attribution
@@ -505,7 +533,7 @@ class Attributor:
             if return_err:
                 res.append(err)
             if return_baseline:
-                res.append(baseline)
+                res.append(self.baseline_type)
             return tuple(res)
 
 
@@ -531,13 +559,6 @@ class Attributor:
             records.append((attributions, approximation_error))
         return records
 
-    def compute_baseline(self, X: torch.tensor):
-        if self.baseline_type == "shuffle":
-            baseline = Attributor.compute_onehot_baseline_by_shuffling(X.reshape(11, 20)).reshape((1, 11*20))
-        elif self.baseline_type == "zero":
-            baseline = torch.zeros(X.shape)
-        return baseline
-
     @staticmethod
     def shuffle_rows(tensor: torch.tensor) -> torch.tensor:
         tensor_shape = tensor.shape
@@ -547,20 +568,22 @@ class Attributor:
         return torch.tensor(tensor[index,:])
 
     @staticmethod
-    def compute_onehot_baseline_by_shuffling(
-        onehot_tensor: torch.tensor,
+    def get_onehot_shuffles(
+        onehot_vector: torch.tensor,
         num_shuffles: int = 1000,
         ):
         """Compute a baseline for one-hot encoded tensor by shuffling the rows
         and averaging the resulting one-hot encodings.
         """
+        assert onehot_vector.shape == (1, 220), f"Expected input shape (1, 220), got {onehot_vector.shape}"
         shuffles = []
         for _ in range(num_shuffles):
             shuffles.append(
-                Attributor.shuffle_rows(onehot_tensor)
+                Attributor
+                .shuffle_rows(onehot_vector.reshape((11, 20)))
+                .reshape((1, 220))
             )
-        baseline = sum(shuffles) / num_shuffles
-        return baseline
+        return shuffles
 
 
 AVAILABLE_MODELS = [SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
@@ -987,3 +1010,129 @@ def compute_pr_curve(y_true, y_score) -> tuple:
     )
     optimal_thr = find_optimal_threshold(y_true, y_score, method="f1")
     return precision, recall, thresholds, optimal_thr
+
+
+def compute_and_collect_model_predictions_and_attributions(df, model, attributors, N=100):
+    """Compute model predictions and attributions for a given dataset.
+    """
+    df = df.copy()
+    if N is not None:
+        df = df.sample(N)
+
+    res = {}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for row in df.iterrows():
+            slide = row[1]["Slide"]
+            binds_a_pos_ag = row[1]["binds_a_pos_ag"]
+
+            # Model predictions and basic parameters
+            is_slide_in_train = slide in df["Slide"]
+            enc = torch.tensor(preprocessing.onehot_encode(slide)).float().reshape((1, -1))
+            expits, logits = model.forward(enc, return_logits=True)
+            y_pred = expits.round()
+            y_true = binds_a_pos_ag
+            is_pred_correct = bool((y_pred == y_true)[0][0])
+            # print(f"{y_pred=} ? {y_true=} => {is_pred_correct=}")
+
+            # Attributions
+            res_attr = {}
+            for attributor in attributors:
+                attributions, baseline = attributor.attribute(enc, return_baseline=True)
+                # baseline_expits, baseline_logits = model.forward(baseline, return_logits=True)
+                res_attr[attributor.name] = {
+                    "attributions": attributions,
+                    "baseline": baseline,
+                    # "baseline_logits": baseline_logits,
+                    # "baseline_expits": baseline_expits,
+            }
+
+            # Record results
+            res[slide] = {
+                "enc": enc,
+                "logits": logits,
+                "expits": expits,
+                "y_pred": y_pred,
+                "y_true": y_true,
+                "is_pred_correct": is_pred_correct,
+                "attributions": res_attr,
+            }
+
+    # Transform results into a dataframe
+    df_res = pd.DataFrame.from_dict(res, orient="index")
+    df_res = df_res.sort_values("logits", ascending=False)
+    df_res.reset_index(inplace=True)
+    df_res.rename(columns={"index": "slide"}, inplace=True)
+
+    df_res["logits"] = df_res["logits"].astype(float)
+    df_res["expits"] = df_res["expits"].astype(float)
+    df_res["y_pred"] = df_res["y_pred"].astype(int)
+    return df_res
+
+
+def get_df_sel(attributor_sel, df, df_para, ag_pos, ag_neg):
+    """Get df_sel for selected attributor."""
+
+    def filter_res_for_selected_attributor(df: pd.DataFrame, attributor_sel: str):
+        """Filter df_res from `compute_and_collect_model_predictions_and_attributions`
+        for selected attributor.
+        
+        Returns:
+            - df_sel: df with selected attributor (Num_slides x #cols(df))
+        """
+        records = []
+        for row in df.iterrows():
+            s = row[1]
+            attr_data = s["attributions"][attributor_sel]
+            new_row_dict = {
+                **dict(s),
+                **attr_data,
+            }
+            records.append(new_row_dict)
+
+        df_sel = pd.DataFrame.from_records(records)
+        # df_sel["baseline_logits"] = df_sel["baseline_logits"].astype(float)
+        # df_sel["baseline_expits"] = df_sel["baseline_expits"].astype(float)
+        # df_attr = pd.DataFrame(np.concatenate(df_sel["attributions"].map(lambda x: x.detach().numpy()), axis=0))
+        
+        return df_sel  #, df_attr
+    
+    df_sel = filter_res_for_selected_attributor(df, attributor_sel)
+    df_sel["Antigen"] = np.where(df_sel["y_true"] == 1, ag_pos, ag_neg)
+    df_sel = pd.merge(df_sel, df_para, how="left", left_on=("slide", "Antigen"), right_on=("Slide", "Antigen"))
+    return df_sel
+
+
+def get_paratope_ranks(y_true_class: int, df_sel, random_paratope=False):
+    """Get the ranks of the paratope positions in the attributions."""
+    paratope_ranks = OrderedDict()
+    sel_indexes = []
+    for i, row in df_sel.iterrows():
+        if row["y_true"] != y_true_class:
+            continue
+
+        slide = row["slide"]
+        attr = row["attributions"].detach().numpy().reshape((11, 20))
+    
+        try:
+            if not random_paratope:
+                paratope = preprocessing.onehot_encode_nodeg_paratope(
+                    preprocessing.get_no_degree_paratope(
+                        row["agregatesABParatope"]
+                    )
+                ).reshape((11, 20))
+            else:
+                paratope = np.zeros((11, 20))
+                for i in range(11):
+                    idx = np.random.choice(range(20), 1)
+                    paratope[i, idx] = 1.0
+        except:
+            continue
+
+        ranks = rankdata(-attr, axis=1, method="ordinal")
+        paratope_ranks_arr = (ranks * paratope).sum(axis=1)
+        # paratope_ranks_arr = np.where(paratope_ranks_arr == 0, -10, paratope_ranks_arr)
+        # paratope_ranks_arr = np.where(paratope_ranks_arr == 0, np.nan, paratope_ranks_arr)
+        paratope_ranks[slide] = paratope_ranks_arr
+        sel_indexes.append(i)
+    return paratope_ranks, sel_indexes

@@ -50,6 +50,23 @@ class BinaryclassPipeline(DataPipeline):
     """Organized workflow for binary classification. 
     """
 
+    def loader(
+        self,
+        ag_pos,
+        ag_neg,
+        N,
+        ):
+        """Load data for binary classification.
+        """
+        df = utils.load_1v1_binary_dataset(
+            ag_pos=ag_pos,
+            ag_neg=ag_neg,
+            num_samples=N,
+            drop_duplicates=False,
+            with_paratopes=False,
+            )
+        return df
+
     def step_1_process_data(
         self,
         ag_pos: str,
@@ -61,14 +78,9 @@ class BinaryclassPipeline(DataPipeline):
         ):
         """Process data for binary classification.
         """
-        df = utils.load_1v1_binary_dataset(
-            ag_pos=ag_pos,
-            ag_neg=ag_neg,
-            num_samples=N,
-            drop_duplicates=False,
-            with_paratopes=False,
-            )
-        
+
+        df = self.loader(ag_pos, ag_neg, N)
+
         if "Slide_farmhash_mod_10" not in df.columns:
             warnings.warn("Slide_farmhash_mod_10 not in df.columns. Adding it now.")
             df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
@@ -221,6 +233,35 @@ class BinaryclassPipeline(DataPipeline):
         """Visualize model for binary classification.
         """
         warnings.warn("No visualization for binary classification is setup.")
+
+
+class BinaryclassBindersPipeline(BinaryclassPipeline):
+
+    def loader(
+        self,
+        ag_pos,
+        ag_neg,
+        N,
+        ):
+        """Load data for binary classification.
+        """
+        ag = ag_pos.split("_")[0]
+        assert ag_pos.split("_")[1] == "high", "ag_pos must be in format '{ag}_high'."
+        assert ag == ag_neg.split("_")[0], "ag_pos and ag_neg must be from the same antigen."
+
+        ag_neg_type = ag_neg.split("_")[1]
+        if ag_neg_type == "looser":
+            dataset_type = "high_looser"
+        elif ag_neg_type == "95low":
+            dataset_type = "high_95low"
+        else:
+            raise ValueError(f"ag_neg_type={ag_neg_type} not recognized.")
+
+        df = utils.build_binding_binary_dataset(
+            ag,
+            dataset_type,
+            )
+        return df
 
 
 class MulticlassPipeline(DataPipeline):

@@ -28,6 +28,7 @@ Usage:
     script_01_build_datasets.py download_absolut
     script_01_build_datasets.py absolut_processed_multiclass
     script_01_build_datasets.py absolut_processed_multilabel
+    script_01_build_datasets.py unzip_rawbindingsmurine
 
 Options:
     -h --help   Show help.
@@ -174,3 +175,16 @@ if __name__ == "__main__":
             out_dir = config.DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR
 
         process_downstream_and_save(out_dir, ags_open, df_wide)
+    
+    elif arguments["unzip_rawbindingsmurine"]:
+        input_dir = Path("data/Absolut/data/RawBindingsMurine")
+        output_dir = Path("data/Absolut/data/RawBindingsMurine/unzipped")
+        output_dir.mkdir(exist_ok=True, parents=True)
+
+        print(f"Unzipping all files in {input_dir} to {output_dir}...")
+        for file in input_dir.glob("*.zip"):
+            if file.stem.split("_")[0] not in config.ANTIGENS:
+                print(f"Skipping {file}, not in Mini-Absolut")
+                continue
+            print(f"Unzipping {file} to {output_dir / file.stem}")
+            utils.unzip_file(file, output_dir / file.stem)
