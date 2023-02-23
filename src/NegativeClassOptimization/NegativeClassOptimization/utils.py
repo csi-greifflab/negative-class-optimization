@@ -451,7 +451,7 @@ def build_binding_dataset_per_ag(
     dataset_type: str, 
     df = None, 
     seed = config.SEED,
-    num_slides: int = 90000,
+    num_slides: int = 80000,
     ):
     """Build a binary dataset for a given antigen.
     """

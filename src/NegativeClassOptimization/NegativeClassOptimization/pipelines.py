@@ -75,6 +75,7 @@ class BinaryclassPipeline(DataPipeline):
         sample_train: Optional[int] = None,
         batch_size: int = 64,
         split_id: int = 0,
+        shuffle_antigen_labels: bool = False,
         ):
         """Process data for binary classification.
         """
@@ -87,6 +88,14 @@ class BinaryclassPipeline(DataPipeline):
 
         df_train_val = df.loc[df["Slide_farmhash_mod_10"] != split_id].copy()
         df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
+
+        if shuffle_antigen_labels:
+            train_val_ag_shuffled = df_train_val["Antigen"].sample(frac=1)
+            test_closed_ag_shuffled = df_test_closed["Antigen"].sample(frac=1)
+
+            df_train_val["Antigen"] = train_val_ag_shuffled.reset_index(drop=True)
+            df_test_closed["Antigen"] = test_closed_ag_shuffled.reset_index(drop=True)
+
         train_data, test_data, train_loader, test_loader = (
             preprocessing.preprocess_data_for_pytorch_binary(
                 df_train_val=df_train_val,
@@ -104,6 +113,7 @@ class BinaryclassPipeline(DataPipeline):
                 "sample_train": sample_train,
                 "batch_size": batch_size,
                 "split_id": split_id,
+                "shuffle_antigen_labels": shuffle_antigen_labels,
 
                 "N_train": len(train_loader.dataset),
                 "N_closed": len(test_loader.dataset),
@@ -118,7 +128,19 @@ class BinaryclassPipeline(DataPipeline):
                         raise ValueError("Could not find unique uid.")
                     else:
                         continue
-            
+
+            if shuffle_antigen_labels:
+                train_val_ag_shuffled.to_csv(
+                    config.TMP_DIR / f"{uid}_train_val_ag_shuffled.tsv", 
+                    sep='\t',
+                    index=False)
+                mlflow.log_artifact(config.TMP_DIR / f"{uid}_train_val_ag_shuffled.tsv", "dataset/train_val_ag_shuffled.tsv")
+
+                test_closed_ag_shuffled.to_csv(
+                    config.TMP_DIR / f"{uid}_test_closed_ag_shuffled.tsv", 
+                    sep='\t',
+                    index=False)
+                mlflow.log_artifact(config.TMP_DIR / f"{uid}_test_closed_ag_shuffled.tsv", "dataset/test_closed_ag_shuffled.tsv")
 
             train_data.df.to_csv(
                 config.TMP_DIR / f"{uid}_train_dataset.tsv", 
