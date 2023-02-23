@@ -257,7 +257,7 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         else:
             raise ValueError(f"ag_neg_type={ag_neg_type} not recognized.")
 
-        df = utils.build_binding_binary_dataset(
+        df = utils.build_binding_dataset_per_ag(
             ag,
             dataset_type,
             )

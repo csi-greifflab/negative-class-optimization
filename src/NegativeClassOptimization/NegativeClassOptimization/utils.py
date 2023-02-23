@@ -341,10 +341,20 @@ def load_paratopes(
 
 def load_raw_bindings_murine(
     ag, 
-    base_path=config.DATA_SLACK_1_RAWBINDINGSMURINE
+    base_path = config.DATA_SLACK_1_RAWBINDINGSMURINE
     ):
-    """Load raw murine binding data for an antigen.
     """
+    **DEPRECATED**
+    
+    Use `load_binding_per_ag`.
+
+    I tried to use the murine binding data, `Absolut/data/RawBindingsMurine`,
+    but it proved not useful. I didn't find interesections with paratopes and,
+    overall, it's source is unclear. We use `Absolut/data/RawBindingsPerClassMurine/`
+    instead.    
+    """
+    raise DeprecationWarning("DEPRECATED.")
+
     ag_full = [ag_i.name for ag_i in list(base_path.glob("*")) if ag_i.stem.split("_")[0] == ag][0]
     ag_dir = base_path / f"{ag_full}/{ag_full}"
     num_files = len(list(ag_dir.glob("*Process*.txt")))
@@ -362,9 +372,21 @@ def load_raw_bindings_murine(
     return df
 
 
-def build_binding_binary_dataset(ag, dataset_type: str, df = None, seed = config.SEED):
-    """Build a binary dataset for a given antigen.
-    """    
+def build_binding_binary_dataset(
+    ag, 
+    dataset_type: str, 
+    df = None, 
+    seed = config.SEED
+    ):
+    """
+    **DEPRECATED**
+
+    Check `load_raw_bindings_murine` documentation.
+    Use `build_binding_dataset_per_ag`.
+    """
+
+    raise DeprecationWarning("DEPRECATED.")
+
     if df is None:
         df = load_raw_bindings_murine(ag)
 
@@ -387,6 +409,90 @@ def build_binding_binary_dataset(ag, dataset_type: str, df = None, seed = config
     df_final = df_final.sample(frac=1).reset_index(drop=True)  # shuffle
 
     return df_final
+
+
+def load_binding_per_ag(
+    ag: str,
+    base_path = config.DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE
+    ):
+    """Load binding data for a given antigen.
+    """
+
+    validate_ag_miniabsolut(ag)    
+    
+    # Get the full name (Absolut) of the antigen.
+    ag_full: str = [
+        path_i.name.split("Analyses")[0] 
+        for path_i in list(base_path.glob("*")) 
+        if path_i.stem.split("_")[0] == ag
+        ][0]
+    
+    ag_dir = base_path / f"{ag_full}Analyses"
+
+    mascotte_path = ag_dir / f"{ag_full}_MascotteSlices.txt.zip"
+    losser_exc_path = ag_dir / f"{ag_full}_LooserExclusiveSlices.txt.zip"
+    nonmascotte_path = ag_dir / f"{ag_full}_500kNonMascotte.txt.zip"
+
+    reader = lambda path: pd.read_csv(path, compression="zip", sep="\t", header=1)
+    df_mascotte = reader(mascotte_path)
+    df_looser_exc = reader(losser_exc_path)
+    df_nonmascotte = reader(nonmascotte_path)
+
+    df_mascotte["Source"] = "mascotte"
+    df_looser_exc["Source"] = "looser_exc"
+    df_nonmascotte["Source"] = "nonmascotte"
+    df = pd.concat([df_mascotte, df_looser_exc, df_nonmascotte], axis=0)
+
+    return df
+
+
+def build_binding_dataset_per_ag(
+    ag, 
+    dataset_type: str, 
+    df = None, 
+    seed = config.SEED,
+    num_slides: int = 90000,
+    ):
+    """Build a binary dataset for a given antigen.
+    """
+
+    validate_ag_miniabsolut(ag)
+
+    if df is None:
+        df = load_binding_per_ag(ag)
+
+    # Duplicated slides exist. We keep the slide with the lowest energy.
+    df.sort_values("Energy", ascending=True, inplace=True)
+    df.drop_duplicates(subset="Slide", keep="first", inplace=True)
+
+    try:
+        df_pos = df.loc[df["Source"] == "mascotte"].sample(num_slides // 2, random_state=seed)
+        df_pos["Antigen"] = f"{ag}_high"
+    except ValueError:
+        raise ValueError(f"{ag} has less than {num_slides // 2} mascotte slides - {(df['Source'] == 'mascotte').sum()}.")
+
+    if dataset_type == "high_looser":
+        df_neg = df.loc[df["Source"] == "looser_exc"].sample(num_slides // 2, random_state=seed)
+        df_neg["Antigen"] = f"{ag}_looser"
+    elif dataset_type == "high_95low":
+        looser_max_energy = max(df.loc[df["Source"] == "looser_exc", "Energy"])
+        df_neg = df.loc[
+            (df["Source"] == "nonmascotte")
+            & (df["Energy"] > looser_max_energy)
+            ].sample(50000, random_state=seed)
+        df_neg["Antigen"] = f"{ag}_95low"
+    else:
+        raise ValueError(f"Invalid dataset_type: {dataset_type}")
+
+    df_final = pd.concat([df_pos, df_neg], axis=0)
+    df_final = df_final.sample(frac=1, random_state=seed).reset_index(drop=True)  # shuffle
+    assert df_final["Slide"].duplicated().sum() == 0, "Duplicated slides."
+
+    return df_final
+
+
+def validate_ag_miniabsolut(ag):
+    assert ag in config.ANTIGENS, f"Antigen {ag} not in MiniAbsolut."
 
 
 def mlflow_log_params_online_metrics(online_metrics: dict) -> None:
