@@ -90,11 +90,12 @@ class BinaryclassPipeline(DataPipeline):
         df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
 
         if shuffle_antigen_labels:
-            train_val_ag_shuffled = df_train_val["Antigen"].sample(frac=1)
-            test_closed_ag_shuffled = df_test_closed["Antigen"].sample(frac=1)
 
-            df_train_val["Antigen"] = train_val_ag_shuffled.reset_index(drop=True)
-            df_test_closed["Antigen"] = test_closed_ag_shuffled.reset_index(drop=True)
+            df_train_val["Antigen"] = df_train_val["Antigen"].sample(frac=1).values
+            df_test_closed["Antigen"] = df_test_closed["Antigen"].sample(frac=1).values
+
+        print(df_train_val["Antigen"].value_counts())
+        print(df_test_closed["Antigen"].value_counts())
 
         train_data, test_data, train_loader, test_loader = (
             preprocessing.preprocess_data_for_pytorch_binary(
@@ -128,19 +129,6 @@ class BinaryclassPipeline(DataPipeline):
                         raise ValueError("Could not find unique uid.")
                     else:
                         continue
-
-            if shuffle_antigen_labels:
-                train_val_ag_shuffled.to_csv(
-                    config.TMP_DIR / f"{uid}_train_val_ag_shuffled.tsv", 
-                    sep='\t',
-                    index=False)
-                mlflow.log_artifact(config.TMP_DIR / f"{uid}_train_val_ag_shuffled.tsv", "dataset/train_val_ag_shuffled.tsv")
-
-                test_closed_ag_shuffled.to_csv(
-                    config.TMP_DIR / f"{uid}_test_closed_ag_shuffled.tsv", 
-                    sep='\t',
-                    index=False)
-                mlflow.log_artifact(config.TMP_DIR / f"{uid}_test_closed_ag_shuffled.tsv", "dataset/test_closed_ag_shuffled.tsv")
 
             train_data.df.to_csv(
                 config.TMP_DIR / f"{uid}_train_dataset.tsv", 
