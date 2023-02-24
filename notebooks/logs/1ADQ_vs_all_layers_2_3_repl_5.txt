@@ -1,0 +1,10 @@
+Epoch: 1/200 - Train loss: 0.7009190917015076, Validation loss: 0.6947222352027893
+Epoch: 2/200 - Train loss: 0.6934111714363098, Validation loss: 0.6932914853096008
+Epoch: 3/200 - Train loss: 0.6931636333465576, Validation loss: 0.6931397914886475
+Epoch: 4/200 - Train loss: 0.693171501159668, Validation loss: 0.6931697130203247
+Epoch: 5/200 - Train loss: 0.6931742429733276, Validation loss: 0.693108856678009
+Epoch: 6/200 - Train loss: 0.6931503415107727, Validation loss: 0.6932916045188904
+Epoch: 7/200 - Train loss: 0.6931756138801575, Validation loss: 0.6932867765426636
+Epoch: 8/200 - Train loss: 0.6931800246238708, Validation loss: 0.6931208968162537
+Epoch: 9/200 - Train loss: 0.6931774616241455, Validation loss: 0.6932821869850159
+Epoch: 10/200 - Train loss: 0.6931721568107605, Validation loss: 0.6931477785110474
