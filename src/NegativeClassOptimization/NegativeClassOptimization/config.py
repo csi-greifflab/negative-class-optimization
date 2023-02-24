@@ -54,7 +54,7 @@ ANTIGENS = [
     '1ADQ',
     '1FBI',
     '2YPV',
-    '1OB1'
+    '1OB1',
 ]
 ANTIGENS_CLOSEDSET = ['1FBI', '1NSN', '1OB1', '1WEJ', '3VRL', '5E94']
 ANTIGENS_OPENSET = ['1ADQ', '1H0D', '2YPV', '3RAJ']

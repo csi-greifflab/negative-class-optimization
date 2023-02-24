@@ -94,9 +94,6 @@ class BinaryclassPipeline(DataPipeline):
             df_train_val["Antigen"] = df_train_val["Antigen"].sample(frac=1).values
             df_test_closed["Antigen"] = df_test_closed["Antigen"].sample(frac=1).values
 
-        print(df_train_val["Antigen"].value_counts())
-        print(df_test_closed["Antigen"].value_counts())
-
         train_data, test_data, train_loader, test_loader = (
             preprocessing.preprocess_data_for_pytorch_binary(
                 df_train_val=df_train_val,
@@ -165,6 +162,7 @@ class BinaryclassPipeline(DataPipeline):
         optimizer_type = "Adam",
         momentum = 0.9,
         weight_decay = 0,
+        swa: bool = False,
         ):
         """Train model for binary classification.
         """
@@ -176,7 +174,7 @@ class BinaryclassPipeline(DataPipeline):
         else:
             callback_on_model_end_epoch = None
 
-        online_metrics = ml.train_for_ndb1(
+        train_output = ml.train_for_ndb1(
             epochs,
             learning_rate, 
             self.train_loader, 
@@ -187,7 +185,13 @@ class BinaryclassPipeline(DataPipeline):
             momentum=momentum,
             weight_decay=weight_decay,
             callback_on_model_end_epoch=callback_on_model_end_epoch,
+            swa=swa,
             )
+        
+        if swa:
+            swa_model, model, online_metrics = train_output
+        else:
+            online_metrics = train_output
         
         if self.log_mlflow:
             mlflow.log_params({
@@ -199,11 +203,13 @@ class BinaryclassPipeline(DataPipeline):
                 "optimizer_type": optimizer_type,
                 "momentum": momentum,
                 "weight_decay": weight_decay,
+                "swa": swa,
             })
             utils.mlflow_log_params_online_metrics(online_metrics)
 
         if self.save_model_mlflow:
             mlflow.pytorch.log_model(model, "models/trained_model")
+            mlflow.pytorch.log_model(swa_model, "models/swa_model")
 
         self.input_dim = input_dim
         self.num_hidden_units = num_hidden_units
@@ -215,6 +221,7 @@ class BinaryclassPipeline(DataPipeline):
         self.weight_decay = weight_decay
 
         self.model = model
+        self.swa_model = swa_model
         self.online_metrics = online_metrics
 
         self.is_step_2_complete = True

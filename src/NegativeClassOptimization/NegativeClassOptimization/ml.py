@@ -21,6 +21,7 @@ from scipy.stats import rankdata
 
 import torch
 from torch import nn
+import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
@@ -764,19 +765,12 @@ def train_for_ndb1(
     momentum: float = 0,
     weight_decay: float = 0,
     callback_on_model_end_epoch: callable = None,
+    swa: bool = False,
     ) -> List[dict]:
     """Train model for the NDB1 problem formalization.
 
-    Args:
-        epochs (_type_): _description_
-        learning_rate (_type_): _description_
-        train_loader (_type_): _description_
-        test_loader (_type_): _description_
-        open_loader (_type_): _description_
-        model (_type_): _description_
-
-    Returns:
-        List[dict]: metrics per epoch.
+    SWA implementation from:
+    https://github.com/csi-greifflab/negative-class-optimization/blob/9d45944a4f696af4a8daa9eed87b2346bafb301b/notebooks/SN10_SWA.ipynb
     """
 
     loss_fn = nn.BCELoss()
@@ -787,6 +781,13 @@ def train_for_ndb1(
         weight_decay, 
         model
         )
+    
+    if swa:
+        swa_model = optim.swa_utils.AveragedModel(model)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
+        swa_start = 3
+        swa_scheduler = optim.swa_utils.SWALR(optimizer, swa_lr=0.005)
+
     if callback_on_model_end_epoch is None:
         callback_on_model_end_epoch = lambda x, t: None
 
@@ -810,7 +811,19 @@ def train_for_ndb1(
 
         callback_on_model_end_epoch(model, t)
 
-    return online_metrics_per_epoch
+        if swa:
+            if t >= swa_start:
+                swa_model.update_parameters(model)
+                swa_scheduler.step()
+            else:
+                scheduler.step()
+
+    if swa:
+        torch.optim.swa_utils.update_bn(train_loader, swa_model)
+        return swa_model, model, online_metrics_per_epoch
+
+    else:
+        return online_metrics_per_epoch
 
 
 def compute_binary_metrics(y_test_pred, y_test_true) -> dict:

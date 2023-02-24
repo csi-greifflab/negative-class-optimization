@@ -26,10 +26,11 @@ from NegativeClassOptimization import config
 
 TEST = False
 experiment_id = 13
-run_name = "dev-v0.1.2-shuffled"
+run_name = "dev-v0.1.2-2"
 num_processes = 20
 
-shuffle_antigen_labels = True
+shuffle_antigen_labels = False
+swa = True
 
 epochs = 50
 learning_rate = 0.001
@@ -68,6 +69,7 @@ def multiprocessing_wrapper_script_12c(
                 sample_train=sample_train,
                 batch_size=batch_size,
                 shuffle_antigen_labels=shuffle_antigen_labels,
+                swa=swa,
             )
 
             pipe.step_2_train_model(
