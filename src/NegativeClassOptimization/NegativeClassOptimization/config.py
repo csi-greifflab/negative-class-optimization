@@ -39,6 +39,17 @@ DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Ta
 DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"
 DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
 
+# Experimental data paths
+DATA_EXPERIMENTAL_DIR = DATA_BASE_PATH / "Experimental_Datasets"
+DATA_BRIJ_DIR = DATA_EXPERIMENTAL_DIR / "Brij_Dataset"
+DATA_POREBSKI_DIR = DATA_EXPERIMENTAL_DIR / "Porebski_Dataset"
+DATA_POREBSKI_AFFMAT = (
+    DATA_POREBSKI_DIR / "fc079_fc080_her2_affmat_paired_translated.csv"
+)
+DATA_POREBSKI_MLLIB = (
+    DATA_POREBSKI_DIR / "fc081_fc082_her2_ml_lib_paired_translated.csv"
+)
+
 DATA_XSTREME = DATA_BASE_PATH / "xstreme"
 
 TMP_DIR = DATA_BASE_PATH / "tmp"

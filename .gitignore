@@ -6,10 +6,10 @@ data
 Frozen_MiniAbsolut_ML
 notebooks/mutant_igs
 notebooks/binder_igs
+notebooks/torch_models
 cdhit-master
 notebooks/cd-hit-res
 notebooks/data-leak-res
 notebooks/figures
-notebooks/torch_models
 notebooks/nb_4_entropy
-
+notebooks/logs
