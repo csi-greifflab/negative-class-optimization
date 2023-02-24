@@ -29,6 +29,8 @@ Usage:
     script_01_build_datasets.py absolut_processed_multiclass
     script_01_build_datasets.py absolut_processed_multilabel
     script_01_build_datasets.py unzip_rawbindingsmurine
+    script_01_build_datasets.py miniabsolut
+
 
 Options:
     -h --help   Show help.
@@ -82,6 +84,19 @@ def process_downstream_and_save(out_dir, ags_open, df_wide):
 
     with open(out_dir / "build_metadata.json", "w+") as fh:
         json.dump(metadata, fh)
+
+
+def split_to_train_test_rest_dfs(N_train, N_test, df_ag):
+    df_train = df_ag.sample(n=N_train, random_state=config.SEED)
+    df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(n=N_test, random_state=config.SEED)
+    df_rest = df_ag.loc[~df_ag.index.isin(df_train.index) & ~df_ag.index.isin(df_test.index)].copy()
+    return df_train,df_test,df_rest
+
+
+def save_train_test_rest(prefix, N_train, N_test, ag_dir, df_train, df_test, df_rest):
+    df_train.to_csv(ag_dir / f"{prefix}_train_{N_train}.tsv", sep='\t')
+    df_test.to_csv(ag_dir / f"{prefix}_test_{N_test}.tsv", sep='\t')
+    df_rest.to_csv(ag_dir / f"{prefix}_rest.tsv", sep='\t')
 
 
 if __name__ == "__main__":
@@ -188,3 +203,55 @@ if __name__ == "__main__":
                 continue
             print(f"Unzipping {file} to {output_dir / file.stem}")
             utils.unzip_file(file, output_dir / file.stem)
+    
+    elif arguments["miniabsolut"]:
+        base_p = config.DATA_MINIABSOLUT
+        base_p.mkdir(exist_ok=True, parents=False)
+
+        # Load the Absolut binding data for the antigens in Mini-Absolut.
+        dfs = []
+        for ag in config.ANTIGENS:
+            df = utils.load_binding_per_ag(ag)
+            df["Antigen"] = ag
+            dfs.append(df)
+        df = pd.concat(dfs, axis=0)
+
+        # Get mascotte
+        df_m = df.loc[df["Source"] == "mascotte"].copy()
+
+        # Get mascotte without duplicates
+        df_m_nodup = df_m.loc[~df_m["Slide"].duplicated(keep=False)].copy()
+
+        N_train = 15000
+        N_test = 5000
+        for ag in config.ANTIGENS:
+            
+            print(f"Processing {ag}...")
+
+            ag_dir = base_p / ag
+            ag_dir.mkdir(exist_ok=True, parents=False)
+
+            # Get the mascotte data for the antigen.
+            df_ag = df_m_nodup.loc[df_m_nodup["Antigen"] == ag].copy()
+            df_ag = df_ag.loc[df_ag["Source"] == "mascotte"].copy()
+            df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
+            print(f"mascotte: {df_ag.shape}")
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            save_train_test_rest("high", N_train, N_test, ag_dir, df_train, df_test, df_rest)
+
+            # Get looserX data for the antigen.
+            df_ag = df.loc[df["Antigen"] == ag].copy()
+            df_ag = df_ag.loc[df_ag["Source"] == "looserX"].copy()
+            df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
+            print(f"looserX: {df_ag.shape}")
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            save_train_test_rest("looserX", N_train, N_test, ag_dir, df_train, df_test, df_rest)
+
+            # Get 95low data for the antigen.
+            df_ag = df.loc[df["Antigen"] == ag].copy()
+            energy_5p_cutoff = df_ag[df_ag["Source"] == "looserX"]["Energy"].max()
+            df_ag = df_ag.loc[df_ag["Energy"] >= energy_5p_cutoff].copy()
+            df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
+            print(f"95low: {df_ag.shape}")
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            save_train_test_rest("95low", N_train, N_test, ag_dir, df_train, df_test, df_rest)

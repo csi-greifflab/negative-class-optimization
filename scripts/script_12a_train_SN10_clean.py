@@ -41,7 +41,7 @@ momentum = 0.9
 weight_decay = 0
 batch_size = 64
 
-sample_train = 70000
+sample_train = None
 
 
 def multiprocessing_wrapper_script_12a(

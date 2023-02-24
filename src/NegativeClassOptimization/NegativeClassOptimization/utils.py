@@ -421,11 +421,7 @@ def load_binding_per_ag(
     validate_ag_miniabsolut(ag)    
     
     # Get the full name (Absolut) of the antigen.
-    ag_full: str = [
-        path_i.name.split("Analyses")[0] 
-        for path_i in list(base_path.glob("*")) 
-        if path_i.stem.split("_")[0] == ag
-        ][0]
+    ag_full = resolve_full_ag_name(ag, base_path)
     
     ag_dir = base_path / f"{ag_full}Analyses"
 
@@ -439,11 +435,23 @@ def load_binding_per_ag(
     df_nonmascotte = reader(nonmascotte_path)
 
     df_mascotte["Source"] = "mascotte"
-    df_looser_exc["Source"] = "looser_exc"
+    df_looser_exc["Source"] = "looserX"
     df_nonmascotte["Source"] = "nonmascotte"
     df = pd.concat([df_mascotte, df_looser_exc, df_nonmascotte], axis=0)
 
     return df
+
+
+def resolve_full_ag_name(ag, base_path = config.DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE):
+    """Resolve the full name of an antigen, i.e. name in full Absolut dataset.
+    """
+    ag_full: str = [
+        path_i.name.split("Analyses")[0] 
+        for path_i in list(base_path.glob("*")) 
+        if path_i.stem.split("_")[0] == ag
+        ][0]
+        
+    return ag_full
 
 
 def build_binding_dataset_per_ag(

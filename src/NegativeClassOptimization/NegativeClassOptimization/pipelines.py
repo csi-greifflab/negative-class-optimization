@@ -64,7 +64,7 @@ class BinaryclassPipeline(DataPipeline):
             num_samples=N,
             drop_duplicates=False,
             with_paratopes=False,
-            )
+        )
         return df
 
     def step_1_process_data(
@@ -76,18 +76,23 @@ class BinaryclassPipeline(DataPipeline):
         batch_size: int = 64,
         split_id: int = 0,
         shuffle_antigen_labels: bool = False,
+        load_from_miniabsolut: bool = False,
         ):
         """Process data for binary classification.
         """
 
-        df = self.loader(ag_pos, ag_neg, N)
+        if load_from_miniabsolut:
+            df_train_val, df_test_closed = self._load_from_miniabsolut(ag_pos, ag_neg)
+        
+        else:
+            df = self.loader(ag_pos, ag_neg, N)
 
-        if "Slide_farmhash_mod_10" not in df.columns:
-            warnings.warn("Slide_farmhash_mod_10 not in df.columns. Adding it now.")
-            df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
+            if "Slide_farmhash_mod_10" not in df.columns:
+                warnings.warn("Slide_farmhash_mod_10 not in df.columns. Adding it now.")
+                df["Slide_farmhash_mod_10"] = df["Slide"].apply(lambda x: preprocessing.farmhash_mod_10(x))
 
-        df_train_val = df.loc[df["Slide_farmhash_mod_10"] != split_id].copy()
-        df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
+            df_train_val = df.loc[df["Slide_farmhash_mod_10"] != split_id].copy()
+            df_test_closed = df.loc[df["Slide_farmhash_mod_10"] == split_id].copy()
 
         if shuffle_antigen_labels:
 
@@ -112,6 +117,7 @@ class BinaryclassPipeline(DataPipeline):
                 "batch_size": batch_size,
                 "split_id": split_id,
                 "shuffle_antigen_labels": shuffle_antigen_labels,
+                "load_from_miniabsolut": load_from_miniabsolut,
 
                 "N_train": len(train_loader.dataset),
                 "N_closed": len(test_loader.dataset),
@@ -142,6 +148,8 @@ class BinaryclassPipeline(DataPipeline):
         self.ag_pos = ag_pos
         self.ag_neg = ag_neg
         self.N = N
+        self.shuffle_antigen_labels = shuffle_antigen_labels
+        self.load_from_miniabsolut = load_from_miniabsolut
         self.batch_size = batch_size
         self.split_id = split_id
         self.df_train_val = df_train_val
@@ -150,6 +158,52 @@ class BinaryclassPipeline(DataPipeline):
         self.test_loader = test_loader
 
         self.is_step_1_complete = True
+
+
+    def _miniabsolut_reader(self, ag, name):
+        return pd.read_csv(
+            config.DATA_MINIABSOLUT / ag / name,
+            sep="\t",
+            dtypes={"Antigen": str}
+        )
+
+
+    def _load_from_miniabsolut(self, ag_pos, ag_neg):
+
+        # Load positive data
+        df_train_val_pos = self._miniabsolut_reader(ag_pos, "high_train_15000.tsv")
+        df_test_closed_pos = self._miniabsolut_reader(ag_pos, "high_test_5000.tsv")
+            
+        # Load negative data
+        if isinstance(ag_neg, str):
+            ag_neg = [ag_neg]
+        N_neg = len(ag_neg)
+        train_samples_per_ag_neg = 15000 // N_neg
+        test_samples_per_ag_neg = 5000 // N_neg
+
+        train_neg_dfs = []
+        test_neg_dfs = []
+        for ag_neg_i in ag_neg:
+            df_train_val_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_train_15000.tsv")
+            df_train_val_neg_i = df_train_val_neg_i.iloc[train_samples_per_ag_neg].copy()
+            df_test_closed_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_test_5000.tsv")
+            df_test_closed_neg_i = df_test_closed_neg_i.iloc[test_samples_per_ag_neg].copy()
+
+            train_neg_dfs.append(df_train_val_neg_i)
+            test_neg_dfs.append(df_test_closed_neg_i)
+
+        df_train_val_neg = pd.concat(train_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
+        df_test_closed_neg = pd.concat(test_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
+
+        # Aggregate positive and negative dataframes and shuffle
+        df_train_val = pd.concat(
+                [df_train_val_pos, df_train_val_neg], axis=0
+                ).sample(frac=1).reset_index(drop=True)
+        df_test_closed = pd.concat(
+                [df_test_closed_pos, df_test_closed_neg], axis=0
+                ).sample(frac=1).reset_index(drop=True)
+            
+        return df_train_val, df_test_closed
 
 
     def step_2_train_model(
@@ -262,7 +316,45 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         ):
         """Load data for binary classification.
         """
-        ag = ag_pos.split("_")[0]
+        
+        dataset_type = self.get_dataset_type(ag_pos, ag_neg)
+
+        df = utils.build_binding_dataset_per_ag(
+            ag_pos.split("_")[0],  # antigen name
+            dataset_type,
+            )
+        return df
+
+    
+    def _load_from_miniabsolut(
+        self,
+        ag_pos,
+        ag_neg,
+        ):
+        """Load data for binary classification.
+        """
+        ag = ag_pos.split("_")[0]  # antigen name
+        dataset_type = self.get_dataset_type(ag_pos, ag_neg)
+
+        df_train_val_pos = self._miniabsolut_reader(ag, "high_train_15000.tsv")
+        df_test_closed_pos = self._miniabsolut_reader(ag, "high_test_5000.tsv")
+
+        if dataset_type == "high_looser":
+            df_train_val_neg = self._miniabsolut_reader(ag, "looserX_train_15000.tsv")
+            df_test_closed_neg = self._miniabsolut_reader(ag, "looserX_test_5000.tsv")
+
+        elif dataset_type == "high_95low":
+            df_train_val_neg = self._miniabsolut_reader(ag, "95low_train_15000.tsv")
+            df_test_closed_neg = self._miniabsolut_reader(ag, "95low_test_5000.tsv")
+        
+        df_train_val = pd.concat([df_train_val_pos, df_train_val_neg], axis=0).sample(frac=1).reset_index(drop=True)
+        df_test_closed = pd.concat([df_test_closed_pos, df_test_closed_neg], axis=0).sample(frac=1).reset_index(drop=True)
+
+        return df_train_val, df_test_closed
+
+
+    def get_dataset_type(self, ag_pos, ag_neg):
+        ag = ag_pos.split("_")[0]  # antigen name
         assert ag_pos.split("_")[1] == "high", "ag_pos must be in format '{ag}_high'."
         assert ag == ag_neg.split("_")[0], "ag_pos and ag_neg must be from the same antigen."
 
@@ -273,12 +365,7 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
             dataset_type = "high_95low"
         else:
             raise ValueError(f"ag_neg_type={ag_neg_type} not recognized.")
-
-        df = utils.build_binding_dataset_per_ag(
-            ag,
-            dataset_type,
-            )
-        return df
+        return dataset_type
 
 
 class MulticlassPipeline(DataPipeline):
