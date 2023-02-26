@@ -29,6 +29,7 @@ experiment_id = 12
 run_name = "dev-v0.1.2-2"
 num_processes = 20
 
+load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
 
@@ -69,7 +70,7 @@ def multiprocessing_wrapper_script_12b(
                 sample_train=sample_train,
                 batch_size=batch_size,
                 shuffle_antigen_labels=shuffle_antigen_labels,
-                swa=swa,
+                load_from_miniabsolut=load_from_miniabsolut
             )
 
             pipe.step_2_train_model(
@@ -78,6 +79,7 @@ def multiprocessing_wrapper_script_12b(
                 optimizer_type=optimizer_type,
                 momentum=momentum,
                 weight_decay=weight_decay,
+                swa=swa,
             )
 
             pipe.step_3_evaluate_model()

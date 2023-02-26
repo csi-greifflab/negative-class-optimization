@@ -164,7 +164,7 @@ class BinaryclassPipeline(DataPipeline):
         return pd.read_csv(
             config.DATA_MINIABSOLUT / ag / name,
             sep="\t",
-            dtypes={"Antigen": str}
+            dtype={"Antigen": str}
         )
 
 
@@ -185,9 +185,9 @@ class BinaryclassPipeline(DataPipeline):
         test_neg_dfs = []
         for ag_neg_i in ag_neg:
             df_train_val_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_train_15000.tsv")
-            df_train_val_neg_i = df_train_val_neg_i.iloc[train_samples_per_ag_neg].copy()
+            df_train_val_neg_i = df_train_val_neg_i.iloc[:train_samples_per_ag_neg].copy()
             df_test_closed_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_test_5000.tsv")
-            df_test_closed_neg_i = df_test_closed_neg_i.iloc[test_samples_per_ag_neg].copy()
+            df_test_closed_neg_i = df_test_closed_neg_i.iloc[:test_samples_per_ag_neg].copy()
 
             train_neg_dfs.append(df_train_val_neg_i)
             test_neg_dfs.append(df_test_closed_neg_i)
@@ -337,7 +337,9 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         dataset_type = self.get_dataset_type(ag_pos, ag_neg)
 
         df_train_val_pos = self._miniabsolut_reader(ag, "high_train_15000.tsv")
+        df_train_val_pos["Antigen"] = ag_pos
         df_test_closed_pos = self._miniabsolut_reader(ag, "high_test_5000.tsv")
+        df_test_closed_pos["Antigen"] = ag_pos
 
         if dataset_type == "high_looser":
             df_train_val_neg = self._miniabsolut_reader(ag, "looserX_train_15000.tsv")
@@ -347,6 +349,9 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
             df_train_val_neg = self._miniabsolut_reader(ag, "95low_train_15000.tsv")
             df_test_closed_neg = self._miniabsolut_reader(ag, "95low_test_5000.tsv")
         
+        df_train_val_neg["Antigen"] = ag_neg
+        df_test_closed_neg["Antigen"] = ag_neg
+
         df_train_val = pd.concat([df_train_val_pos, df_train_val_neg], axis=0).sample(frac=1).reset_index(drop=True)
         df_test_closed = pd.concat([df_test_closed_pos, df_test_closed_neg], axis=0).sample(frac=1).reset_index(drop=True)
 

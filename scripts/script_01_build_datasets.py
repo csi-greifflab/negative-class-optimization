@@ -241,6 +241,13 @@ if __name__ == "__main__":
 
             # Get looserX data for the antigen.
             df_ag = df.loc[df["Antigen"] == ag].copy()
+            
+            df_ag = df_ag.loc[~df_ag["Slide"].isin(
+                df_m_nodup.loc[df_m_nodup["Antigen"] == ag]["Slide"]
+                )].copy()
+            
+            df_ag.sort_values(by="Energy", ascending=False, inplace=True)
+            df_ag = df_ag.loc[~df_ag.duplicated(subset=["Slide"], keep="first")].copy()
             df_ag = df_ag.loc[df_ag["Source"] == "looserX"].copy()
             df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
             print(f"looserX: {df_ag.shape}")
@@ -249,6 +256,13 @@ if __name__ == "__main__":
 
             # Get 95low data for the antigen.
             df_ag = df.loc[df["Antigen"] == ag].copy()
+            
+            df_ag = df_ag.loc[~df_ag["Slide"].isin(
+                df_m_nodup.loc[df_m_nodup["Antigen"] == ag]["Slide"]
+                )].copy()
+            
+            df_ag.sort_values(by="Energy", ascending=False, inplace=True)
+            df_ag = df_ag.loc[~df_ag.duplicated(subset=["Slide"], keep="first")].copy()
             energy_5p_cutoff = df_ag[df_ag["Source"] == "looserX"]["Energy"].max()
             df_ag = df_ag.loc[df_ag["Energy"] >= energy_5p_cutoff].copy()
             df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
