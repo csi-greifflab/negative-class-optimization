@@ -38,6 +38,8 @@ DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Ta
 DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"
 DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
 
+DATA_XSTREME = DATA_BASE_PATH / "xstreme"
+
 TMP_DIR = DATA_BASE_PATH / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
 

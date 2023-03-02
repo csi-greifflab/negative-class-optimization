@@ -646,13 +646,23 @@ class MlflowAPI:
 class MLFlowTaskAPI(MlflowAPI):
     """Helper class to fetch results from MLFlow per task."""
 
-    def get_experiment_and_run(self, task: dict):
+    def get_experiment_and_run(self, task: dict, most_recent: bool = True):
         experiment_id = MLFlowTaskAPI.get_experiment_id(task)
         # Filter by ag_pos
         df = self.get_results_and_filter_ag_pos(experiment_id, task["ag_pos"])
         # Filter by ag_neg for each experiment_id
         df = self.filter_ag_neg(experiment_id, task["ag_neg"], df)
-        # df is expected to have 1 row at this point
+        df = df.loc[df["shuffle_antigen_labels"] == task["shuffle_antigen_labels"]].copy()
+        
+        # Filter by most recent
+        if most_recent:
+            df = df.iloc[0:1].copy()
+        else:
+            raise NotImplementedError("Only fetching most recent is implemented.")
+
+        # By this point should be 1
+        assert df.shape[0] == 1
+
         run_id = MLFlowTaskAPI.get_run_id(df)
         return experiment_id, run_id
 
@@ -682,6 +692,15 @@ class MLFlowTaskAPI(MlflowAPI):
         self.mlflow_request(experiment_id)
         df = self.build_mlflow_results_df()
         df = df.loc[df["ag_pos"] == ag_pos]
+        # sort by date
+        datetimes: List[str] = []
+        for idx, row in df.iterrows():
+            s: str = row["mlflow.log-model.history"]
+            d: List[dict] = json.loads(s)
+            datetime: str = d[0]["utc_time_created"]
+            datetimes.append(datetime)
+        df["date"] = pd.to_datetime(datetimes)
+        df = df.sort_values(by="date", ascending=False)
         return df
 
 

@@ -28,11 +28,11 @@ from NegativeClassOptimization import config
 TEST = False
 
 experiment_id = 11
-run_name = "dev-v0.1.2-2"
+run_name = "dev-v0.1.2-2-shuffle"
 num_processes = 20
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = False
+shuffle_antigen_labels = True
 swa = True
 
 epochs = 50
