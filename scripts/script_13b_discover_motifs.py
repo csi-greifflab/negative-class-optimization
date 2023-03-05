@@ -7,6 +7,7 @@ import itertools
 import logging
 from pathlib import Path
 from typing import Optional
+import warnings
 import docker
 from dataclasses import dataclass
 from NegativeClassOptimization import config
@@ -40,9 +41,10 @@ class XSTREME_CMD:
         Run XSTREME command.
         """
         client = docker.from_env()
+        warnings.warn(f"Parallel version not implemented yet (easy with --meme-p). Running in serial mod")
         client.containers.run(
-            "memesuite/memesuite",
-            self.as_str(),
+            image="memesuite/memesuite",
+            command=self.as_str(),
             volumes={
                 str(config.DATA_BASE_PATH.parent): {
                     "bind": "/home/meme",

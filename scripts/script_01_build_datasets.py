@@ -30,6 +30,7 @@ Usage:
     script_01_build_datasets.py absolut_processed_multilabel
     script_01_build_datasets.py unzip_rawbindingsmurine
     script_01_build_datasets.py miniabsolut
+    script_01_build_datasets.py frozen_results
 
 
 Options:
@@ -269,3 +270,11 @@ if __name__ == "__main__":
             print(f"95low: {df_ag.shape}")
             df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
             save_train_test_rest("95low", N_train, N_test, ag_dir, df_train, df_test, df_rest)
+
+    elif arguments["frozen_results"]:
+        # Save the frozen results in a convenient format for sharing and further analysis.
+        # For each tasks of interest: high vs looser, high vs 95low, 1v1 and 1v9.
+
+        
+
+        pass
