@@ -2,7 +2,9 @@ setup.py
 NegativeClassOptimization/__init__.py
 NegativeClassOptimization/config.py
 NegativeClassOptimization/datasets.py
+NegativeClassOptimization/immuneml_utils.py
 NegativeClassOptimization/ml.py
+NegativeClassOptimization/pipelines.py
 NegativeClassOptimization/preprocessing.py
 NegativeClassOptimization/utils.py
 NegativeClassOptimization/visualisations.py

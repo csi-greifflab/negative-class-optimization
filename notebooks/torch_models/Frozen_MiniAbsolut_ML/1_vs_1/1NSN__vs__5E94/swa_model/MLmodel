@@ -1,0 +1,18 @@
+artifact_path: models/swa_model
+flavors:
+  python_function:
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pytorch
+    pickle_module_name: mlflow.pytorch.pickle_module
+    python_version: 3.8.16
+  pytorch:
+    code: null
+    model_data: data
+    pytorch_version: 1.12.1
+mlflow_version: 2.1.1
+model_uuid: 45cd0aa950864bf7af6cfba1830b0c7f
+run_id: 80fb42797a134cc89198205ebee4286d
+utc_time_created: '2023-02-24 17:46:14.896520'
