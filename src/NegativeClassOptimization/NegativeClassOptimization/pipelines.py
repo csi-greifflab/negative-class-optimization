@@ -77,12 +77,13 @@ class BinaryclassPipeline(DataPipeline):
         split_id: int = 0,
         shuffle_antigen_labels: bool = False,
         load_from_miniabsolut: bool = False,
+        load_from_miniabsolut_split_seed: Optional[int] = None,
         ):
         """Process data for binary classification.
         """
 
         if load_from_miniabsolut:
-            df_train_val, df_test_closed = self._load_from_miniabsolut(ag_pos, ag_neg)
+            df_train_val, df_test_closed = self._load_from_miniabsolut(ag_pos, ag_neg, split_seed=load_from_miniabsolut_split_seed)
         
         else:
             df = self.loader(ag_pos, ag_neg, N)
@@ -160,19 +161,25 @@ class BinaryclassPipeline(DataPipeline):
         self.is_step_1_complete = True
 
 
-    def _miniabsolut_reader(self, ag, name):
+    def _miniabsolut_reader(self, ag, name, split_seed = None):
+
+        if split_seed is None:
+            path = config.DATA_MINIABSOLUT / ag / name
+        else:
+            path = config.DATA_MINIABSOLUT_SPLITS / f"MiniAbsolut_Seed{split_seed}" / ag / name
+
         return pd.read_csv(
-            config.DATA_MINIABSOLUT / ag / name,
+            path,
             sep="\t",
             dtype={"Antigen": str}
         )
 
 
-    def _load_from_miniabsolut(self, ag_pos, ag_neg):
+    def _load_from_miniabsolut(self, ag_pos, ag_neg, split_seed = None):
 
         # Load positive data
-        df_train_val_pos = self._miniabsolut_reader(ag_pos, "high_train_15000.tsv")
-        df_test_closed_pos = self._miniabsolut_reader(ag_pos, "high_test_5000.tsv")
+        df_train_val_pos = self._miniabsolut_reader(ag_pos, "high_train_15000.tsv", split_seed=split_seed)
+        df_test_closed_pos = self._miniabsolut_reader(ag_pos, "high_test_5000.tsv", split_seed=split_seed)
             
         # Load negative data
         if isinstance(ag_neg, str):
@@ -184,9 +191,9 @@ class BinaryclassPipeline(DataPipeline):
         train_neg_dfs = []
         test_neg_dfs = []
         for ag_neg_i in ag_neg:
-            df_train_val_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_train_15000.tsv")
+            df_train_val_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_train_15000.tsv", split_seed=split_seed)
             df_train_val_neg_i = df_train_val_neg_i.iloc[:train_samples_per_ag_neg].copy()
-            df_test_closed_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_test_5000.tsv")
+            df_test_closed_neg_i = self._miniabsolut_reader(ag_neg_i, f"high_test_5000.tsv", split_seed=split_seed)
             df_test_closed_neg_i = df_test_closed_neg_i.iloc[:test_samples_per_ag_neg].copy()
 
             train_neg_dfs.append(df_train_val_neg_i)

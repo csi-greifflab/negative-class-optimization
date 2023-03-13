@@ -35,7 +35,6 @@ Usage:
 
 Options:
     -h --help   Show help.
-
 """
 
 logging.basicConfig(level=logging.DEBUG)
@@ -87,11 +86,13 @@ def process_downstream_and_save(out_dir, ags_open, df_wide):
         json.dump(metadata, fh)
 
 
-def split_to_train_test_rest_dfs(N_train, N_test, df_ag):
-    df_train = df_ag.sample(n=N_train, random_state=config.SEED)
-    df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(n=N_test, random_state=config.SEED)
+def split_to_train_test_rest_dfs(N_train, N_test, df_ag, random_state = None):
+    if random_state is None:
+        random_state = config.SEED
+    df_train = df_ag.sample(n=N_train, random_state=random_state)
+    df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(n=N_test, random_state=random_state)
     df_rest = df_ag.loc[~df_ag.index.isin(df_train.index) & ~df_ag.index.isin(df_test.index)].copy()
-    return df_train,df_test,df_rest
+    return df_train, df_test, df_rest
 
 
 def save_train_test_rest(prefix, N_train, N_test, ag_dir, df_train, df_test, df_rest):
@@ -206,12 +207,28 @@ if __name__ == "__main__":
             utils.unzip_file(file, output_dir / file.stem)
     
     elif arguments["miniabsolut"]:
-        base_p = config.DATA_MINIABSOLUT
-        base_p.mkdir(exist_ok=True, parents=False)
+
+        N_train = 15000
+        N_test = 5000
+
+        MAKE_SPLITS = True
+        # Get seed from arguments
+        # if arguments["seed"]:
+        #     seed = int(arguments["seed"])
+        #     print(f"Using seed from arguments: {seed}")
+        seed = 3
+
+        if MAKE_SPLITS:
+            base_p = Path(config.DATA_MINIABSOLUT_SPLITS) / f"MiniAbsolut_Seed{seed}"
+            base_p.mkdir(exist_ok=True, parents=False)
+        else:
+            base_p = config.DATA_MINIABSOLUT
+            base_p.mkdir(exist_ok=True, parents=False)
 
         # Load the Absolut binding data for the antigens in Mini-Absolut.
         dfs = []
         for ag in config.ANTIGENS:
+            # Load based on config.DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE
             df = utils.load_binding_per_ag(ag)
             df["Antigen"] = ag
             dfs.append(df)
@@ -223,8 +240,6 @@ if __name__ == "__main__":
         # Get mascotte without duplicates
         df_m_nodup = df_m.loc[~df_m["Slide"].duplicated(keep=False)].copy()
 
-        N_train = 15000
-        N_test = 5000
         for ag in config.ANTIGENS:
             
             print(f"Processing {ag}...")
@@ -237,7 +252,12 @@ if __name__ == "__main__":
             df_ag = df_ag.loc[df_ag["Source"] == "mascotte"].copy()
             df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
             print(f"mascotte: {df_ag.shape}")
-            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+                N_train, 
+                N_test, 
+                df_ag,
+                random_state=seed,
+            )
             save_train_test_rest("high", N_train, N_test, ag_dir, df_train, df_test, df_rest)
 
             # Get looserX data for the antigen.
@@ -252,7 +272,12 @@ if __name__ == "__main__":
             df_ag = df_ag.loc[df_ag["Source"] == "looserX"].copy()
             df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
             print(f"looserX: {df_ag.shape}")
-            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+                N_train, 
+                N_test, 
+                df_ag,
+                random_state=seed,
+            )
             save_train_test_rest("looserX", N_train, N_test, ag_dir, df_train, df_test, df_rest)
 
             # Get 95low data for the antigen.
@@ -264,17 +289,25 @@ if __name__ == "__main__":
             
             df_ag.sort_values(by="Energy", ascending=False, inplace=True)
             df_ag = df_ag.loc[~df_ag.duplicated(subset=["Slide"], keep="first")].copy()
+
+            # Exclude 95low intersection with looserX.
             energy_5p_cutoff = df_ag[df_ag["Source"] == "looserX"]["Energy"].max()
             df_ag = df_ag.loc[df_ag["Energy"] >= energy_5p_cutoff].copy()
+
             df_ag = df_ag.sample(frac=1).reset_index(drop=True)  # shuffle
             print(f"95low: {df_ag.shape}")
-            df_train, df_test, df_rest = split_to_train_test_rest_dfs(N_train, N_test, df_ag)
+            df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+                N_train, 
+                N_test, 
+                df_ag,
+                random_state=seed,
+            )
             save_train_test_rest("95low", N_train, N_test, ag_dir, df_train, df_test, df_rest)
 
     elif arguments["frozen_results"]:
         # Save the frozen results in a convenient format for sharing and further analysis.
         # For each tasks of interest: high vs looser, high vs 95low, 1v1 and 1v9.
 
-        
+        ### GOTO notebook 02b
 
         pass

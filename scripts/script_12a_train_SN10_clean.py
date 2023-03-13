@@ -26,14 +26,17 @@ from NegativeClassOptimization import config
 
 
 TEST = False
+RESTRICTED_AG_COMBINATIONS = True
 
 experiment_id = 11
-run_name = "dev-v0.1.2-2-shuffle"
+run_name = "dev-v0.1.2-2-split_replicates"
 num_processes = 20
 
 load_from_miniabsolut = True
 shuffle_antigen_labels = True
 swa = True
+seed_id = [0]
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3]
 
 epochs = 50
 learning_rate = 0.001
@@ -51,6 +54,8 @@ def multiprocessing_wrapper_script_12a(
     ag_pos,
     ag_neg,
     sample_train,
+    seed_id,
+    load_from_miniabsolut_split_seed,
     ):
     
     with mlflow.start_run(
@@ -72,6 +77,7 @@ def multiprocessing_wrapper_script_12a(
             batch_size=batch_size,
             shuffle_antigen_labels=shuffle_antigen_labels,
             load_from_miniabsolut=load_from_miniabsolut,
+            load_from_miniabsolut_split_seed=load_from_miniabsolut_split_seed,
         )
 
         pipe.step_2_train_model(
@@ -81,6 +87,7 @@ def multiprocessing_wrapper_script_12a(
             momentum=momentum,
             weight_decay=weight_decay,
             swa=swa,
+            seed_id=seed_id,
         )
 
         pipe.step_3_evaluate_model()
@@ -94,6 +101,9 @@ if __name__ == "__main__":
 
     antigens: List[str] = config.ANTIGENS
     ag_perms = list(itertools.permutations(antigens, 2))
+
+    if RESTRICTED_AG_COMBINATIONS:
+        ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
 
     if TEST:
         run_name = "test"
@@ -117,20 +127,24 @@ if __name__ == "__main__":
     
     else:    
         # Run batched multiprocessing
-        for i in range(0, len(ag_perms), num_processes):
-            print(f"Batch {i} of {len(ag_perms) / num_processes}")
-            ag_perms_batch = ag_perms[i:i+num_processes]
-            with multiprocessing.Pool(processes=num_processes) as pool:
-                pool.starmap(
-                    multiprocessing_wrapper_script_12a,
-                    [
-                        (
-                            experiment_id,
-                            run_name,
-                            ag_perm[0],
-                            ag_perm[1],
-                            sample_train,
+        for seed in seed_id:
+            for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
+                for i in range(0, len(ag_perms), num_processes):
+                    print(f"Batch {i} of {len(ag_perms) / num_processes}")
+                    ag_perms_batch = ag_perms[i:i+num_processes]
+                    with multiprocessing.Pool(processes=num_processes) as pool:
+                        pool.starmap(
+                            multiprocessing_wrapper_script_12a,
+                            [
+                                (
+                                    experiment_id,
+                                    run_name,
+                                    ag_perm[0],
+                                    ag_perm[1],
+                                    sample_train,
+                                    seed,
+                                    load_from_miniabsolut_split_seed,
+                                )
+                                for ag_perm in ag_perms_batch
+                            ]
                         )
-                        for ag_perm in ag_perms_batch
-                    ]
-                )

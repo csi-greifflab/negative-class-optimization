@@ -1,9 +1,10 @@
 # import abc
+from dataclasses import dataclass
+import os
 import warnings
 from pathlib import Path
 from typing import Optional, List
 from itertools import combinations, product
-from NegativeClassOptimization import utils
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ import torch
 from torch.utils.data import Dataset
 
 import NegativeClassOptimization.config as config
+from NegativeClassOptimization import utils
 
 
 def trim_short_CDR3(df) -> pd.DataFrame:
@@ -269,3 +271,54 @@ class AbsolutDataset3:
         df = pd.read_csv(path, sep='\t', header=None)
         df.columns = ["Slide", "num_binding_ags", "binding_profile"]
         return df
+
+
+@dataclass
+class Task:
+    """Task for modelling antigen binding classifiers.
+    Fetches data from MLFlow backend (on local system) 
+    and stores it in the local filesystem for sharing.
+
+    Returns:
+        _type_: _description_
+    """
+    ag_pos: str
+    ag_neg: str
+    shuffle_antigen_labels: str = "False"
+
+    def __post_init__(self):
+        if isinstance(self.shuffle_antigen_labels, bool):
+            self.shuffle_antigen_labels = str(self.shuffle_antigen_labels)
+
+    def get_exp_and_run_ids(self) -> str:
+        api = utils.MLFlowTaskAPI()
+        exp_id, run_id = api.get_experiment_and_run(self.__dict__)
+        return exp_id, run_id
+    
+    def get_paths_to_data(self) -> List[Path]:
+        exp_id, run_id = self.get_exp_and_run_ids()
+
+        self.artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+
+        # This is a hack to correct for a bug in folder/file namiang
+        glob_list = list((self.artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
+        self.dataset_hash = glob_list[0].stem.split("_")[0]
+        self.df_train_path = self.artifacts_path / f"dataset/train_dataset.tsv/{self.dataset_hash}_train_dataset.tsv"
+        self.df_test_path = self.artifacts_path / f"dataset/test_dataset.tsv/{self.dataset_hash}_test_dataset.tsv"
+
+        self.metrics_path = self.artifacts_path / "eval_metrics.json"
+        self.model_path = self.artifacts_path / f"models/trained_model"
+        self.swa_model_path = self.artifacts_path / f"models/swa_model"
+    
+    def copy_files_to_dir(self, dest_dir: Path):
+        self.get_paths_to_data()
+
+        dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
+        dest_dir.mkdir(exist_ok=True, parents=True)
+        
+        for path in [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]:
+            dest_path = dest_dir / path.name
+            if dest_path.exists():
+                warnings.warn(f"File {dest_path} already exists. Skipping copy.")
+            else:
+                os.system(f"cp -r {path} {dest_path}")

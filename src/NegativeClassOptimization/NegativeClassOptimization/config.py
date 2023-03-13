@@ -33,6 +33,7 @@ DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/mult
 DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR = DATA_BASE_PATH / "Absolut/processed/multilabel"
 
 DATA_MINIABSOLUT = DATA_BASE_PATH / "MiniAbsolut"
+DATA_MINIABSOLUT_SPLITS = DATA_BASE_PATH / "MiniAbsolut_Splits"
 
 DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Task4_Merged_Slice_ParaEpi.txt"
 DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"

@@ -188,8 +188,9 @@ def plot_confusion(
     return fig, axs
 
 
-def plot_logo(df_attr: pd.DataFrame, ax=None):
-    assert df_attr.shape == (11, 20)
+def plot_logo(df_attr: pd.DataFrame, allow_other_shape: bool = False, ax=None):
+    if not allow_other_shape:
+        assert df_attr.shape == (11, 20)
     if ax:
         return logomaker.Logo(
             df_attr,
