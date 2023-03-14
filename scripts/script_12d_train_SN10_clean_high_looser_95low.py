@@ -26,14 +26,14 @@ from NegativeClassOptimization import config
 
 TEST = False
 experiment_id = 14
-run_name = "dev-v0.1.2-2-split_replicates"
+run_name = "dev-v0.1.2-2-replicates"
 num_processes = 20
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = True
+shuffle_antigen_labels = False
 swa = True
-seed_id = [0]
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3]
+seed_id = [1, 2, 3, 4]  # default was 0
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3]  # default None
 
 epochs = 50
 learning_rate = 0.001
@@ -115,22 +115,40 @@ if __name__ == "__main__":
     else:    
         # Run batched multiprocessing
         for seed in seed_id:
-            for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
-                for i in range(0, len(datasets), num_processes):
-                    datasets_batch = datasets[i:i+num_processes]
-                    with multiprocessing.Pool(processes=num_processes) as pool:
-                        pool.starmap(
-                            multiprocessing_wrapper_script_12d,
-                            [
-                                (
-                                    experiment_id,
-                                    run_name,
-                                    ags[0],
-                                    ags[1],
-                                    sample_train,
-                                    seed,
-                                    load_from_miniabsolut_split_seed,
-                                )
-                                for ags in datasets_batch
-                            ]
-                        )
+            for i in range(0, len(datasets), num_processes):
+                datasets_batch = datasets[i:i+num_processes]
+                with multiprocessing.Pool(processes=num_processes) as pool:
+                    pool.starmap(
+                        multiprocessing_wrapper_script_12d,
+                        [
+                            (
+                                experiment_id,
+                                run_name,
+                                ags[0],
+                                ags[1],
+                                sample_train,
+                                seed,
+                                None,
+                            )
+                            for ags in datasets_batch
+                        ]
+                    )
+        for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
+            for i in range(0, len(datasets), num_processes):
+                datasets_batch = datasets[i:i+num_processes]
+                with multiprocessing.Pool(processes=num_processes) as pool:
+                    pool.starmap(
+                        multiprocessing_wrapper_script_12d,
+                        [
+                            (
+                                experiment_id,
+                                run_name,
+                                ags[0],
+                                ags[1],
+                                sample_train,
+                                0,
+                                load_from_miniabsolut_split_seed,
+                            )
+                            for ags in datasets_batch
+                        ]
+                    )

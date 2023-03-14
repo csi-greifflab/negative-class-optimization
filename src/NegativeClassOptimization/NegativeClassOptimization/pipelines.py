@@ -119,6 +119,7 @@ class BinaryclassPipeline(DataPipeline):
                 "split_id": split_id,
                 "shuffle_antigen_labels": shuffle_antigen_labels,
                 "load_from_miniabsolut": load_from_miniabsolut,
+                "load_from_miniabsolut_split_seed": load_from_miniabsolut_split_seed,
 
                 "N_train": len(train_loader.dataset),
                 "N_closed": len(test_loader.dataset),
@@ -227,7 +228,8 @@ class BinaryclassPipeline(DataPipeline):
         ):
         """Train model for binary classification.
         """
-        torch.manual_seed(seed_id)
+        # torch.manual_seed(seed_id)
+        utils.nco_seed(seed_id)
         model = ml.SNN(num_hidden_units, input_dim)
 
         if self.save_model_mlflow:
