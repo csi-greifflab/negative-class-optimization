@@ -646,10 +646,10 @@ class MlflowAPI:
 class MLFlowTaskAPI(MlflowAPI):
     """Helper class to fetch results from MLFlow per task."""
 
-    def get_experiment_and_run(self, task: dict, most_recent: bool = True):
+    def get_experiment_and_run(self, task: dict, most_recent: bool = True, run_name=None):
         experiment_id = MLFlowTaskAPI.get_experiment_id(task)
         # Filter by ag_pos
-        df = self.get_results_and_filter_ag_pos(experiment_id, task["ag_pos"])
+        df = self.get_results_and_filter_ag_pos(experiment_id, task["ag_pos"], run_name=run_name)
         # Filter by ag_neg for each experiment_id
         df = self.filter_ag_neg(experiment_id, task["ag_neg"], df)
         df = df.loc[df["shuffle_antigen_labels"] == task["shuffle_antigen_labels"]].copy()
@@ -688,8 +688,11 @@ class MLFlowTaskAPI(MlflowAPI):
                 return "11"
 
 
-    def get_results_and_filter_ag_pos(self, experiment_id, ag_pos):
-        self.mlflow_request(experiment_id)
+    def get_results_and_filter_ag_pos(self, experiment_id, ag_pos, run_name=None):
+        if run_name is None:
+            self.mlflow_request(experiment_id)
+        else:
+            self.mlflow_request(experiment_id, run_name=run_name)
         df = self.build_mlflow_results_df()
         df = df.loc[df["ag_pos"] == ag_pos]
         # sort by date

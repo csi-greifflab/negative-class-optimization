@@ -339,24 +339,25 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         self,
         ag_pos,
         ag_neg,
+        split_seed = None,
         ):
         """Load data for binary classification.
         """
         ag = ag_pos.split("_")[0]  # antigen name
         dataset_type = self.get_dataset_type(ag_pos, ag_neg)
 
-        df_train_val_pos = self._miniabsolut_reader(ag, "high_train_15000.tsv")
+        df_train_val_pos = self._miniabsolut_reader(ag, "high_train_15000.tsv", split_seed=split_seed)
         df_train_val_pos["Antigen"] = ag_pos
-        df_test_closed_pos = self._miniabsolut_reader(ag, "high_test_5000.tsv")
+        df_test_closed_pos = self._miniabsolut_reader(ag, "high_test_5000.tsv", split_seed=split_seed)
         df_test_closed_pos["Antigen"] = ag_pos
 
         if dataset_type == "high_looser":
-            df_train_val_neg = self._miniabsolut_reader(ag, "looserX_train_15000.tsv")
-            df_test_closed_neg = self._miniabsolut_reader(ag, "looserX_test_5000.tsv")
+            df_train_val_neg = self._miniabsolut_reader(ag, "looserX_train_15000.tsv", split_seed=split_seed)
+            df_test_closed_neg = self._miniabsolut_reader(ag, "looserX_test_5000.tsv", split_seed=split_seed)
 
         elif dataset_type == "high_95low":
-            df_train_val_neg = self._miniabsolut_reader(ag, "95low_train_15000.tsv")
-            df_test_closed_neg = self._miniabsolut_reader(ag, "95low_test_5000.tsv")
+            df_train_val_neg = self._miniabsolut_reader(ag, "95low_train_15000.tsv", split_seed=split_seed)
+            df_test_closed_neg = self._miniabsolut_reader(ag, "95low_test_5000.tsv", split_seed=split_seed)
         
         df_train_val_neg["Antigen"] = ag_neg
         df_test_closed_neg["Antigen"] = ag_neg

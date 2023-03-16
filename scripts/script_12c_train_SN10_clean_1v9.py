@@ -24,16 +24,17 @@ from NegativeClassOptimization import preprocessing
 from NegativeClassOptimization import config
 
 
-TEST = False
+TEST = True
+
 experiment_id = 13
-run_name = "dev-v0.1.2-2-replicates"
+run_name = "dev-v0.1.2-3-with-replicates"
 num_processes = 20
 
 load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
-seed_id = [1, 2, 3, 4]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3]  # default None
+seed_id = [0, 1, 2, 3]  # default was 0
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
 
 epochs = 50
 learning_rate = 0.001
@@ -109,12 +110,25 @@ if __name__ == "__main__":
 
 
     if TEST:
+
+        epochs = 3
+        learning_rate = 0.001
+        optimizer_type = "Adam"
+        momentum = 0.9
+        weight_decay = 0
+        batch_size = 64
+        
+        # Select 3VRL vs 9
+        ags_1_vs_9_test = list(filter(lambda x: x[0] == "3VRL", ags_1_vs_9))
+
         multiprocessing_wrapper_script_12c(
             experiment_id,
             "test",
-            ags_1_vs_9[0][0],
-            ags_1_vs_9[0][1],
-            sample_train=10000,
+            ags_1_vs_9_test[0][0],
+            ags_1_vs_9_test[0][1],
+            None,  # sample_train
+            0,
+            None,
         )
     
     else:    

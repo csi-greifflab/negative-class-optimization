@@ -29,14 +29,14 @@ TEST = False
 RESTRICTED_AG_COMBINATIONS = False
 
 experiment_id = 11
-run_name = "dev-v0.1.2-2-replicates"
+run_name = "dev-v0.1.2-3-with-replicates"
 num_processes = 20
 
 load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
-seed_id = [1, 2, 3, 4]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3]  # default None
+seed_id = [0, 1, 2, 3]  # default was 0
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
 
 epochs = 50
 learning_rate = 0.001
@@ -106,7 +106,6 @@ if __name__ == "__main__":
         ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
 
     if TEST:
-        run_name = "test"
 
         epochs = 3
         learning_rate = 0.001
@@ -114,15 +113,15 @@ if __name__ == "__main__":
         momentum = 0.9
         weight_decay = 0
         batch_size = 64
-        
-        sample_train = 1000
-        
+                
         multiprocessing_wrapper_script_12a(
             experiment_id,
             "test",
-            ag_perms[0][0],
-            ag_perms[0][1],
-            sample_train=sample_train,
+            "3VRL", # ag_perms[0][0],
+            "1NSN", # ag_perms[0][1],
+            None,
+            0,
+            None,
         )
     
     else:    

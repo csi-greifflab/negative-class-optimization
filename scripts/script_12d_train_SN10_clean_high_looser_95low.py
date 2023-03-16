@@ -24,16 +24,17 @@ from NegativeClassOptimization import preprocessing
 from NegativeClassOptimization import config
 
 
-TEST = False
+TEST = True
+
 experiment_id = 14
-run_name = "dev-v0.1.2-2-replicates"
+run_name = "dev-v0.1.2-3-with-replicates"
 num_processes = 20
 
 load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
-seed_id = [1, 2, 3, 4]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3]  # default None
+seed_id = [0, 1, 2, 3]  # default was 0
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
 
 epochs = 50
 learning_rate = 0.001
@@ -52,6 +53,7 @@ def multiprocessing_wrapper_script_12d(
     ag_neg,
     sample_train,
     seed_id,
+    load_from_miniabsolut_split_seed,
     ):
     
     with mlflow.start_run(
@@ -104,12 +106,31 @@ if __name__ == "__main__":
         datasets.append((f"{ag}_high", f"{ag}_95low"))
 
     if TEST:
+
+        epochs = 3
+        learning_rate = 0.001
+        optimizer_type = "Adam"
+        momentum = 0.9
+        weight_decay = 0
+        batch_size = 64
+
         multiprocessing_wrapper_script_12d(
             experiment_id,
             "test",
-            datasets[0][0],
-            datasets[0][1],
-            sample_train=10000,
+            "3VRL_high",
+            "3VRL_looser",
+            None,  # sample_train
+            0,
+            None,
+        )
+        multiprocessing_wrapper_script_12d(
+            experiment_id,
+            "test",
+            "3VRL_high",
+            "3VRL_95low",
+            None,  # sample_train
+            0,
+            None,
         )
     
     else:    

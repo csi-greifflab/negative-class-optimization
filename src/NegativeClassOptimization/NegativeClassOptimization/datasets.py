@@ -1,5 +1,6 @@
 # import abc
 from dataclasses import dataclass
+import json
 import os
 import warnings
 from pathlib import Path
@@ -285,6 +286,7 @@ class Task:
     ag_pos: str
     ag_neg: str
     shuffle_antigen_labels: str = "False"
+    run_name: Optional[str] = None
 
     def __post_init__(self):
         if isinstance(self.shuffle_antigen_labels, bool):
@@ -292,7 +294,7 @@ class Task:
 
     def get_exp_and_run_ids(self) -> str:
         api = utils.MLFlowTaskAPI()
-        exp_id, run_id = api.get_experiment_and_run(self.__dict__)
+        exp_id, run_id = api.get_experiment_and_run(self.__dict__, run_name=self.run_name)
         return exp_id, run_id
     
     def get_paths_to_data(self) -> List[Path]:
@@ -309,6 +311,9 @@ class Task:
         self.metrics_path = self.artifacts_path / "eval_metrics.json"
         self.model_path = self.artifacts_path / f"models/trained_model"
         self.swa_model_path = self.artifacts_path / f"models/swa_model"
+
+        self.exp_id = exp_id
+        self.run_id = run_id
     
     def copy_files_to_dir(self, dest_dir: Path):
         self.get_paths_to_data()
@@ -316,6 +321,16 @@ class Task:
         dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
         dest_dir.mkdir(exist_ok=True, parents=True)
         
+        with open(dest_dir / "task.json", "w") as f:
+            d = self.__dict__.copy()
+            
+            # Make Paths serializable
+            for k, v in d.items():
+                if isinstance(v, Path):
+                    d[k] = str(v)
+            
+            json.dump(d, f, indent=4)
+
         for path in [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]:
             dest_path = dest_dir / path.name
             if dest_path.exists():
