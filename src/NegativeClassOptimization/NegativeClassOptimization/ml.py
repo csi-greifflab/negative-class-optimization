@@ -4,6 +4,7 @@ Includes models, datasets and data loaders.
 """
 
 
+import abc
 from argparse import ArgumentError
 import math
 from pathlib import Path
@@ -35,7 +36,85 @@ import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
 
 
-class SN10(nn.Module):
+# Abstract base class for all models using
+class NCOModel(nn.Module):
+
+    @abc.abstractmethod
+    def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
+        pass
+
+    @abc.abstractmethod
+    def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
+        pass
+
+    @abc.abstractmethod
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        pass
+
+    @abc.abstractmethod
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        pass
+
+    @staticmethod
+    def compute_metrics_closed_testset_static(model, x_test, y_test):
+        y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
+        y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
+        y_test_true = y_test.detach().numpy().reshape(-1)
+        binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
+        
+        try:
+            roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)    
+            avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
+        except ValueError:
+            roc_auc_closed = np.nan
+            avg_precision_closed = np.nan
+        
+        metrics_closed = {
+                "y_test_logits": y_test_logits,
+                "y_test_pred": y_test_pred,
+                "y_test_true": y_test_true,
+                "roc_auc_closed": roc_auc_closed,
+                "avg_precision_closed": avg_precision_closed,
+                **{f"{k}_closed": v for k, v in binary_metrics.items()},
+            }
+        
+        return metrics_closed
+
+
+class LogisticRegression(NCOModel):
+    """Logistic regression model.
+    """
+
+    def __init__(self, input_dim: int):
+        super(LogisticRegression, self).__init__()
+        self.linear = nn.Linear(input_dim, 1)
+    
+    def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
+        logits = self.linear(x)
+        return logits
+    
+    def forward(
+        self, 
+        x: torch.Tensor, 
+        return_logits = False
+        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        
+        logits = self.forward_logits(x)
+        y_pred = torch.sigmoid(logits)
+        if return_logits:
+            return y_pred, logits
+        else:
+            return y_pred
+    
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        y_pred = self.forward(x)
+        return y_pred
+    
+    def compute_metrics_closed_testset(self, x_test, y_test):
+        return NCOModel.compute_metrics_closed_testset_static(self, x_test, y_test)
+
+
+class SN10(NCOModel):
     """The simple neural network 10 (SN10) model from `Absolut!`.
     """
 
@@ -74,34 +153,7 @@ class SN10(nn.Module):
         return self.forward(x, return_logits=False).round()
 
     def compute_metrics_closed_testset(self, x_test, y_test):
-        return SN10.compute_metrics_closed_testset_static(self, x_test, y_test)
-
-    @staticmethod
-    def compute_metrics_closed_testset_static(model, x_test, y_test):
-        y_test_logits = model.forward_logits(x_test).detach().numpy().reshape(-1)
-        y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
-        y_test_true = y_test.detach().numpy().reshape(-1)
-        binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
-        
-        try:
-            roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)    
-            avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
-        except ValueError:
-            roc_auc_closed = np.nan
-            avg_precision_closed = np.nan
-        
-        metrics_closed = {
-                "y_test_logits": y_test_logits,
-                "y_test_pred": y_test_pred,
-                "y_test_true": y_test_true,
-                "roc_auc_closed": roc_auc_closed,
-                "avg_precision_closed": avg_precision_closed,
-                **{f"{k}_closed": v for k, v in binary_metrics.items()},
-            }
-        
-        return metrics_closed
-
-
+        return NCOModel.compute_metrics_closed_testset_static(self, x_test, y_test)
 
 class SNN(SN10):
 
@@ -587,7 +639,7 @@ class Attributor:
         return shuffles
 
 
-AVAILABLE_MODELS = [SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
+AVAILABLE_MODELS = [LogisticRegression, SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -660,6 +712,7 @@ def compute_avg_test_loss(loader, model, loss_fn):
 
 
 def compute_loss(model, loss_fn, X, y):
+    model_class_name = type(model).__name__
     if type(loss_fn) == nn.CrossEntropyLoss:
         loss = loss_fn(model(X), y.reshape(-1))
     elif type(loss_fn) == nn.BCELoss:
@@ -679,6 +732,8 @@ def compute_loss(model, loss_fn, X, y):
                 # hack for Transformer
                 X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))
                 loss = loss_fn(X_pred, y)
+            elif model_class_name == "LogisticRegression":
+                loss = loss_fn(model(X), y.reshape(-1, 1, 1))  # add extra dimension for batch index
             else:
                 loss = loss_fn(model(X), y)
 

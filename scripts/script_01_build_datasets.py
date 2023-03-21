@@ -216,7 +216,7 @@ if __name__ == "__main__":
         # if arguments["seed"]:
         #     seed = int(arguments["seed"])
         #     print(f"Using seed from arguments: {seed}")
-        seed = 3
+        seed = 4
 
         if MAKE_SPLITS:
             base_p = Path(config.DATA_MINIABSOLUT_SPLITS) / f"MiniAbsolut_Seed{seed}"

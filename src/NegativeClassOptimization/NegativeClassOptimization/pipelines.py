@@ -225,12 +225,20 @@ class BinaryclassPipeline(DataPipeline):
         momentum = 0.9,
         weight_decay = 0,
         swa: bool = False,
+        model_type: str = "SNN",
         ):
         """Train model for binary classification.
         """
         # torch.manual_seed(seed_id)
         utils.nco_seed(seed_id)
-        model = ml.SNN(num_hidden_units, input_dim)
+
+        if model_type == "SNN":
+            model = ml.SNN(num_hidden_units, input_dim)
+        elif model_type == "LogisticRegression":
+            model = ml.LogisticRegression(input_dim)
+            num_hidden_units = 0
+        else:
+            raise ValueError(f"{model_type=} must be 'SNN' or 'LogisticRegression'.")
 
         if self.save_model_mlflow:
             callback_on_model_end_epoch = lambda model, epoch: mlflow.pytorch.log_model(model, f"models/trained_model_epoch_{epoch}")
@@ -267,6 +275,7 @@ class BinaryclassPipeline(DataPipeline):
                 "momentum": momentum,
                 "weight_decay": weight_decay,
                 "swa": swa,
+                "model_type": model_type,
             })
             utils.mlflow_log_params_online_metrics(online_metrics)
 

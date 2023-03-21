@@ -625,8 +625,12 @@ class MlflowAPI:
 
         def build_record_from_mlflow_record(mlflow_record_data: dict) -> dict:
             record = {}
-            for mlflow_record in (*mlflow_record_data["params"], *mlflow_record_data["metrics"], *mlflow_record_data["tags"]):
-                record[mlflow_record["key"]] = mlflow_record["value"]
+            try:
+                for mlflow_record in (*mlflow_record_data["params"], *mlflow_record_data["metrics"], *mlflow_record_data["tags"]):
+                    record[mlflow_record["key"]] = mlflow_record["value"]
+            except KeyError:
+                print(f"KeyError in `mlflow_record_data`.")
+                pass
             return record
         
         mlflow_records = [self.response["runs"][idx]["data"] for idx in range(len(self.response["runs"]))]
@@ -734,6 +738,30 @@ class MLFlowTaskAPI(MlflowAPI):
     def get_run_id(df):
         assert len(df) == 1, "Expected 1 result"
         model_history: str = df["mlflow.log-model.history"].values[0]
+        run_id = df.run_id_from_model_history(model_history)
+        return run_id
+
+    def run_id_from_model_history(model_history: str) -> str:
         model_history: dict = json.loads(model_history)
         run_id = model_history[0]["run_id"]
         return run_id
+
+    def mlflow_results_as_dataframe(exp_list: List[str], run_name: str) -> pd.DataFrame:
+        """
+        Example:
+            experiment_ids = ["11", "13", "14"]
+            run_name = "dev-v0.1.2-3-with-replicates"
+        """
+        api = MLFlowTaskAPI()
+
+        dfs = []
+        for exp_id in exp_list:
+            api.mlflow_request(exp_id, run_name=run_name)
+            df = api.build_mlflow_results_df()
+            df["experiment"] = exp_id
+            dfs.append(df)
+
+        df = pd.concat(dfs, axis=0)
+        df = df.loc[~df["mlflow.log-model.history"].isna()].copy()
+        df["run_id"] = df["mlflow.log-model.history"].apply(MLFlowTaskAPI.run_id_from_model_history)
+        return df

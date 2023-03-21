@@ -24,10 +24,10 @@ from NegativeClassOptimization import preprocessing
 from NegativeClassOptimization import config
 
 
-TEST = True
+TEST = False
 
-experiment_id = 14
-run_name = "dev-v0.1.2-3-with-replicates"
+experiment_id = 13
+run_name = "dev-v0.1.2-3-with-replicates-linear"
 num_processes = 20
 
 load_from_miniabsolut = True
@@ -35,6 +35,8 @@ shuffle_antigen_labels = False
 swa = True
 seed_id = [0, 1, 2, 3]  # default was 0
 load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+model_type = "LogisticRegression"
+
 
 epochs = 50
 learning_rate = 0.001
@@ -86,6 +88,7 @@ def multiprocessing_wrapper_script_12d(
             weight_decay=weight_decay,
             swa=swa,
             seed_id=seed_id,
+            model_type=model_type,
         )
 
         pipe.step_3_evaluate_model()

@@ -300,20 +300,34 @@ class Task:
     def get_paths_to_data(self) -> List[Path]:
         exp_id, run_id = self.get_exp_and_run_ids()
 
-        self.artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+        artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path = Task.compile_paths(exp_id, run_id)
 
-        # This is a hack to correct for a bug in folder/file namiang
-        glob_list = list((self.artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
-        self.dataset_hash = glob_list[0].stem.split("_")[0]
-        self.df_train_path = self.artifacts_path / f"dataset/train_dataset.tsv/{self.dataset_hash}_train_dataset.tsv"
-        self.df_test_path = self.artifacts_path / f"dataset/test_dataset.tsv/{self.dataset_hash}_test_dataset.tsv"
 
-        self.metrics_path = self.artifacts_path / "eval_metrics.json"
-        self.model_path = self.artifacts_path / f"models/trained_model"
-        self.swa_model_path = self.artifacts_path / f"models/swa_model"
-
+        self.artifacts_path = artifacts_path
+        self.dataset_hash = dataset_hash
+        self.df_train_path = df_train_path
+        self.df_test_path = df_test_path
+        self.metrics_path = metrics_path
+        self.model_path = model_path
+        self.swa_model_path = swa_model_path
+    
         self.exp_id = exp_id
         self.run_id = run_id
+
+    @staticmethod
+    def compile_paths(exp_id, run_id) -> List[Path]:
+        artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+
+        # This is a hack to correct for a bug in folder/file namiang
+        glob_list = list((artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
+        dataset_hash = glob_list[0].stem.split("_")[0]
+        df_train_path = artifacts_path / f"dataset/train_dataset.tsv/{dataset_hash}_train_dataset.tsv"
+        df_test_path = artifacts_path / f"dataset/test_dataset.tsv/{dataset_hash}_test_dataset.tsv"
+
+        metrics_path = artifacts_path / "eval_metrics.json"
+        model_path = artifacts_path / f"models/trained_model"
+        swa_model_path = artifacts_path / f"models/swa_model"
+        return [artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path]
     
     def copy_files_to_dir(self, dest_dir: Path):
         self.get_paths_to_data()
@@ -331,7 +345,13 @@ class Task:
             
             json.dump(d, f, indent=4)
 
-        for path in [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]:
+        list_of_paths = [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]
+
+        self.copy_pathlist_to_dest(dest_dir, list_of_paths)
+
+    @staticmethod
+    def copy_pathlist_to_dest(dest_dir: Path, list_of_paths: List[Path]):
+        for path in list_of_paths:
             dest_path = dest_dir / path.name
             if dest_path.exists():
                 warnings.warn(f"File {dest_path} already exists. Skipping copy.")
