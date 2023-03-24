@@ -1,5 +1,6 @@
 # import abc
 from dataclasses import dataclass
+from enum import Enum
 import json
 import os
 import warnings
@@ -368,3 +369,194 @@ class AbsolutDataset3:
     #             warnings.warn(f"File {dest_path} already exists. Skipping copy.")
     #         else:
     #             os.system(f"cp -r {path} {dest_path}")
+
+
+class ClassificationTaskType(Enum):
+    ONE_VS_ONE = 1
+    ONE_VS_NINE = 2
+    HIGH_VS_95LOW = 3
+    HIGH_VS_LOOSER = 4
+
+
+class ClassificationTask:
+    """Task for modelling antigen binding classifiers.
+    
+    ## Example
+    # t = ClassificationTask(
+    #     task_type=ClassificationTaskType.ONE_VS_ONE,
+    #     ag_pos="A",
+    #     ag_neg="B",
+    #     seed_id=0,
+    #     split_id=0,
+    # )
+
+    # t_inv = ClassificationTask.init_from_str(str(t))
+    # str(t_inv) == str(t)
+    """
+    def __init__(
+        self,
+        task_type: ClassificationTaskType,
+        ag_pos: str,
+        seed_id: int,
+        split_id: int,
+        ag_neg: Optional[str] = "auto",
+        ):
+        
+        # Validate task type
+        if task_type == ClassificationTaskType.ONE_VS_ONE and ag_neg == "auto":
+            raise ValueError("ag_neg must be specified for ONE_VS_ONE task type")
+        elif task_type != ClassificationTaskType.ONE_VS_ONE and ag_neg != "auto":
+            raise ValueError("ag_neg must be set to 'auto' / not set for non-ONE_VS_ONE task type")
+
+        # Validate antigens
+        ClassificationTask.validate_antigen(ag_pos)
+        if ag_neg != "auto":
+            ClassificationTask.validate_antigen(ag_neg)
+
+        self.task_type = task_type
+        self.ag_pos = ag_pos
+        self.seed_id = seed_id
+        self.split_id = split_id
+        self.ag_neg = ag_neg
+
+        self.basepath = None
+        self.model = None
+        self.test_dataset = None
+
+
+    def validate_antigen(ag: str):
+        """
+        Validates an antigen name.
+        """
+        if "_" in ag:
+            raise ValueError(f"Invalid antigen name: {ag}")
+        elif len(ag) != 4:
+            raise ValueError(f"Invalid antigen name: {ag}")
+
+
+    def get_nco_ag_pos(self):
+        """
+        Returns the antigen name for NCO.
+        """
+        if self.task_type == ClassificationTaskType.ONE_VS_ONE:
+            return self.ag_pos
+        elif self.task_type == ClassificationTaskType.ONE_VS_NINE:
+            return self.ag_pos
+        elif self.task_type in [ClassificationTaskType.HIGH_VS_95LOW, ClassificationTaskType.HIGH_VS_LOOSER]:
+            return f"{self.ag_pos}_high"
+        else:
+            raise ValueError(f"Invalid task type: {self.task_type}")
+
+
+    def get_nco_ag_neg(self):
+        """
+        Returns the antigen name for NCO.
+        """
+        if self.task_type == ClassificationTaskType.ONE_VS_ONE:
+            return self.ag_neg
+        elif self.task_type == ClassificationTaskType.ONE_VS_NINE:
+            return "9"
+        elif self.task_type == ClassificationTaskType.HIGH_VS_95LOW:
+            return f"{self.ag_pos}_95low"
+        elif self.task_type == ClassificationTaskType.HIGH_VS_LOOSER:
+            return f"{self.ag_pos}_looser"
+        else:
+            raise ValueError(f"Invalid task type: {self.task_type}")
+
+
+    def __str__(self):
+        return f"{self.task_type.name}__{self.ag_pos}__{self.ag_neg}__{self.seed_id}__{self.split_id}"
+    
+
+    def __repr__(self):
+        return str(self)
+
+
+    def init_from_str(task_str: str):
+        """
+        Returns a Task object from a string.
+        """
+        task_type_name, ag_pos, ag_neg, seed_id, split_id = task_str.split("__")
+        return ClassificationTask(
+            task_type=ClassificationTaskType[task_type_name],
+            ag_pos=ag_pos,
+            ag_neg=ag_neg,
+            seed_id=int(seed_id),
+            split_id=int(split_id),
+        )
+
+
+    def __hash__(self) -> int:
+        return hash(str(self))
+
+
+    def __eq__(self, __value: object) -> bool:
+        return str(self) == str(__value)
+
+
+class FrozenMiniAbsolutMLLoader:
+    """
+    Loads the frozen MiniAbsolut dataset.
+
+    ## Example use case
+    # loader = FrozenMiniAbsolutMLLoader(data_dir=Path("../data/Frozen_MiniAbsolut_ML/"))
+    # task = ClassificationTask(
+    #     task_type=ClassificationTaskType.ONE_VS_ONE,
+    #     ag_pos="1ADQ",
+    #     ag_neg="3VRL",
+    #     seed_id=0,
+    #     split_id=0,
+    # )
+    # loader.load(task)
+    # print(task.model, task.test_dataset)
+    """
+    
+    def __init__(
+        self,
+        data_dir: Path,
+        ):
+        self.data_dir = data_dir
+    
+    def load(
+            self, 
+            task: ClassificationTask,
+            load_model = True,
+            load_test_dataset = True,
+            ):
+        """
+        Loads the frozen MiniAbsolut dataset.
+        """
+
+        # Convert ClassificationTaskType to string in order to load the correct dataset
+        if task.task_type == ClassificationTaskType.ONE_VS_ONE:
+            task_type_str = "1v1"
+        elif task.task_type == ClassificationTaskType.ONE_VS_NINE:
+            task_type_str = "1v9"
+        elif task.task_type == ClassificationTaskType.HIGH_VS_95LOW:
+            task_type_str = "high_vs_95low"
+        elif task.task_type == ClassificationTaskType.HIGH_VS_LOOSER:
+            task_type_str = "high_vs_looser"
+        else:
+            raise ValueError("Invalid task type")
+
+        # Infer positive and negative antigens
+        ag_pos = task.get_nco_ag_pos()
+        ag_neg = task.get_nco_ag_neg()
+
+        task.basepath = (
+            self.data_dir 
+            / task_type_str 
+            / f"seed_{task.seed_id}" 
+            / f"split_{task.split_id}" 
+            / f"{ag_pos}__vs__{ag_neg}"
+        )
+
+        if load_model:
+            model_path = task.basepath / "swa_model/data/model.pth"
+            task.model = torch.load(model_path)
+        if load_test_dataset:
+            hash_val = list(task.basepath.glob("*tsv"))[0].name.split("_")[0]
+            test_dataset_path = task.basepath / f"{hash_val}_test_dataset.tsv"
+            task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")
+
+        return task
