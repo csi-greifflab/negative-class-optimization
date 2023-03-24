@@ -746,7 +746,7 @@ class MLFlowTaskAPI(MlflowAPI):
         run_id = model_history[0]["run_id"]
         return run_id
 
-    def mlflow_results_as_dataframe(exp_list: List[str], run_name: str) -> pd.DataFrame:
+    def mlflow_results_as_dataframe(exp_list: List[str], run_name: str, classify_tasks = False) -> pd.DataFrame:
         """
         Example:
             experiment_ids = ["11", "13", "14"]
@@ -764,4 +764,30 @@ class MLFlowTaskAPI(MlflowAPI):
         df = pd.concat(dfs, axis=0)
         df = df.loc[~df["mlflow.log-model.history"].isna()].copy()
         df["run_id"] = df["mlflow.log-model.history"].apply(MLFlowTaskAPI.run_id_from_model_history)
+        
+        if classify_tasks:
+            df["task"] = MLFlowTaskAPI.classify_tasks(df)
+
+        df["split_seed"] = df["load_from_miniabsolut_split_seed"]
+        df["split_seed"].replace({'None': 42}, inplace=True)
+
         return df
+
+
+    def classify_tasks(df: pd.DataFrame) -> List[str]:
+        tasks = []
+        for i, row in df.iterrows():
+            exp: str = row["experiment"]
+            ag_neg: str = row["ag_neg"]
+            if exp == "11":
+                tasks.append("1v1")
+            elif exp == "13":
+                tasks.append("1v9")
+            elif exp == "14":
+                if ag_neg.split("_")[1] == "looser":
+                    tasks.append("high_vs_looser")
+                elif ag_neg.split("_")[1] == "95low":
+                    tasks.append("high_vs_95low")
+            else:
+                raise ValueError(f"Experiment {exp} not recognized.")
+        return tasks

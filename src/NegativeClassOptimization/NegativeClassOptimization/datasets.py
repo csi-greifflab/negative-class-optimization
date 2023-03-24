@@ -274,86 +274,97 @@ class AbsolutDataset3:
         return df
 
 
-@dataclass
-class Task:
-    """Task for modelling antigen binding classifiers.
-    Fetches data from MLFlow backend (on local system) 
-    and stores it in the local filesystem for sharing.
+### Deprecated
+# @dataclass
+# class Task:
+#     """Task for modelling antigen binding classifiers.
+#     Fetches data from MLFlow backend (on local system) 
+#     and stores it in the local filesystem for sharing.
 
-    Returns:
-        _type_: _description_
-    """
-    ag_pos: str
-    ag_neg: str
-    shuffle_antigen_labels: str = "False"
-    run_name: Optional[str] = None
+#     This class shares a lot with `ClassificationTaskType`.
+#     It is not a good design. However, this class is used
+#     to interact with mlflow, while the other represents
+#     the more abstract task, that doesn't depend on mlflow.
 
-    def __post_init__(self):
-        if isinstance(self.shuffle_antigen_labels, bool):
-            self.shuffle_antigen_labels = str(self.shuffle_antigen_labels)
+#     This class can also probably be removed.
 
-    def get_exp_and_run_ids(self) -> str:
-        api = utils.MLFlowTaskAPI()
-        exp_id, run_id = api.get_experiment_and_run(self.__dict__, run_name=self.run_name)
-        return exp_id, run_id
+#     Returns:
+#         _type_: _description_
+#     """
+#     ag_pos: str
+#     ag_neg: str
+#     shuffle_antigen_labels: str = "False"
+#     run_name: Optional[str] = None
+
+#     def __post_init__(self):
+#         if isinstance(self.shuffle_antigen_labels, bool):
+#             self.shuffle_antigen_labels = str(self.shuffle_antigen_labels)
+
+    # def get_exp_and_run_ids(self) -> str:
+    #     api = utils.MLFlowTaskAPI()
+    #     exp_id, run_id = api.get_experiment_and_run(self.__dict__, run_name=self.run_name)
+    #     return exp_id, run_id
     
-    def get_paths_to_data(self) -> List[Path]:
-        exp_id, run_id = self.get_exp_and_run_ids()
+    # def get_paths_to_data(self) -> List[Path]:
+    #     exp_id, run_id = self.get_exp_and_run_ids()
 
-        artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path = Task.compile_paths(exp_id, run_id)
+    #     artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path = Task.compile_paths(exp_id, run_id)
 
 
-        self.artifacts_path = artifacts_path
-        self.dataset_hash = dataset_hash
-        self.df_train_path = df_train_path
-        self.df_test_path = df_test_path
-        self.metrics_path = metrics_path
-        self.model_path = model_path
-        self.swa_model_path = swa_model_path
+    #     self.artifacts_path = artifacts_path
+    #     self.dataset_hash = dataset_hash
+    #     self.df_train_path = df_train_path
+    #     self.df_test_path = df_test_path
+    #     self.metrics_path = metrics_path
+    #     self.model_path = model_path
+    #     self.swa_model_path = swa_model_path
     
-        self.exp_id = exp_id
-        self.run_id = run_id
+    #     self.exp_id = exp_id
+    #     self.run_id = run_id
 
-    @staticmethod
-    def compile_paths(exp_id, run_id) -> List[Path]:
-        artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
-
-        # This is a hack to correct for a bug in folder/file namiang
-        glob_list = list((artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
-        dataset_hash = glob_list[0].stem.split("_")[0]
-        df_train_path = artifacts_path / f"dataset/train_dataset.tsv/{dataset_hash}_train_dataset.tsv"
-        df_test_path = artifacts_path / f"dataset/test_dataset.tsv/{dataset_hash}_test_dataset.tsv"
-
-        metrics_path = artifacts_path / "eval_metrics.json"
-        model_path = artifacts_path / f"models/trained_model"
-        swa_model_path = artifacts_path / f"models/swa_model"
-        return [artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path]
     
-    def copy_files_to_dir(self, dest_dir: Path):
-        self.get_paths_to_data()
+    # def copy_files_to_dir(self, dest_dir: Path):
+    #     self.get_paths_to_data()
 
-        dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
-        dest_dir.mkdir(exist_ok=True, parents=True)
+    #     dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
+    #     dest_dir.mkdir(exist_ok=True, parents=True)
         
-        with open(dest_dir / "task.json", "w") as f:
-            d = self.__dict__.copy()
+    #     with open(dest_dir / "task.json", "w") as f:
+    #         d = self.__dict__.copy()
             
-            # Make Paths serializable
-            for k, v in d.items():
-                if isinstance(v, Path):
-                    d[k] = str(v)
+    #         # Make Paths serializable
+    #         for k, v in d.items():
+    #             if isinstance(v, Path):
+    #                 d[k] = str(v)
             
-            json.dump(d, f, indent=4)
+    #         json.dump(d, f, indent=4)
 
-        list_of_paths = [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]
+    #     list_of_paths = [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]
 
-        self.copy_pathlist_to_dest(dest_dir, list_of_paths)
+    #     self.copy_pathlist_to_dest(dest_dir, list_of_paths)
 
-    @staticmethod
-    def copy_pathlist_to_dest(dest_dir: Path, list_of_paths: List[Path]):
-        for path in list_of_paths:
-            dest_path = dest_dir / path.name
-            if dest_path.exists():
-                warnings.warn(f"File {dest_path} already exists. Skipping copy.")
-            else:
-                os.system(f"cp -r {path} {dest_path}")
+
+    # @staticmethod
+    # def compile_paths(exp_id, run_id) -> List[Path]:
+    #     artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+
+    #     # This is a hack to correct for a bug in folder/file namiang
+    #     glob_list = list((artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
+    #     dataset_hash = glob_list[0].stem.split("_")[0]
+    #     df_train_path = artifacts_path / f"dataset/train_dataset.tsv/{dataset_hash}_train_dataset.tsv"
+    #     df_test_path = artifacts_path / f"dataset/test_dataset.tsv/{dataset_hash}_test_dataset.tsv"
+
+    #     metrics_path = artifacts_path / "eval_metrics.json"
+    #     model_path = artifacts_path / f"models/trained_model"
+    #     swa_model_path = artifacts_path / f"models/swa_model"
+    #     return [artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path]
+
+
+    # @staticmethod
+    # def copy_pathlist_to_dest(dest_dir: Path, list_of_paths: List[Path]):
+    #     for path in list_of_paths:
+    #         dest_path = dest_dir / path.name
+    #         if dest_path.exists():
+    #             warnings.warn(f"File {dest_path} already exists. Skipping copy.")
+    #         else:
+    #             os.system(f"cp -r {path} {dest_path}")
