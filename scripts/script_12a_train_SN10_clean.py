@@ -28,7 +28,7 @@ from NegativeClassOptimization import config
 TEST = False
 RESTRICTED_AG_COMBINATIONS = False
 
-experiment_id = 13
+experiment_id = 11
 run_name = "dev-v0.1.2-3-with-replicates-linear"
 num_processes = 20
 
