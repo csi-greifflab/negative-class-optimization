@@ -1,12 +1,12 @@
 # import abc
-from dataclasses import dataclass
-from enum import Enum
 import json
 import os
 import warnings
-from pathlib import Path
-from typing import Optional, List
+from dataclasses import dataclass
+from enum import Enum
 from itertools import combinations, product
+from pathlib import Path
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -21,17 +21,13 @@ def trim_short_CDR3(df) -> pd.DataFrame:
     """Legacy function for removing short CDR3 - was relevant when
     working with ImmuneML.
     # TODO: Remove.
-    """    
+    """
     LEN_TH = 25
     cdr3_len_counts = df["CDR3"].str.len().value_counts()
-    small_lengths = (
-        cdr3_len_counts
-        .loc[cdr3_len_counts < LEN_TH]
-        .index.to_list()
-    )
+    small_lengths = cdr3_len_counts.loc[cdr3_len_counts < LEN_TH].index.to_list()
     small_len_mask = df["CDR3"].str.len().isin(small_lengths)
     warnings.warn(
-        "Removal of sequences with len<25 can be not enough" 
+        "Removal of sequences with len<25 can be not enough"
         "for onehot encoding!"
         f"\nRemoving rare CDR3 lengths: {sum(small_len_mask)}"
         f" rows from {df.shape}"
@@ -46,11 +42,11 @@ def generate_pairwise_dataframe(
     ag2: str,
     N: Optional[int] = None,
     base_data_path: Path = config.DATA_BASE_PATH,
-    seed = config.SEED,
-    read_if_exists = True,
+    seed=config.SEED,
+    read_if_exists=True,
     Slide=True,
-    save_datasets=True
-    ) -> pd.DataFrame:
+    save_datasets=True,
+) -> pd.DataFrame:
     """Generate pairwise dataframe from a global dataframe.
 
     Args:
@@ -66,32 +62,34 @@ def generate_pairwise_dataframe(
 
     Returns:
         pd.DataFrame: _description_
-    """    
+    """
 
     if Slide:
-        filepath = base_data_path / "pairwise_wo_dupl" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
+        filepath = (
+            base_data_path / "pairwise_wo_dupl" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
+        )
     elif N:
         filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}_{N}.tsv"
     else:
         filepath = base_data_path / "pairwise" / f"pairwise_dataset_{ag1}_{ag2}.tsv"
 
     if read_if_exists and filepath.exists():
-        df = pd.read_csv(filepath, sep='\t')
+        df = pd.read_csv(filepath, sep="\t")
         return df
 
     df_ag1 = df_global.loc[df_global["Antigen"] == ag1].copy()
     df_ag2 = df_global.loc[df_global["Antigen"] == ag2].copy()
-    
+
     if Slide:
-        df_ag1.drop_duplicates(subset='Slide', keep="last", inplace=True)
-        df_ag2.drop_duplicates(subset='Slide', keep="last", inplace=True)
-        inters = set(df_ag1.Slide)&set(df_ag2.Slide)
-        df_ag2 = df_ag2[df_ag2['Slide'].isin(inters) == False]
-        df_ag1 = df_ag1[df_ag1['Slide'].isin(inters) == False]
+        df_ag1.drop_duplicates(subset="Slide", keep="last", inplace=True)
+        df_ag2.drop_duplicates(subset="Slide", keep="last", inplace=True)
+        inters = set(df_ag1.Slide) & set(df_ag2.Slide)
+        df_ag2 = df_ag2[df_ag2["Slide"].isin(inters) == False]
+        df_ag1 = df_ag1[df_ag1["Slide"].isin(inters) == False]
     else:
-        inters = set(df_ag1.CDR3)&set(df_ag2.CDR3)
-        df_ag2 = df_ag2[df_ag2['CDR3'].isin(inters) == False]
-        df_ag1 = df_ag1[df_ag1['CDR3'].isin(inters) == False]   
+        inters = set(df_ag1.CDR3) & set(df_ag2.CDR3)
+        df_ag2 = df_ag2[df_ag2["CDR3"].isin(inters) == False]
+        df_ag1 = df_ag1[df_ag1["CDR3"].isin(inters) == False]
 
     if N:
         np.random.seed(seed)
@@ -105,7 +103,7 @@ def generate_pairwise_dataframe(
 
     df = df.sample(frac=1, random_state=config.SEED)
     if save_datasets:
-        df.to_csv(filepath, sep='\t')
+        df.to_csv(filepath, sep="\t")
 
     return df
 
@@ -114,8 +112,8 @@ def generate_1_vs_all_dataset(
     df_global: pd.DataFrame,
     ag: str,
     base_data_path: Path = config.DATA_BASE_PATH,
-    seed = config.SEED,
-    ) -> pd.DataFrame:
+    seed=config.SEED,
+) -> pd.DataFrame:
     """Generate a 1_vs_all dataframe.
 
     Args:
@@ -126,20 +124,19 @@ def generate_1_vs_all_dataset(
 
     Returns:
         pd.DataFrame: _description_
-    """    
+    """
     df = df_global.copy()
     df["binder"] = df["Antigen"] == ag
     df = trim_short_CDR3(df)
-    
+
     filepath = base_data_path / "1_vs_all" / f"{ag}_vs_all_dataset.tsv"
-    df.to_csv(filepath, sep='\t')
-    
+    df.to_csv(filepath, sep="\t")
+
     return df
 
 
 class BinaryDataset(Dataset):
-    """Pytorch dataset for modelling antigen binding binary classifiers.
-    """
+    """Pytorch dataset for modelling antigen binding binary classifiers."""
 
     def __init__(self, df):
         self.df = df
@@ -150,8 +147,7 @@ class BinaryDataset(Dataset):
 
     def __getitem__(self, idx):
         return (
-            torch.tensor(self.df.loc[idx, "X"]).reshape(
-                (1, -1)).type(torch.float),
+            torch.tensor(self.df.loc[idx, "X"]).reshape((1, -1)).type(torch.float),
             self.process_y_tensor(torch.tensor(self.df.loc[idx, "y"])),
         )
 
@@ -160,8 +156,7 @@ class BinaryDataset(Dataset):
 
 
 class MulticlassDataset(BinaryDataset):
-    """Pytorch dataset for modelling antigen binding multiclass classifiers.
-    """
+    """Pytorch dataset for modelling antigen binding multiclass classifiers."""
 
     def __init__(self, df):
         super().__init__(df)
@@ -169,15 +164,12 @@ class MulticlassDataset(BinaryDataset):
 
 
 class MultilabelDataset(BinaryDataset):
-
     def __init__(self, df):
         super().__init__(df)
         self.process_y_tensor = lambda t: t.reshape((1, -1)).type(torch.long)
 
 
-def construct_dataset_atoms(
-    antigens: List[str]
-    ) -> List[List[str]]:
+def construct_dataset_atoms(antigens: List[str]) -> List[List[str]]:
     atoms = []
     for i in range(len(antigens)):
         size = i + 1
@@ -187,8 +179,8 @@ def construct_dataset_atoms(
 
 def construct_dataset_atom_combinations(
     antigens: List[str] = config.ANTIGENS_CLOSEDSET,
-    atoms: Optional[List[List[str]]] = None
-    ) -> List[List[str]]:
+    atoms: Optional[List[List[str]]] = None,
+) -> List[List[str]]:
     """Construct ag set pairs to be used in defining datasets.
 
     Args:
@@ -197,12 +189,12 @@ def construct_dataset_atom_combinations(
 
     Returns:
         _type_: _description_
-    """    
-    
+    """
+
     if atoms is None:
         atoms = construct_dataset_atoms(antigens)
     valid_combinations = []
-    
+
     for ag_pos_atom, ag_neg_atom in product(atoms, atoms):
         if len(set(ag_pos_atom).intersection(set(ag_neg_atom))) > 0:
             continue
@@ -228,13 +220,13 @@ class AbsolutDataset3:
     #     self.splits_open_closed = {}
     #     for seed in range(1, 5):
     #         self.splits_open_closed[seed] = AbsolutDataset3.split_open_closed(
-    #             self.antigens, 
-    #             num_open=40, 
+    #             self.antigens,
+    #             num_open=40,
     #             seed=seed
     #             )
-    
+
     # def get_closed_open_antigen_split(self, seed=1):
-        # return self.splits_open_closed[seed]
+    # return self.splits_open_closed[seed]
 
     @staticmethod
     def split_open_closed(antigens: List[str], num_open: int, seed: int):
@@ -244,12 +236,13 @@ class AbsolutDataset3:
 
     @staticmethod
     def convert_to_wide_format(df, antigens: Optional[List[str]] = None):
-        """Converts Absolut Dataset 3 format to wide format.
-        """    
+        """Converts Absolut Dataset 3 format to wide format."""
         if antigens is None:
             antigens = AbsolutDataset3.get_antigens()
         df_wide = pd.DataFrame.from_records(
-            data=df["binding_profile"].apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))}).to_list(),
+            data=df["binding_profile"]
+            .apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))})
+            .to_list(),
         )
         assert all(df_wide.sum(axis=1) == df["num_binding_ags"])
 
@@ -257,20 +250,22 @@ class AbsolutDataset3:
         return df_wide
 
     @staticmethod
-    def get_antigens(path = config.DATA_ABSOLUT_DATASET3_AGLIST):
+    def get_antigens(path=config.DATA_ABSOLUT_DATASET3_AGLIST):
         with open(path, "r") as f:
             antigens = f.read().splitlines()
         return antigens
-    
+
     @staticmethod
-    def get_closed_antigens(processed_path = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR):
+    def get_closed_antigens(
+        processed_path=config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR,
+    ):
         dfs = utils.load_processed_dataframes(processed_path)
         df_train_val = dfs["train_val"]
         return sorted(set(df_train_val["Antigen"]))
 
     @staticmethod
-    def get_binding_matrix(path = config.DATA_ABSOLUT_DATASET3_BINDINGMTX):
-        df = pd.read_csv(path, sep='\t', header=None)
+    def get_binding_matrix(path=config.DATA_ABSOLUT_DATASET3_BINDINGMTX):
+        df = pd.read_csv(path, sep="\t", header=None)
         df.columns = ["Slide", "num_binding_ags", "binding_profile"]
         return df
 
@@ -279,7 +274,7 @@ class AbsolutDataset3:
 # @dataclass
 # class Task:
 #     """Task for modelling antigen binding classifiers.
-#     Fetches data from MLFlow backend (on local system) 
+#     Fetches data from MLFlow backend (on local system)
 #     and stores it in the local filesystem for sharing.
 
 #     This class shares a lot with `ClassificationTaskType`.
@@ -301,74 +296,74 @@ class AbsolutDataset3:
 #         if isinstance(self.shuffle_antigen_labels, bool):
 #             self.shuffle_antigen_labels = str(self.shuffle_antigen_labels)
 
-    # def get_exp_and_run_ids(self) -> str:
-    #     api = utils.MLFlowTaskAPI()
-    #     exp_id, run_id = api.get_experiment_and_run(self.__dict__, run_name=self.run_name)
-    #     return exp_id, run_id
-    
-    # def get_paths_to_data(self) -> List[Path]:
-    #     exp_id, run_id = self.get_exp_and_run_ids()
+# def get_exp_and_run_ids(self) -> str:
+#     api = utils.MLFlowTaskAPI()
+#     exp_id, run_id = api.get_experiment_and_run(self.__dict__, run_name=self.run_name)
+#     return exp_id, run_id
 
-    #     artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path = Task.compile_paths(exp_id, run_id)
+# def get_paths_to_data(self) -> List[Path]:
+#     exp_id, run_id = self.get_exp_and_run_ids()
 
-
-    #     self.artifacts_path = artifacts_path
-    #     self.dataset_hash = dataset_hash
-    #     self.df_train_path = df_train_path
-    #     self.df_test_path = df_test_path
-    #     self.metrics_path = metrics_path
-    #     self.model_path = model_path
-    #     self.swa_model_path = swa_model_path
-    
-    #     self.exp_id = exp_id
-    #     self.run_id = run_id
-
-    
-    # def copy_files_to_dir(self, dest_dir: Path):
-    #     self.get_paths_to_data()
-
-    #     dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
-    #     dest_dir.mkdir(exist_ok=True, parents=True)
-        
-    #     with open(dest_dir / "task.json", "w") as f:
-    #         d = self.__dict__.copy()
-            
-    #         # Make Paths serializable
-    #         for k, v in d.items():
-    #             if isinstance(v, Path):
-    #                 d[k] = str(v)
-            
-    #         json.dump(d, f, indent=4)
-
-    #     list_of_paths = [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]
-
-    #     self.copy_pathlist_to_dest(dest_dir, list_of_paths)
+#     artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path = Task.compile_paths(exp_id, run_id)
 
 
-    # @staticmethod
-    # def compile_paths(exp_id, run_id) -> List[Path]:
-    #     artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+#     self.artifacts_path = artifacts_path
+#     self.dataset_hash = dataset_hash
+#     self.df_train_path = df_train_path
+#     self.df_test_path = df_test_path
+#     self.metrics_path = metrics_path
+#     self.model_path = model_path
+#     self.swa_model_path = swa_model_path
 
-    #     # This is a hack to correct for a bug in folder/file namiang
-    #     glob_list = list((artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
-    #     dataset_hash = glob_list[0].stem.split("_")[0]
-    #     df_train_path = artifacts_path / f"dataset/train_dataset.tsv/{dataset_hash}_train_dataset.tsv"
-    #     df_test_path = artifacts_path / f"dataset/test_dataset.tsv/{dataset_hash}_test_dataset.tsv"
-
-    #     metrics_path = artifacts_path / "eval_metrics.json"
-    #     model_path = artifacts_path / f"models/trained_model"
-    #     swa_model_path = artifacts_path / f"models/swa_model"
-    #     return [artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path]
+#     self.exp_id = exp_id
+#     self.run_id = run_id
 
 
-    # @staticmethod
-    # def copy_pathlist_to_dest(dest_dir: Path, list_of_paths: List[Path]):
-    #     for path in list_of_paths:
-    #         dest_path = dest_dir / path.name
-    #         if dest_path.exists():
-    #             warnings.warn(f"File {dest_path} already exists. Skipping copy.")
-    #         else:
-    #             os.system(f"cp -r {path} {dest_path}")
+# def copy_files_to_dir(self, dest_dir: Path):
+#     self.get_paths_to_data()
+
+#     dest_dir = Path(dest_dir) / f"{self.ag_pos}__vs__{self.ag_neg}"
+#     dest_dir.mkdir(exist_ok=True, parents=True)
+
+#     with open(dest_dir / "task.json", "w") as f:
+#         d = self.__dict__.copy()
+
+#         # Make Paths serializable
+#         for k, v in d.items():
+#             if isinstance(v, Path):
+#                 d[k] = str(v)
+
+#         json.dump(d, f, indent=4)
+
+#     list_of_paths = [self.df_train_path, self.df_test_path, self.metrics_path, self.model_path, self.swa_model_path]
+
+#     self.copy_pathlist_to_dest(dest_dir, list_of_paths)
+
+
+# @staticmethod
+# def compile_paths(exp_id, run_id) -> List[Path]:
+#     artifacts_path = config.DATA_BASE_PATH / Path(f"nco_mlflow_runs/ftp/artifacts_store/{exp_id}/{run_id}/artifacts/")
+
+#     # This is a hack to correct for a bug in folder/file namiang
+#     glob_list = list((artifacts_path / "dataset/train_dataset.tsv").glob("*tsv"))
+#     dataset_hash = glob_list[0].stem.split("_")[0]
+#     df_train_path = artifacts_path / f"dataset/train_dataset.tsv/{dataset_hash}_train_dataset.tsv"
+#     df_test_path = artifacts_path / f"dataset/test_dataset.tsv/{dataset_hash}_test_dataset.tsv"
+
+#     metrics_path = artifacts_path / "eval_metrics.json"
+#     model_path = artifacts_path / f"models/trained_model"
+#     swa_model_path = artifacts_path / f"models/swa_model"
+#     return [artifacts_path, dataset_hash, df_train_path, df_test_path, metrics_path, model_path, swa_model_path]
+
+
+# @staticmethod
+# def copy_pathlist_to_dest(dest_dir: Path, list_of_paths: List[Path]):
+#     for path in list_of_paths:
+#         dest_path = dest_dir / path.name
+#         if dest_path.exists():
+#             warnings.warn(f"File {dest_path} already exists. Skipping copy.")
+#         else:
+#             os.system(f"cp -r {path} {dest_path}")
 
 
 class ClassificationTaskType(Enum):
@@ -380,7 +375,7 @@ class ClassificationTaskType(Enum):
 
 class ClassificationTask:
     """Task for modelling antigen binding classifiers.
-    
+
     ## Example
     # t = ClassificationTask(
     #     task_type=ClassificationTaskType.ONE_VS_ONE,
@@ -393,6 +388,7 @@ class ClassificationTask:
     # t_inv = ClassificationTask.init_from_str(str(t))
     # str(t_inv) == str(t)
     """
+
     def __init__(
         self,
         task_type: ClassificationTaskType,
@@ -400,13 +396,14 @@ class ClassificationTask:
         seed_id: int,
         split_id: int,
         ag_neg: Optional[str] = "auto",
-        ):
-        
+    ):
         # Validate task type
         if task_type == ClassificationTaskType.ONE_VS_ONE and ag_neg == "auto":
             raise ValueError("ag_neg must be specified for ONE_VS_ONE task type")
         elif task_type != ClassificationTaskType.ONE_VS_ONE and ag_neg != "auto":
-            raise ValueError("ag_neg must be set to 'auto' / not set for non-ONE_VS_ONE task type")
+            raise ValueError(
+                "ag_neg must be set to 'auto' / not set for non-ONE_VS_ONE task type"
+            )
 
         # Validate antigens
         ClassificationTask.validate_antigen(ag_pos)
@@ -423,7 +420,6 @@ class ClassificationTask:
         self.model = None
         self.test_dataset = None
 
-
     def validate_antigen(ag: str):
         """
         Validates an antigen name.
@@ -433,7 +429,6 @@ class ClassificationTask:
         elif len(ag) != 4:
             raise ValueError(f"Invalid antigen name: {ag}")
 
-
     def get_nco_ag_pos(self):
         """
         Returns the antigen name for NCO.
@@ -442,11 +437,13 @@ class ClassificationTask:
             return self.ag_pos
         elif self.task_type == ClassificationTaskType.ONE_VS_NINE:
             return self.ag_pos
-        elif self.task_type in [ClassificationTaskType.HIGH_VS_95LOW, ClassificationTaskType.HIGH_VS_LOOSER]:
+        elif self.task_type in [
+            ClassificationTaskType.HIGH_VS_95LOW,
+            ClassificationTaskType.HIGH_VS_LOOSER,
+        ]:
             return f"{self.ag_pos}_high"
         else:
             raise ValueError(f"Invalid task type: {self.task_type}")
-
 
     def get_nco_ag_neg(self):
         """
@@ -463,14 +460,11 @@ class ClassificationTask:
         else:
             raise ValueError(f"Invalid task type: {self.task_type}")
 
-
     def __str__(self):
         return f"{self.task_type.name}__{self.ag_pos}__{self.ag_neg}__{self.seed_id}__{self.split_id}"
-    
 
     def __repr__(self):
         return str(self)
-
 
     def init_from_str(task_str: str):
         """
@@ -485,10 +479,8 @@ class ClassificationTask:
             split_id=int(split_id),
         )
 
-
     def __hash__(self) -> int:
         return hash(str(self))
-
 
     def __eq__(self, __value: object) -> bool:
         return str(self) == str(__value)
@@ -510,19 +502,19 @@ class FrozenMiniAbsolutMLLoader:
     # loader.load(task)
     # print(task.model, task.test_dataset)
     """
-    
+
     def __init__(
         self,
         data_dir: Path,
-        ):
+    ):
         self.data_dir = data_dir
-    
+
     def load(
-            self, 
-            task: ClassificationTask,
-            load_model = True,
-            load_test_dataset = True,
-            ):
+        self,
+        task: ClassificationTask,
+        load_model=True,
+        load_test_dataset=True,
+    ):
         """
         Loads the frozen MiniAbsolut dataset.
         """
@@ -544,10 +536,10 @@ class FrozenMiniAbsolutMLLoader:
         ag_neg = task.get_nco_ag_neg()
 
         task.basepath = (
-            self.data_dir 
-            / task_type_str 
-            / f"seed_{task.seed_id}" 
-            / f"split_{task.split_id}" 
+            self.data_dir
+            / task_type_str
+            / f"seed_{task.seed_id}"
+            / f"split_{task.split_id}"
             / f"{ag_pos}__vs__{ag_neg}"
         )
 
