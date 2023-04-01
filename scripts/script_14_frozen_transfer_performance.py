@@ -26,7 +26,7 @@ def evaluate_model(
     """
     with torch.no_grad():
         test_dataset = preprocessing.onehot_encode_df(test_dataset)
-        X = np.stack(test_dataset["Slide_onehot"])
+        X = np.stack(test_dataset["Slide_onehot"])  # type: ignore
         X = torch.from_numpy(X).float()
         y_pred = model(X).round().detach().numpy().reshape(-1)
         y_true = test_dataset["binds_a_pos_ag"].values
@@ -35,8 +35,10 @@ def evaluate_model(
 
 
 experiment_ids = ["11", "13", "14"]
-df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(
-    experiment_ids, run_name="dev-v0.1.2-3-with-replicates", classify_tasks=True
+df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
+    exp_list=experiment_ids,
+    run_name="dev-v0.1.2-3-with-replicates",
+    classify_tasks=True,
 )
 
 

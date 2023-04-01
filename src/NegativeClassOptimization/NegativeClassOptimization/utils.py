@@ -104,6 +104,7 @@ class AntigenData:
         return self.df_c
 
     def read_features(self) -> pd.DataFrame:
+        assert self.df_c is not None, "Read corpus first."
         self.df_f = pd.read_csv(self.features, sep="\t", header=1)
         self.df_f["UID"] = self.antigen + "_" + self.df_c["ID_slide_Variant"]
         return self.df_f
@@ -186,6 +187,7 @@ def build_global_dataset(
     dfs = []
     for antigen in antigens:
         ag_data = AntigenData(antigen, Path(dataset_path))
+        assert ag_data.df_c is not None, "Read corpus first."
         df_component = ag_data.df_c
         df_component["Antigen"] = ag_data.antigen
         dfs.append(ag_data.df_c)
@@ -659,7 +661,8 @@ class MLFlowTaskAPI(MlflowAPI):
         run_id = MLFlowTaskAPI.get_run_id(df)
         return experiment_id, run_id
 
-    def get_experiment_id(task):
+    @staticmethod
+    def get_experiment_id(task: dict):
         """Given a task specification, fetch experiment_id and run_id"""
         ag_pos = task["ag_pos"]
         ag_neg = task["ag_neg"]
@@ -719,17 +722,20 @@ class MLFlowTaskAPI(MlflowAPI):
             raise ValueError(f"Unrecognized experiment_id: {experiment_id}")
         return df
 
+    @staticmethod
     def get_run_id(df):
         assert len(df) == 1, "Expected 1 result"
         model_history: str = df["mlflow.log-model.history"].values[0]
         run_id = df.run_id_from_model_history(model_history)
         return run_id
 
-    def run_id_from_model_history(model_history: str) -> str:
+    @staticmethod
+    def run_id_from_model_history(model_history: str) -> str:  # type: ignore
         model_history: dict = json.loads(model_history)
         run_id = model_history[0]["run_id"]
         return run_id
 
+    @staticmethod
     def mlflow_results_as_dataframe(
         exp_list: List[str], run_name: str, classify_tasks=False
     ) -> pd.DataFrame:
@@ -748,19 +754,20 @@ class MLFlowTaskAPI(MlflowAPI):
             dfs.append(df)
 
         df = pd.concat(dfs, axis=0)
-        df = df.loc[~df["mlflow.log-model.history"].isna()].copy()
+        df = df.loc[~df["mlflow.log-model.history"].isna()].copy()  # type: ignore
         df["run_id"] = df["mlflow.log-model.history"].apply(
             MLFlowTaskAPI.run_id_from_model_history
         )
 
         if classify_tasks:
-            df["task"] = MLFlowTaskAPI.classify_tasks(df)
+            df["task_type"] = MLFlowTaskAPI.classify_tasks(df)
 
-        df["split_seed"] = df["load_from_miniabsolut_split_seed"]
-        df["split_seed"].replace({"None": 42}, inplace=True)
+        df["split_seed"] = df["load_from_miniabsolut_split_seed"].copy()
+        df["split_seed"].replace({"None": "42"}, inplace=True)
 
         return df
 
+    @staticmethod
     def classify_tasks(df: pd.DataFrame) -> List[str]:
         tasks = []
         for i, row in df.iterrows():

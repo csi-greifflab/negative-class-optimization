@@ -2,31 +2,25 @@
 """
 
 import itertools
+import math
 import multiprocessing
 from pathlib import Path
 from typing import List
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
-import math
-
-
-import mlflow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-from NegativeClassOptimization import ml, pipelines
-from NegativeClassOptimization import utils
-from NegativeClassOptimization import preprocessing
-from NegativeClassOptimization import config
-
+import mlflow
+from NegativeClassOptimization import config, ml, pipelines, preprocessing, utils
 
 TEST = False
 
-experiment_id = 13
+experiment_id = "13"
 run_name = "dev-v0.1.2-3-with-replicates-linear"
 num_processes = 20
 
@@ -48,22 +42,20 @@ sample_train = None
 
 
 def multiprocessing_wrapper_script_12c(
-    experiment_id, 
+    experiment_id,
     run_name,
     ag_pos,
     ag_neg,
     sample_train,
     seed_id,
     load_from_miniabsolut_split_seed,
-    ):
-    
+):
     with mlflow.start_run(
-        experiment_id=experiment_id, 
-        run_name=run_name, 
+        experiment_id=experiment_id,
+        run_name=run_name,
         description=f"{ag_pos} vs {ag_neg}",
         tags={"mlflow.runName": run_name},
-        ):
-
+    ):
         try:
             pipe = pipelines.BinaryclassPipeline(
                 log_mlflow=True,
@@ -93,33 +85,29 @@ def multiprocessing_wrapper_script_12c(
 
             pipe.step_3_evaluate_model()
         except:
-            pass    # Generate all 1 vs 9 antigens combinations
-
+            pass  # Generate all 1 vs 9 antigens combinations
 
 
 if __name__ == "__main__":
-
     utils.nco_seed()
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     antigens: List[str] = config.ANTIGENS
-    
+
     # Generate all 1 vs 9 antigens combinations
     ags_1_vs_9 = []
     for ag in antigens:
         ags_1_vs_9.append((ag, tuple(ag_i for ag_i in antigens if ag_i != ag)))
 
-
     if TEST:
-
         epochs = 3
         learning_rate = 0.001
         optimizer_type = "Adam"
         momentum = 0.9
         weight_decay = 0
         batch_size = 64
-        
+
         # Select 3VRL vs 9
         ags_1_vs_9_test = list(filter(lambda x: x[0] == "3VRL", ags_1_vs_9))
 
@@ -132,12 +120,12 @@ if __name__ == "__main__":
             0,
             None,
         )
-    
-    else:    
+
+    else:
         # Run batched multiprocessing
         for seed in seed_id:
             for i in range(0, len(ags_1_vs_9), num_processes):
-                ags_1_vs_9_batch = ags_1_vs_9[i:i+num_processes]
+                ags_1_vs_9_batch = ags_1_vs_9[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
                         multiprocessing_wrapper_script_12c,
@@ -152,11 +140,11 @@ if __name__ == "__main__":
                                 None,
                             )
                             for ag_perm in ags_1_vs_9_batch
-                        ]
+                        ],
                     )
         for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
             for i in range(0, len(ags_1_vs_9), num_processes):
-                ags_1_vs_9_batch = ags_1_vs_9[i:i+num_processes]
+                ags_1_vs_9_batch = ags_1_vs_9[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
                         multiprocessing_wrapper_script_12c,
@@ -171,5 +159,5 @@ if __name__ == "__main__":
                                 load_from_miniabsolut_split_seed,
                             )
                             for ag_perm in ags_1_vs_9_batch
-                        ]
+                        ],
                     )

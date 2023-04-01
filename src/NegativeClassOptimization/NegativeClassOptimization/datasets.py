@@ -241,7 +241,7 @@ class AbsolutDataset3:
             antigens = AbsolutDataset3.get_antigens()
         df_wide = pd.DataFrame.from_records(
             data=df["binding_profile"]
-            .apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))})
+            .apply(lambda x: {antigens[i]: int(x[i]) for i in range(len(antigens))})  # type: ignore
             .to_list(),
         )
         assert all(df_wide.sum(axis=1) == df["num_binding_ags"])
@@ -372,6 +372,31 @@ class ClassificationTaskType(Enum):
     HIGH_VS_95LOW = 3
     HIGH_VS_LOOSER = 4
 
+    @classmethod  # https://stackoverflow.com/questions/41359490/python-static-method-inside-private-inner-enum-class
+    def from_str(cls, s: str) -> "ClassificationTaskType":
+        if s == "1v1":
+            return ClassificationTaskType.ONE_VS_ONE
+        elif s == "1v9":
+            return ClassificationTaskType.ONE_VS_NINE
+        elif s == "high_vs_95low":
+            return ClassificationTaskType.HIGH_VS_95LOW
+        elif s == "high_vs_looser":
+            return ClassificationTaskType.HIGH_VS_LOOSER
+        else:
+            raise ValueError(f"Unrecognized ClassificationTaskType: {s}")
+
+    def to_str(self) -> str:
+        if self == ClassificationTaskType.ONE_VS_ONE:
+            return "1v1"
+        elif self == ClassificationTaskType.ONE_VS_NINE:
+            return "1v9"
+        elif self == ClassificationTaskType.HIGH_VS_95LOW:
+            return "high_vs_95low"
+        elif self == ClassificationTaskType.HIGH_VS_LOOSER:
+            return "high_vs_looser"
+        else:
+            raise ValueError(f"Unrecognized ClassificationTaskType: {self}")
+
 
 class ClassificationTask:
     """Task for modelling antigen binding classifiers.
@@ -395,7 +420,7 @@ class ClassificationTask:
         ag_pos: str,
         seed_id: int,
         split_id: int,
-        ag_neg: Optional[str] = "auto",
+        ag_neg: str = "auto",
     ):
         # Validate task type
         if task_type == ClassificationTaskType.ONE_VS_ONE and ag_neg == "auto":
@@ -420,6 +445,7 @@ class ClassificationTask:
         self.model = None
         self.test_dataset = None
 
+    @staticmethod
     def validate_antigen(ag: str):
         """
         Validates an antigen name.
@@ -466,6 +492,7 @@ class ClassificationTask:
     def __repr__(self):
         return str(self)
 
+    @staticmethod
     def init_from_str(task_str: str):
         """
         Returns a Task object from a string.
@@ -519,23 +546,24 @@ class FrozenMiniAbsolutMLLoader:
         Loads the frozen MiniAbsolut dataset.
         """
 
-        # Convert ClassificationTaskType to string in order to load the correct dataset
-        if task.task_type == ClassificationTaskType.ONE_VS_ONE:
-            task_type_str = "1v1"
-        elif task.task_type == ClassificationTaskType.ONE_VS_NINE:
-            task_type_str = "1v9"
-        elif task.task_type == ClassificationTaskType.HIGH_VS_95LOW:
-            task_type_str = "high_vs_95low"
-        elif task.task_type == ClassificationTaskType.HIGH_VS_LOOSER:
-            task_type_str = "high_vs_looser"
-        else:
-            raise ValueError("Invalid task type")
+        ## Convert ClassificationTaskType to string in order to load the correct dataset
+        # if task.task_type == ClassificationTaskType.ONE_VS_ONE:
+        #     task_type_str = "1v1"
+        # elif task.task_type == ClassificationTaskType.ONE_VS_NINE:
+        #     task_type_str = "1v9"
+        # elif task.task_type == ClassificationTaskType.HIGH_VS_95LOW:
+        #     task_type_str = "high_vs_95low"
+        # elif task.task_type == ClassificationTaskType.HIGH_VS_LOOSER:
+        #     task_type_str = "high_vs_looser"
+        # else:
+        #     raise ValueError("Invalid task type")
+        task_type_str = task.task_type.to_str()
 
         # Infer positive and negative antigens
         ag_pos = task.get_nco_ag_pos()
         ag_neg = task.get_nco_ag_neg()
 
-        task.basepath = (
+        task.basepath = (  # type: ignore
             self.data_dir
             / task_type_str
             / f"seed_{task.seed_id}"
@@ -549,6 +577,6 @@ class FrozenMiniAbsolutMLLoader:
         if load_test_dataset:
             hash_val = list(task.basepath.glob("*tsv"))[0].name.split("_")[0]
             test_dataset_path = task.basepath / f"{hash_val}_test_dataset.tsv"
-            task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")
+            task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
 
         return task
