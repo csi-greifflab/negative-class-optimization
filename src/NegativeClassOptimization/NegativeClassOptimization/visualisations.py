@@ -36,6 +36,12 @@ class PlotParams:
         "#0bb4ff",  # Blue
         "#e60049",  # Red
     ]
+    cmap_tasks_no1v1 = [
+        # Selection from Dutch Field
+        "#00bfa0",  # Dark Green
+        "#0bb4ff",  # Blue
+        "#e60049",  # Red
+    ]
     cmap_antigens = [
         # Extended Dutch Field (+ #EB4C00)
         "#e60049",
