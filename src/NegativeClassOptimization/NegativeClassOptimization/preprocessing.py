@@ -304,7 +304,6 @@ def preprocess_data_for_pytorch_binary(
 
     df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
     df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
-
     if sample_train is not None:
         df_train_val = sample_train_val(df_train_val, sample_train)
 
@@ -597,7 +596,6 @@ def preprocess_X(
     if scaler is None:
         scaler = StandardScaler()
         scaler.fit(arr)
-
     scaled_arr = scaler.transform(arr)
 
     df["X"] = scaled_arr.tolist()
@@ -665,7 +663,6 @@ def openset_datasplit_from_global_stable(
         test_mask = df_closed["Slide_farmhash_mod_10"].isin(farmhash_mod_10_test_mask)
     else:
         raise ValueError()
-
     df_train_val = df_closed.loc[~test_mask].copy()
     df_test_closed_exclusive = df_closed.loc[test_mask].copy()
     df_test_closed_exclusive = df_test_closed_exclusive.loc[

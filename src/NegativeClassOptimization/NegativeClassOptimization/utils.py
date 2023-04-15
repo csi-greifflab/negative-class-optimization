@@ -82,6 +82,12 @@ def unzip_file(path, output_path):
         zip_ref.extractall(output_path)
 
 
+def unzip_file(path, output_path):
+    """Unzip a file to a given path."""
+    with zipfile.ZipFile(path, "r") as zip_ref:
+        zip_ref.extractall(output_path)
+
+
 @dataclass
 class AntigenData:
     corpus: Path
@@ -304,7 +310,6 @@ def load_1v1_binary_dataset(
 
     if num_samples is not None:
         df = df.sample(n=num_samples, random_state=42)
-
     df = df.sample(frac=1, random_state=42)
 
     return df

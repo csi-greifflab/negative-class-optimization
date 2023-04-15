@@ -94,7 +94,6 @@ if __name__ == "__main__":
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     antigens: List[str] = config.ANTIGENS
-
     # Generate all 1 vs 9 antigens combinations
     ags_1_vs_9 = []
     for ag in antigens:
@@ -107,7 +106,6 @@ if __name__ == "__main__":
         momentum = 0.9
         weight_decay = 0
         batch_size = 64
-
         # Select 3VRL vs 9
         ags_1_vs_9_test = list(filter(lambda x: x[0] == "3VRL", ags_1_vs_9))
 
