@@ -11,16 +11,16 @@ from script_08_MulticlassSN10_openset_OSK import multiprocessing_wrapper_script_
 
 TEST = False
 
-experiment_id = 7
-run_name = "dev-0.1.2-2"
-input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR
+experiment_id = 9
+run_name = "dev-0.1.2-1"
+input_data_dir = config.DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR
 sample_data_source = None
 sample_per_ag_train = 1000
 sample_per_ag_test = None
 batch_size = 64
-model = "SN10_MULTICLASS"
+model = "SNN_MULTILABEL"
 hidden_dim = None
-epochs = 50
+epochs = 30
 learning_rate = 0.001
 num_processes = 20
 

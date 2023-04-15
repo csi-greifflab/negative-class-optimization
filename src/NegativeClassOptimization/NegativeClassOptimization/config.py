@@ -30,6 +30,21 @@ DATA_ABSOLUT_DOI = DATA_BASE_PATH / "Absolut/toc_doi10.11582_2021.00063.csv"
 DATA_ABSOLUT_DATASET3_AGLIST = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/ListAntigens142.txt"
 DATA_ABSOLUT_DATASET3_BINDINGMTX = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/Treated142.txt"
 DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/multiclass"
+DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR = DATA_BASE_PATH / "Absolut/processed/multilabel"
+
+DATA_MINIABSOLUT = DATA_BASE_PATH / "MiniAbsolut"
+DATA_MINIABSOLUT_SPLITS = DATA_BASE_PATH / "MiniAbsolut_Splits"
+
+DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Task4_Merged_Slice_ParaEpi.txt"
+DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"
+DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
+
+DATA_XSTREME = DATA_BASE_PATH / "xstreme"
+
+TMP_DIR = DATA_BASE_PATH / "tmp"
+TMP_DIR.mkdir(exist_ok=True)
+
+DATA_EMB_DIR = DATA_BASE_PATH / "embeddings"
 
 SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
                     'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
@@ -44,7 +59,7 @@ ANTIGENS = [
     '1ADQ',
     '1FBI',
     '2YPV',
-    '1OB1'
+    '1OB1',
 ]
 ANTIGENS_CLOSEDSET = ['1FBI', '1NSN', '1OB1', '1WEJ', '3VRL', '5E94']
 ANTIGENS_OPENSET = ['1ADQ', '1H0D', '2YPV', '3RAJ']

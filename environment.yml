@@ -11,12 +11,13 @@ dependencies:
   - jupyterlab
   - umap-learn
   - pytorch 
-  - torchvision 
+  # - torchvision 
   - torchaudio 
   - captum
   - cudatoolkit=10.2
   - optuna
   - sphinx
+  - jsonnet
   - pip
   - pip:
       - dvc[gdrive]==2.10.2
@@ -37,3 +38,10 @@ dependencies:
       - dovpanda
       - nbconvert
       - nbdev
+      - bio-embeddings[all]
+      # - modisco
+      # - tfmodisco-lite
+      - logomaker
+      - docker
+      - pykeops
+      - geomloss

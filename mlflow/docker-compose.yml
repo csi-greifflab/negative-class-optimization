@@ -13,12 +13,18 @@ services:
             - nco_mlflow_net
         volumes:
             - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs:/home/mlflow
+        # Added gunicorn-opts to fix the issue with the MLFlow server timing out
+        # when there are multiple experiments and runs.
+        # https://github.com/mlflow/mlflow/issues/925#issuecomment-1055125656
+        # didn't help: --gunicorn-opts "--worker-class gevent --threads 3 --workers 3 --timeout 300 --keep-alive 300 --log-level INFO"  
         command: >
           mlflow server 
           --host 0.0.0.0 
           --backend-store-uri ./backend_store
           --registry-store-uri sqlite:////home/mlflow/registry_store.db
           --default-artifact-root ftp://${FTP_USER}:${FTP_PASS}@${IP}/artifacts_store
+          --gunicorn-opts "--timeout 0"
+        
     
     nco_ftp:
         restart: always
