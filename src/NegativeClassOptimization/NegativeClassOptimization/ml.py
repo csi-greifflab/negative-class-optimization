@@ -5,40 +5,37 @@ Includes models, datasets and data loaders.
 
 
 import abc
-from argparse import ArgumentError
 import math
+import warnings
+from argparse import ArgumentError
+from collections import OrderedDict
 from pathlib import Path
 from tkinter import Y
 from typing import List, Optional, Tuple, Union
-import warnings
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+from captum.attr import DeepLift, IntegratedGradients
+from scipy.stats import rankdata
+
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
-from scipy.stats import rankdata
-
-import torch
 from torch import nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import torch.nn.functional as F
-
-from captum.attr import IntegratedGradients, DeepLift
+from torch.utils.data import DataLoader, Dataset
 
 import mlflow
-
 import NegativeClassOptimization.config as config
-import NegativeClassOptimization.utils as utils
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
+import NegativeClassOptimization.utils as utils
 
 
 # Abstract base class for all models using
 class NCOModel(nn.Module):
-
     @abc.abstractmethod
     def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
         pass
@@ -61,67 +58,66 @@ class NCOModel(nn.Module):
         y_test_pred = model.forward(x_test).detach().numpy().reshape(-1).round()
         y_test_true = y_test.detach().numpy().reshape(-1)
         binary_metrics: dict = compute_binary_metrics(y_test_pred, y_test_true)
-        
+
         try:
-            roc_auc_closed = metrics.roc_auc_score(y_true=y_test_true, y_score=y_test_logits)    
-            avg_precision_closed = metrics.average_precision_score(y_true=y_test_true, y_score=y_test_logits)
+            roc_auc_closed = metrics.roc_auc_score(
+                y_true=y_test_true, y_score=y_test_logits
+            )
+            avg_precision_closed = metrics.average_precision_score(
+                y_true=y_test_true, y_score=y_test_logits
+            )
         except ValueError:
             roc_auc_closed = np.nan
             avg_precision_closed = np.nan
-        
+
         metrics_closed = {
-                "y_test_logits": y_test_logits,
-                "y_test_pred": y_test_pred,
-                "y_test_true": y_test_true,
-                "roc_auc_closed": roc_auc_closed,
-                "avg_precision_closed": avg_precision_closed,
-                **{f"{k}_closed": v for k, v in binary_metrics.items()},
-            }
-        
+            "y_test_logits": y_test_logits,
+            "y_test_pred": y_test_pred,
+            "y_test_true": y_test_true,
+            "roc_auc_closed": roc_auc_closed,
+            "avg_precision_closed": avg_precision_closed,
+            **{f"{k}_closed": v for k, v in binary_metrics.items()},
+        }
+
         return metrics_closed
 
 
 class LogisticRegression(NCOModel):
-    """Logistic regression model.
-    """
+    """Logistic regression model."""
 
     def __init__(self, input_dim: int):
         super(LogisticRegression, self).__init__()
         self.linear = nn.Linear(input_dim, 1)
-    
+
     def forward_logits(self, x: torch.Tensor) -> torch.Tensor:
         logits = self.linear(x)
         return logits
-    
+
     def forward(
-        self, 
-        x: torch.Tensor, 
-        return_logits = False
-        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        
+        self, x: torch.Tensor, return_logits=False
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         logits = self.forward_logits(x)
         y_pred = torch.sigmoid(logits)
         if return_logits:
             return y_pred, logits
         else:
             return y_pred
-    
+
     def predict(self, x: torch.Tensor) -> torch.Tensor:
         y_pred = self.forward(x)
         return y_pred
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         return NCOModel.compute_metrics_closed_testset_static(self, x_test, y_test)
 
 
 class SN10(NCOModel):
-    """The simple neural network 10 (SN10) model from `Absolut!`.
-    """
+    """The simple neural network 10 (SN10) model from `Absolut!`."""
 
     def __init__(self):
         super(SN10, self).__init__()
         self.flatten = nn.Flatten()
-        self.linear_1 = nn.Linear(11*20, 10)
+        self.linear_1 = nn.Linear(11 * 20, 10)
         self.activation = nn.ReLU()
         self.linear_2 = nn.Linear(10, 1)
         self.final = nn.Sigmoid()
@@ -134,30 +130,27 @@ class SN10(NCOModel):
         return logits
 
     def forward(
-        self, 
-        x: torch.Tensor, 
-        return_logits = False
-        ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        
+        self, x: torch.Tensor, return_logits=False
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         logits = self.forward_logits(x)
         expits = self.final(logits)
         if return_logits:
             return expits, logits
         else:
             return expits
-    
+
     def predict(
         self,
         x: torch.Tensor,
-        ) -> torch.Tensor:
+    ) -> torch.Tensor:
         return self.forward(x, return_logits=False).round()
 
     def compute_metrics_closed_testset(self, x_test, y_test):
         return NCOModel.compute_metrics_closed_testset_static(self, x_test, y_test)
 
-class SNN(SN10):
 
-    def __init__(self, num_hidden_units: int, input_dim: int = 11*20):
+class SNN(SN10):
+    def __init__(self, num_hidden_units: int, input_dim: int = 11 * 20):
         super().__init__()
         self.num_hidden_units = num_hidden_units
         self.input_dim = input_dim
@@ -173,11 +166,9 @@ class SNN(SN10):
 
 
 class MulticlassSN10(SN10):
-
     def __init__(self, num_classes: int):
-        
         super().__init__()
-        
+
         self.linear_2 = nn.Linear(10, num_classes)
 
         # Cross-entropy loss expects raw, not softmax
@@ -185,29 +176,28 @@ class MulticlassSN10(SN10):
         self.softmax = nn.Softmax(dim=1)
 
         self.num_classes = num_classes
-    
+
     def forward(
         self,
         x: torch.Tensor,
-        ) -> torch.Tensor:
-
+    ) -> torch.Tensor:
         # confusing but these are the logits
-        logits = super().forward(x, return_logits = False)
+        logits = super().forward(x, return_logits=False)
         return logits
-    
+
     def forward_prob(
         self,
         x: torch.Tensor,
-        ) -> torch.Tensor:
+    ) -> torch.Tensor:
         logits = self.forward(x)
         return self.softmax(logits)
-    
+
     def predict(
         self,
         x: torch.Tensor,
-        ) -> torch.Tensor:
+    ) -> torch.Tensor:
         return self.forward_prob(x).argmax(dim=1)
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         y_test_pred_prob = self.forward_prob(x_test).detach().numpy()
         y_test_pred = y_test_pred_prob.argmax(axis=1)
@@ -216,47 +206,44 @@ class MulticlassSN10(SN10):
             "acc_balanced_closed": metrics.balanced_accuracy_score(y_test, y_test_pred),
             **{
                 f"{str(func).split(' ')[1].split('_')[0]}_{str(avg_type)}_closed": func(
-                    y_test, 
-                    y_test_pred, 
-                    average=avg_type
-                    )
+                    y_test, y_test_pred, average=avg_type
+                )
                 for func in {
-                    metrics.f1_score, 
-                    metrics.precision_score, 
+                    metrics.f1_score,
+                    metrics.precision_score,
                     metrics.recall_score,
-                    }
+                }
                 for avg_type in {"micro", "macro", "weighted", None}
             },
             **{
                 f"roc_auc_{avg_type}_closed": metrics.roc_auc_score(
-                    y_test, 
-                    y_test_pred_prob, 
+                    y_test,
+                    y_test_pred_prob,
                     average=avg_type,
                     multi_class="ovr",
-                    )
+                )
                 for avg_type in {"macro", "weighted", None}
             },
-            
             "confusion_matrix_closed": metrics.confusion_matrix(
-                y_test, 
+                y_test,
                 y_test_pred,
-                ),
+            ),
             "confusion_matrix_normed_closed": metrics.confusion_matrix(
                 y_test,
                 y_test_pred,
                 normalize="all",
-                ),
+            ),
             "mcc_closed": metrics.matthews_corrcoef(y_test, y_test_pred),
-            }
+        }
         return metrics_closed
 
 
 class MulticlassSNN(MulticlassSN10):
-    """Generalizes `MulticlassSN10` to a variable size of the hidden dimension.
-    """    
+    """Generalizes `MulticlassSN10` to a variable size of the hidden dimension."""
+
     def __init__(self, hidden_dim: int, num_classes: int):
         super().__init__(num_classes=num_classes)
-        self.linear_1 = nn.Linear(11*20, hidden_dim)
+        self.linear_1 = nn.Linear(11 * 20, hidden_dim)
         self.linear_2 = nn.Linear(hidden_dim, num_classes)
         self.hidden_dim = hidden_dim
 
@@ -274,24 +261,25 @@ class MultilabelSNN(MulticlassSNN):
     def __init__(self, hidden_dim: int, num_classes: int):
         super().__init__(hidden_dim=hidden_dim, num_classes=num_classes)
         self.softmax = nn.Identity()
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         y_test_pred_prob = self(x_test).detach().numpy()
         y_test_pred = y_test_pred_prob.round()
         # metrics.multilabel_confusion_matrix(y_test, y_test_pred),
         return {
-            "multilabel_fraction": ((y_test == 1.0).sum(axis=1) == 1).sum().item() / y_test.shape[0],
+            "multilabel_fraction": ((y_test == 1.0).sum(axis=1) == 1).sum().item()
+            / y_test.shape[0],
             **{
                 f"{str(func).split(' ')[1].split('_')[0]}_{str(avg_type)}_closed": func(
                     y_test.reshape((-1, self.num_classes)),
                     y_test_pred,
-                    average=avg_type
-                    )
+                    average=avg_type,
+                )
                 for func in {
-                    metrics.f1_score, 
-                    metrics.precision_score, 
+                    metrics.f1_score,
+                    metrics.precision_score,
                     metrics.recall_score,
-                    }
+                }
                 for avg_type in {"micro", "macro", "weighted", None}
             },
         }
@@ -304,39 +292,39 @@ class CNN(nn.Module):
         conv1_filter_size=3,
         conv2_num_filters=3,
         conv2_filter_size=3,
-        ):
+    ):
         super().__init__()
-        
+
         # ConvNet Calculator
         # https://madebyollin.github.io/convnet-calculator/
 
         # input: 11(W) x 20(H) x 1(#C)
 
         self.conv1 = nn.Conv2d(
-            in_channels=1, 
+            in_channels=1,
             out_channels=conv1_num_filters,  # filter count
             kernel_size=conv1_filter_size,  # filter size
         )
-        conv1_out_w = math.floor((11-conv1_filter_size)/1 + 1)
-        conv1_out_h = math.floor((20-conv1_filter_size)/1 + 1)
+        conv1_out_w = math.floor((11 - conv1_filter_size) / 1 + 1)
+        conv1_out_h = math.floor((20 - conv1_filter_size) / 1 + 1)
 
         self.pool = nn.MaxPool2d(
-            kernel_size=2,  # filter size 
+            kernel_size=2,  # filter size
             stride=2,
         )
-        pool1_out_w = math.floor((conv1_out_w-2)/2 + 1)
-        pool1_out_h = math.floor((conv1_out_h-2)/2 + 1)
-        
+        pool1_out_w = math.floor((conv1_out_w - 2) / 2 + 1)
+        pool1_out_h = math.floor((conv1_out_h - 2) / 2 + 1)
+
         self.conv2 = nn.Conv2d(
-            in_channels=conv1_num_filters, 
+            in_channels=conv1_num_filters,
             out_channels=conv2_num_filters,  # filter count
             kernel_size=conv2_filter_size,
         )
-        conv2_out_w = math.floor((pool1_out_w-conv2_filter_size)/1 + 1)
-        conv2_out_h = math.floor((pool1_out_h-conv2_filter_size)/1 + 1)
+        conv2_out_w = math.floor((pool1_out_w - conv2_filter_size) / 1 + 1)
+        conv2_out_h = math.floor((pool1_out_h - conv2_filter_size) / 1 + 1)
 
-        pool2_out_w = math.floor((conv2_out_w-2)/2 + 1)
-        pool2_out_h = math.floor((conv2_out_h-2)/2 + 1)
+        pool2_out_w = math.floor((conv2_out_w - 2) / 2 + 1)
+        pool2_out_h = math.floor((conv2_out_h - 2) / 2 + 1)
         fc1_in_features = pool2_out_w * pool2_out_h * conv2_num_filters
         self.fc1 = nn.Linear(fc1_in_features, 10)
         self.fc2 = nn.Linear(10, 1)
@@ -356,10 +344,10 @@ class CNN(nn.Module):
         else:
             x = self.sigmoid(x)
             return x
-    
+
     def forward_logits(self, x):
         return self.forward(x, forward_logits=True)
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         x_test_cnn = x_test.reshape((-1, 1, 11, 20))
         return SN10.compute_metrics_closed_testset_static(self, x_test_cnn, y_test)
@@ -372,7 +360,7 @@ class Transformer(nn.Module):
 
     def __init__(
         self,
-        vocab_size, 
+        vocab_size,
         d_model,
         nhead=8,
         dim_feedforward=2048,
@@ -380,8 +368,7 @@ class Transformer(nn.Module):
         dropout=0.1,
         activation="relu",
         classifier_dropout=0.1,
-        ):
-
+    ):
         super().__init__()
 
         assert d_model % nhead == 0, "nheads must divide evenly into d_model"
@@ -424,17 +411,19 @@ class Transformer(nn.Module):
         else:
             x = nn.Sigmoid()(x)
             return x
-    
+
     def forward_logits(self, x):
         return self.forward(x, return_logits=True)
-    
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         # The transformation below is specific for the transformer
         #  but is manually applied in loss computation and here. This is
         #  not ideal, but it works for now. Will have to be redesigned.
         #  Same for CNN.
         x_test_transformer = x_test.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11)
-        return SN10.compute_metrics_closed_testset_static(self, x_test_transformer, y_test)
+        return SN10.compute_metrics_closed_testset_static(
+            self, x_test_transformer, y_test
+        )
 
 
 class PositionalEncoding(nn.Module):
@@ -449,14 +438,12 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(vocab_size, d_model)
         position = torch.arange(0, vocab_size, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, d_model, 2).float()
-            * (-math.log(10000.0) / d_model)
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
-
 
     def forward(self, x):
         x = x + self.pe[:, : x.size(1), :]
@@ -464,11 +451,10 @@ class PositionalEncoding(nn.Module):
 
 
 class Attributor:
-    """Class for computing attributions for a given model.
-    """
+    """Class for computing attributions for a given model."""
 
     def __init__(
-        self, 
+        self,
         model: nn.Module,
         type: str = "deep_lift",  # "integrated_gradients"
         baseline_type: str = "shuffle",  # "zero"
@@ -476,8 +462,7 @@ class Attributor:
         compute_on: str = "expits",  # "logits"
         multiply_by_inputs: bool = True,
         name: Optional[str] = None,
-        ):
-        
+    ):
         self.model = model
         self.compute_on = compute_on
         self.multiply_by_inputs = multiply_by_inputs
@@ -490,18 +475,23 @@ class Attributor:
             raise ValueError(f"Unknown attributor type {type}")
 
         if compute_on == "expits":
-            self.attributor = self.attributor_class(model, multiply_by_inputs=self.multiply_by_inputs)
+            self.attributor = self.attributor_class(
+                model, multiply_by_inputs=self.multiply_by_inputs
+            )
         elif compute_on == "logits":
             # https://github.com/pytorch/captum/issues/678
             class LogitWrapper(nn.Module):
                 def __init__(self, model):
                     super().__init__()  # mandatory
                     self.model = model
+
                 def forward(self, *args):
                     return self.model.forward_logits(*args)
-            
+
             wrapper = LogitWrapper(model)
-            self.attributor = self.attributor_class(wrapper, multiply_by_inputs=self.multiply_by_inputs)
+            self.attributor = self.attributor_class(
+                wrapper, multiply_by_inputs=self.multiply_by_inputs
+            )
         else:
             raise ValueError(f"Unknown compute_on type {compute_on}")
 
@@ -511,17 +501,17 @@ class Attributor:
         self.num_shuffles = num_shuffles
 
         if name is None:
-            self.name = f"{type}__{compute_on}__{baseline_type}__multiply{multiply_by_inputs}"
+            self.name = (
+                f"{type}__{compute_on}__{baseline_type}__multiply{multiply_by_inputs}"
+            )
         else:
             self.name = name
 
-
     def __call__(
         self,
-        X: Union[torch.tensor, Dataset], 
+        X: Union[torch.tensor, Dataset],
         return_err: bool = False,
-        ):
-        
+    ):
         if type(X) == Dataset:
             return self.attribute_dataset(X, return_err)
         elif type(X) == torch.Tensor:
@@ -534,11 +524,10 @@ class Attributor:
         X: torch.tensor,
         return_err: bool = False,
         return_baseline: bool = False,
-        ):
-        """Compute attributions for a given input using Integrated Gradients.
-        """
+    ):
+        """Compute attributions for a given input using Integrated Gradients."""
         assert X.shape == (1, 220), f"Expected input shape (1, 220), got {X.shape}"
-        
+
         if self.baseline_type == "zero":
             if type(self.attributor) == IntegratedGradients:
                 attribution, err = self.attributor.attribute(
@@ -554,11 +543,10 @@ class Attributor:
                     baselines=torch.zeros(X.shape),
                     return_convergence_delta=True,
                 )
-        
+
         elif self.baseline_type == "shuffle":
             shuffles: List[torch.tensor] = Attributor.get_onehot_shuffles(
-                X,
-                num_shuffles=self.num_shuffles
+                X, num_shuffles=self.num_shuffles
             )
             attrs = []
             for baseline in shuffles:
@@ -589,11 +577,10 @@ class Attributor:
                 res.append(self.baseline_type)
             return tuple(res)
 
-
     def attribute_dataset(
         self,
         data: Dataset,
-        ):
+    ):
         """Compute Integrated Gradients attribution for a model on a dataset.
 
         Args:
@@ -606,9 +593,8 @@ class Attributor:
         records = []
         for index in indexes:
             attributions, approximation_error = self.attribute(
-                data[index][0], 
-                return_err=True
-                )
+                data[index][0], return_err=True
+            )
             records.append((attributions, approximation_error))
         return records
 
@@ -618,28 +604,40 @@ class Attributor:
         tensor = np.copy(tensor)  # create a copy to avoid shuffling the original tensor
         index = np.arange(tensor.shape[0])
         np.random.shuffle(index)
-        return torch.tensor(tensor[index,:])
+        return torch.tensor(tensor[index, :])
 
     @staticmethod
     def get_onehot_shuffles(
         onehot_vector: torch.tensor,
         num_shuffles: int = 1000,
-        ):
+    ):
         """Compute a baseline for one-hot encoded tensor by shuffling the rows
         and averaging the resulting one-hot encodings.
         """
-        assert onehot_vector.shape == (1, 220), f"Expected input shape (1, 220), got {onehot_vector.shape}"
+        assert onehot_vector.shape == (
+            1,
+            220,
+        ), f"Expected input shape (1, 220), got {onehot_vector.shape}"
         shuffles = []
         for _ in range(num_shuffles):
             shuffles.append(
-                Attributor
-                .shuffle_rows(onehot_vector.reshape((11, 20)))
-                .reshape((1, 220))
+                Attributor.shuffle_rows(onehot_vector.reshape((11, 20))).reshape(
+                    (1, 220)
+                )
             )
         return shuffles
 
 
-AVAILABLE_MODELS = [LogisticRegression, SN10, SNN, MulticlassSN10, MulticlassSNN, MultilabelSNN, CNN, Transformer]
+AVAILABLE_MODELS = [
+    LogisticRegression,
+    SN10,
+    SNN,
+    MulticlassSN10,
+    MulticlassSNN,
+    MultilabelSNN,
+    CNN,
+    Transformer,
+]
 
 
 def train_loop(loader, model, loss_fn, optimizer):
@@ -654,7 +652,6 @@ def train_loop(loader, model, loss_fn, optimizer):
     losses = []
     size = len(loader.dataset)
     for batch, (X, y) in enumerate(loader):
-        
         loss = compute_loss(model, loss_fn, X, y)
 
         optimizer.zero_grad()
@@ -677,9 +674,7 @@ def test_loop(loader, model, loss_fn) -> dict:
         loss_fn (Callable)
     """
 
-    assert type(model) in AVAILABLE_MODELS, (
-        f"Model class {type(model)} not recognized."
-    )
+    assert type(model) in AVAILABLE_MODELS, f"Model class {type(model)} not recognized."
 
     test_loss = compute_avg_test_loss(loader, model, loss_fn)
 
@@ -690,10 +685,8 @@ def test_loop(loader, model, loss_fn) -> dict:
     x_test, y_test = Xy_from_loader(loader=loader)
     closed_metrics: dict = compute_metrics_closed_testset(model, x_test, y_test)
 
-    acc_closed = closed_metrics.get('acc_closed', np.nan)
-    print(
-        f"Test Error: \n Acc: {100*acc_closed:.1f} Avg loss: {test_loss:>8f} \n"
-    )
+    acc_closed = closed_metrics.get("acc_closed", np.nan)
+    print(f"Test Error: \n Acc: {100*acc_closed:.1f} Avg loss: {test_loss:>8f} \n")
 
     return {
         **loop_metrics,
@@ -733,7 +726,9 @@ def compute_loss(model, loss_fn, X, y):
                 X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))
                 loss = loss_fn(X_pred, y)
             elif model_class_name == "LogisticRegression":
-                loss = loss_fn(model(X), y.reshape(-1, 1, 1))  # add extra dimension for batch index
+                loss = loss_fn(
+                    model(X), y.reshape(-1, 1, 1)
+                )  # add extra dimension for batch index
             else:
                 loss = loss_fn(model(X), y)
 
@@ -750,16 +745,14 @@ def openset_loop(open_loader, test_loader, model):
 
 
 def Xy_from_loader(loader: DataLoader):
-    X, y = list(
-        DataLoader(loader.dataset, batch_size=len(loader.dataset))
-        )[0]
+    X, y = list(DataLoader(loader.dataset, batch_size=len(loader.dataset)))[0]
     return X, y
 
 
 def construct_dataset_loader_multiclass(
     df: pd.DataFrame,
     batch_size: int = 64,
-    ):
+):
     dataset = datasets.MulticlassDataset(df.reset_index(drop=True))
     loader = DataLoader(
         dataset=dataset,
@@ -772,8 +765,8 @@ def construct_dataset_loader_multiclass(
 def construct_dataset_loader(
     df: pd.DataFrame,
     batch_size: int = 64,
-    dataset_class = datasets.MulticlassDataset,
-    ):
+    dataset_class=datasets.MulticlassDataset,
+):
     dataset = dataset_class(df.reset_index(drop=True))
     loader = DataLoader(
         dataset=dataset,
@@ -789,28 +782,28 @@ def construct_optimizer(
     momentum,
     weight_decay,
     model,
-    ) -> torch.optim.Optimizer:
+) -> torch.optim.Optimizer:
     if optimizer_type == "SGD":
         optimizer = torch.optim.SGD(
-            model.parameters(), 
+            model.parameters(),
             lr=learning_rate,
             momentum=momentum,
             weight_decay=weight_decay,
-            )
+        )
     elif optimizer_type == "Adam":
         optimizer = torch.optim.Adam(
-            model.parameters(), 
+            model.parameters(),
             lr=learning_rate,
             betas=(momentum, 0.999),  # beta1 ~ momentum
             weight_decay=weight_decay,
-            )
+        )
     else:
         raise ValueError(f"optimizer_type `{optimizer_type}` not recognized.")
     return optimizer
 
 
 def train_for_ndb1(
-    epochs, 
+    epochs,
     learning_rate,
     train_loader,
     test_loader,
@@ -821,7 +814,7 @@ def train_for_ndb1(
     weight_decay: float = 0,
     callback_on_model_end_epoch: callable = None,
     swa: bool = False,
-    ) -> List[dict]:
+) -> List[dict]:
     """Train model for the NDB1 problem formalization.
 
     SWA implementation from:
@@ -830,13 +823,9 @@ def train_for_ndb1(
 
     loss_fn = nn.BCELoss()
     optimizer = construct_optimizer(
-        optimizer_type,
-        learning_rate,
-        momentum,
-        weight_decay, 
-        model
-        )
-    
+        optimizer_type, learning_rate, momentum, weight_decay, model
+    )
+
     if swa:
         swa_model = optim.swa_utils.AveragedModel(model)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
@@ -852,17 +841,19 @@ def train_for_ndb1(
         losses = train_loop(train_loader, model, loss_fn, optimizer)
         # 2 lines below replace with evaluate_on_closed_and_open_testsets
         test_metrics = test_loop(test_loader, model, loss_fn)
-        
+
         if open_loader is not None:
             open_metrics = openset_loop(open_loader, test_loader, model)
         else:
             open_metrics = {}
-        
-        online_metrics_per_epoch.append({
-            "train_losses": losses,
-            "test_metrics": test_metrics,
-            "open_metrics": open_metrics,
-        })
+
+        online_metrics_per_epoch.append(
+            {
+                "train_losses": losses,
+                "test_metrics": test_metrics,
+                "open_metrics": open_metrics,
+            }
+        )
 
         callback_on_model_end_epoch(model, t)
 
@@ -924,7 +915,7 @@ def compute_metrics_open_testset(model, x_open, x_test) -> dict:
         dict: recorded metrics.
     """
     assert hasattr(model, "forward_logits")
-    
+
     l2_norm = lambda arr: np.linalg.norm(arr, ord=2, axis=1)
 
     ## Norm implementation works in both binary and multiclass case.
@@ -932,22 +923,26 @@ def compute_metrics_open_testset(model, x_open, x_test) -> dict:
     # closed_abs_logits = abs(model.forward_logits(x_test).detach().numpy()).reshape(-1)
 
     open_abs_logits = l2_norm(model.forward_logits(x_open).detach().numpy()).reshape(-1)
-    closed_abs_logits = l2_norm(model.forward_logits(x_test).detach().numpy()).reshape(-1)    
+    closed_abs_logits = l2_norm(model.forward_logits(x_test).detach().numpy()).reshape(
+        -1
+    )
 
     df_tmp = pd.DataFrame(data=open_abs_logits, columns=["logits"])
     df_tmp = pd.concat(
         (
             pd.DataFrame(data={"abs_logits": open_abs_logits, "test_type": "open"}),
-            pd.DataFrame(data={"abs_logits": closed_abs_logits, "test_type": "closed"})
+            pd.DataFrame(data={"abs_logits": closed_abs_logits, "test_type": "closed"}),
         ),
-        axis=0
+        axis=0,
     ).reset_index(drop=True)
     y_open_abs_logits = df_tmp["abs_logits"].values
     df_tmp["y"] = np.where(df_tmp["test_type"] == "open", 0, 1)
     y_open_true = df_tmp["y"].values
     del df_tmp
     roc_auc_open = metrics.roc_auc_score(y_true=y_open_true, y_score=y_open_abs_logits)
-    avg_precision_open = metrics.average_precision_score(y_true=y_open_true, y_score=y_open_abs_logits)
+    avg_precision_open = metrics.average_precision_score(
+        y_true=y_open_true, y_score=y_open_abs_logits
+    )
 
     # Find optimal threshold based on PR and compute binary classification metrics
     th_opt = find_optimal_threshold(y_open_true, y_open_abs_logits, method="f1")
@@ -978,20 +973,20 @@ def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
     scenarios.
 
     Args:
-        open_loader (DataLoader): loads the open set testing dataset 
+        open_loader (DataLoader): loads the open set testing dataset
         which includes closed set and open set examples. Evaluated as
         a binary classification problem.
 
         test_loader (DataLoader): loads the typical closed set test data.
-        
-        model (torch.nn): the model to be evaluated. Must implement 
+
+        model (torch.nn): the model to be evaluated. Must implement
         forward_logits(x).
     """
     assert hasattr(model, "forward_logits")
 
     x_test, y_test = Xy_from_loader(test_loader)
     metrics_closed = compute_metrics_closed_testset(model, x_test, y_test)
-    
+
     if open_loader is not None:
         x, y = Xy_from_loader(open_loader)
         metrics_open = compute_metrics_open_testset(model, x, x_test)
@@ -1005,11 +1000,7 @@ def evaluate_on_closed_and_open_testsets(open_loader, test_loader, model):
     return eval_metrics
 
 
-def find_optimal_threshold(
-    y_true,
-    y_score,
-    method: str = "roc"
-    ) -> float:
+def find_optimal_threshold(y_true, y_score, method: str = "roc") -> float:
     """Finds optimal thresholds for binary classification.
 
     https://machinelearningmastery.com/threshold-moving-for-imbalanced-classification/
@@ -1027,12 +1018,10 @@ def find_optimal_threshold(
             y_true=y_true,
             y_score=y_score,
         )
-        th_opt = thresholds[
-            np.argmin(np.abs(fpr + tpr - 1))
-        ]
+        th_opt = thresholds[np.argmin(np.abs(fpr + tpr - 1))]
     elif method == "f1":
         precision, recall, thresholds = metrics.precision_recall_curve(
-            y_true=y_true, 
+            y_true=y_true,
             probas_pred=y_score,
         )
         fscore = (2 * precision * recall) / (precision + recall + 1e-8)
@@ -1053,7 +1042,7 @@ def compute_roc_curve(y_true, y_score) -> tuple:
 
     Returns:
         tuple: fpr, tpr, thresholds, optimal_thr
-    """    
+    """
     fpr, tpr, thresholds = metrics.roc_curve(
         y_true=y_true,
         y_score=y_score,
@@ -1071,18 +1060,19 @@ def compute_pr_curve(y_true, y_score) -> tuple:
 
     Returns:
         tuple: precision, recall, thresholds, optimal_thr
-    """  
+    """
     precision, recall, thresholds = metrics.precision_recall_curve(
-        y_true=y_true, 
+        y_true=y_true,
         probas_pred=y_score,
     )
     optimal_thr = find_optimal_threshold(y_true, y_score, method="f1")
     return precision, recall, thresholds, optimal_thr
 
 
-def compute_and_collect_model_predictions_and_attributions(df, model, attributors, N=100):
-    """Compute model predictions and attributions for a given dataset.
-    """
+def compute_and_collect_model_predictions_and_attributions(
+    df: pd.DataFrame, model: nn.Module, attributors: List[Attributor], N=100
+):
+    """Compute model predictions and attributions for a given dataset."""
     df = df.copy()
     if N is not None:
         df = df.sample(N)
@@ -1096,7 +1086,11 @@ def compute_and_collect_model_predictions_and_attributions(df, model, attributor
 
             # Model predictions and basic parameters
             is_slide_in_train = slide in df["Slide"]
-            enc = torch.tensor(preprocessing.onehot_encode(slide)).float().reshape((1, -1))
+            enc = (
+                torch.tensor(preprocessing.onehot_encode(slide))
+                .float()
+                .reshape((1, -1))
+            )
             expits, logits = model.forward(enc, return_logits=True)
             y_pred = expits.round()
             y_true = binds_a_pos_ag
@@ -1113,7 +1107,7 @@ def compute_and_collect_model_predictions_and_attributions(df, model, attributor
                     "baseline": baseline,
                     # "baseline_logits": baseline_logits,
                     # "baseline_expits": baseline_expits,
-            }
+                }
 
             # Record results
             res[slide] = {
@@ -1144,7 +1138,7 @@ def get_df_sel(attributor_sel, df, df_para, ag_pos, ag_neg):
     def filter_res_for_selected_attributor(df: pd.DataFrame, attributor_sel: str):
         """Filter df_res from `compute_and_collect_model_predictions_and_attributions`
         for selected attributor.
-        
+
         Returns:
             - df_sel: df with selected attributor (Num_slides x #cols(df))
         """
@@ -1162,12 +1156,18 @@ def get_df_sel(attributor_sel, df, df_para, ag_pos, ag_neg):
         # df_sel["baseline_logits"] = df_sel["baseline_logits"].astype(float)
         # df_sel["baseline_expits"] = df_sel["baseline_expits"].astype(float)
         # df_attr = pd.DataFrame(np.concatenate(df_sel["attributions"].map(lambda x: x.detach().numpy()), axis=0))
-        
-        return df_sel  #, df_attr
-    
+
+        return df_sel  # , df_attr
+
     df_sel = filter_res_for_selected_attributor(df, attributor_sel)
     df_sel["Antigen"] = np.where(df_sel["y_true"] == 1, ag_pos, ag_neg)
-    df_sel = pd.merge(df_sel, df_para, how="left", left_on=("slide", "Antigen"), right_on=("Slide", "Antigen"))
+    df_sel = pd.merge(
+        df_sel,
+        df_para,
+        how="left",
+        left_on=("slide", "Antigen"),
+        right_on=("Slide", "Antigen"),
+    )
     return df_sel
 
 
@@ -1181,13 +1181,11 @@ def get_paratope_ranks(y_true_class: int, df_sel, random_paratope=False):
 
         slide = row["slide"]
         attr = row["attributions"].detach().numpy().reshape((11, 20))
-    
+
         try:
             if not random_paratope:
                 paratope = preprocessing.onehot_encode_nodeg_paratope(
-                    preprocessing.get_no_degree_paratope(
-                        row["agregatesABParatope"]
-                    )
+                    preprocessing.get_no_degree_paratope(row["agregatesABParatope"])
                 ).reshape((11, 20))
             else:
                 paratope = np.zeros((11, 20))
@@ -1204,3 +1202,30 @@ def get_paratope_ranks(y_true_class: int, df_sel, random_paratope=False):
         paratope_ranks[slide] = paratope_ranks_arr
         sel_indexes.append(i)
     return paratope_ranks, sel_indexes
+
+
+def get_activations_on_slide(
+    slide: str, model: nn.Module, return_z: bool = False
+) -> torch.Tensor:
+    """Get activations on a slide.
+    :return_z: if True, return z, else return activation, e.g. ReLU(z)
+    """
+    x = torch.tensor(preprocessing.onehot_encode(slide)).reshape((1, -1))
+    x = x.float()
+    if hasattr(model, "module"):
+        model_ = model.module
+    else:
+        model_ = model
+
+    x = model_.flatten(x)  # type: ignore
+    x = model_.linear_1(x)  # type: ignore
+    if return_z:
+        return x
+    x = model_.activation(x)  # type: ignore
+    return x
+
+
+def get_logits_on_slide(slide: str, model: nn.Module):
+    x = get_activations_on_slide(slide, model)
+    x = model.module.linear_2(x)  # type: ignore
+    return x

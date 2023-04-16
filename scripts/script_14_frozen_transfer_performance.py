@@ -44,13 +44,7 @@ df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
 
 ## Generate valid seed_id and split_id combinations
 ## According to hard-coded logic in script_12*.py
-seed_split_ids = []
-for seed in [0, 1, 2, 3]:
-    split_id_default = 42
-    seed_split_ids.append((seed, split_id_default))
-for split_id in [0, 1, 2, 3, 4]:
-    seed_id_default = 0
-    seed_split_ids.append((seed_id_default, split_id))
+seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
 
 ## Generate valid task pairings
 task_types_for_openset = [

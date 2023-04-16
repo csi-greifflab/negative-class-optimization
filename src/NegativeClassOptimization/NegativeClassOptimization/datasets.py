@@ -546,17 +546,19 @@ class FrozenMiniAbsolutMLLoader:
         Loads the frozen MiniAbsolut dataset.
         """
 
-        ## Convert ClassificationTaskType to string in order to load the correct dataset
-        # if task.task_type == ClassificationTaskType.ONE_VS_ONE:
-        #     task_type_str = "1v1"
-        # elif task.task_type == ClassificationTaskType.ONE_VS_NINE:
-        #     task_type_str = "1v9"
-        # elif task.task_type == ClassificationTaskType.HIGH_VS_95LOW:
-        #     task_type_str = "high_vs_95low"
-        # elif task.task_type == ClassificationTaskType.HIGH_VS_LOOSER:
-        #     task_type_str = "high_vs_looser"
-        # else:
-        #     raise ValueError("Invalid task type")
+        basepath = self.infer_task_basepath(task)
+
+        if load_model:
+            model_path = basepath / "swa_model/data/model.pth"
+            task.model = torch.load(model_path)
+        if load_test_dataset:
+            hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
+            test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"
+            task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
+
+        return task
+
+    def infer_task_basepath(self, task):
         task_type_str = task.task_type.to_str()
 
         # Infer positive and negative antigens
@@ -570,13 +572,19 @@ class FrozenMiniAbsolutMLLoader:
             / f"split_{task.split_id}"
             / f"{ag_pos}__vs__{ag_neg}"
         )
+        return task.basepath
 
-        if load_model:
-            model_path = task.basepath / "swa_model/data/model.pth"
-            task.model = torch.load(model_path)
-        if load_test_dataset:
-            hash_val = list(task.basepath.glob("*tsv"))[0].name.split("_")[0]
-            test_dataset_path = task.basepath / f"{hash_val}_test_dataset.tsv"
-            task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
-
-        return task
+    @staticmethod
+    def generate_seed_split_ids():
+        """
+        Generate valid seed_id and split_id combinations,
+        used in FrozenMiniAbsolutML dataset.
+        """
+        seed_split_ids = []
+        for seed in [0, 1, 2, 3]:
+            split_id_default = 42
+            seed_split_ids.append((seed, split_id_default))
+        for split_id in [0, 1, 2, 3, 4]:
+            seed_id_default = 0
+            seed_split_ids.append((seed_id_default, split_id))
+        return seed_split_ids
