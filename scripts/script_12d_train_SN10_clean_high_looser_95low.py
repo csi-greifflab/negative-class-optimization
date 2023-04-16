@@ -2,40 +2,37 @@
 """
 
 import itertools
+import math
 import multiprocessing
 from pathlib import Path
 from typing import List
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
-import math
-
-
-import mlflow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-from NegativeClassOptimization import ml, pipelines
-from NegativeClassOptimization import utils
-from NegativeClassOptimization import preprocessing
-from NegativeClassOptimization import config
-
+import mlflow
+from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
+                                       utils)
 
 TEST = False
 
 experiment_id = 14
-run_name = "dev-v0.1.2-3-with-replicates-linear"
-num_processes = 20
+run_name = "dev-v0.2-shuffled"
+num_processes = 10
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = False
+shuffle_antigen_labels = True
 swa = True
-seed_id = [0, 1, 2, 3]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
-model_type = "LogisticRegression"
+# seed_id = [0, 1, 2, 3]  # default was 0
+# load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+seed_id = [0]
+load_from_miniabsolut_split_seeds = []
+model_type = "SNN"  # "LogisticRegression"
 
 
 epochs = 50
@@ -49,22 +46,20 @@ sample_train = None
 
 
 def multiprocessing_wrapper_script_12d(
-    experiment_id, 
+    experiment_id,
     run_name,
     ag_pos,
     ag_neg,
     sample_train,
     seed_id,
     load_from_miniabsolut_split_seed,
-    ):
-    
+):
     with mlflow.start_run(
-        experiment_id=experiment_id, 
-        run_name=run_name, 
+        experiment_id=experiment_id,
+        run_name=run_name,
         description=f"{ag_pos} vs {ag_neg}",
         tags={"mlflow.runName": run_name},
-        ):
-
+    ):
         pipe = pipelines.BinaryclassBindersPipeline(
             log_mlflow=True,
             save_model_mlflow=True,
@@ -95,13 +90,12 @@ def multiprocessing_wrapper_script_12d(
 
 
 if __name__ == "__main__":
-
     utils.nco_seed()
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)
 
     antigens: List[str] = config.ANTIGENS
-    
+
     # Generate all datasets
     datasets = []
     for ag in antigens:
@@ -109,7 +103,6 @@ if __name__ == "__main__":
         datasets.append((f"{ag}_high", f"{ag}_95low"))
 
     if TEST:
-
         epochs = 3
         learning_rate = 0.001
         optimizer_type = "Adam"
@@ -135,12 +128,12 @@ if __name__ == "__main__":
             0,
             None,
         )
-    
-    else:    
+
+    else:
         # Run batched multiprocessing
         for seed in seed_id:
             for i in range(0, len(datasets), num_processes):
-                datasets_batch = datasets[i:i+num_processes]
+                datasets_batch = datasets[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
                         multiprocessing_wrapper_script_12d,
@@ -155,11 +148,11 @@ if __name__ == "__main__":
                                 None,
                             )
                             for ags in datasets_batch
-                        ]
+                        ],
                     )
         for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
             for i in range(0, len(datasets), num_processes):
-                datasets_batch = datasets[i:i+num_processes]
+                datasets_batch = datasets[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
                         multiprocessing_wrapper_script_12d,
@@ -174,5 +167,5 @@ if __name__ == "__main__":
                                 load_from_miniabsolut_split_seed,
                             )
                             for ags in datasets_batch
-                        ]
+                        ],
                     )

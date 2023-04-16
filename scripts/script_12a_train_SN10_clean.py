@@ -23,15 +23,17 @@ TEST = False
 RESTRICTED_AG_COMBINATIONS = True
 
 experiment_id = 11
-run_name = "dev-v0.1.2-3-with-replicates-linear"
-num_processes = 20
+run_name = "dev-v0.2-shuffled"
+num_processes = 10
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = False
+shuffle_antigen_labels = True
 swa = True
-seed_id = [3]  # default was 0
-load_from_miniabsolut_split_seeds = []  # default None --(internally)--> 42
-model_type = "LogisticRegression"
+# seed_id = [0, 1, 2, 3]  # default was 0
+# load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+seed_id = [0]
+load_from_miniabsolut_split_seeds = []
+model_type = "SNN"  # "LogisticRegression"
 
 epochs = 50
 learning_rate = 0.001
@@ -96,20 +98,20 @@ if __name__ == "__main__":
     ag_perms = list(itertools.permutations(antigens, 2))
 
     if RESTRICTED_AG_COMBINATIONS:
-        # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
-        ag_perms = [
-            ("1H0D", "1NSN"),
-            ("3RAJ", "1OB1"),
-            ("1H0D", "3VRL"),
-            ("5E94", "1NSN"),
-            ("5E94", "1OB1"),
-            ("5E94", "1ADQ"),
-            ("5E94", "1FBI"),
-            ("3RAJ", "1FBI"),
-            ("3RAJ", "1H0D"),
-            ("3RAJ", "5E94"),
-            ("3RAJ", "1WEJ"),
-        ]
+        ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
+        # ag_perms = [
+        #     ("1H0D", "1NSN"),
+        #     ("3RAJ", "1OB1"),
+        #     ("1H0D", "3VRL"),
+        #     ("5E94", "1NSN"),
+        #     ("5E94", "1OB1"),
+        #     ("5E94", "1ADQ"),
+        #     ("5E94", "1FBI"),
+        #     ("3RAJ", "1FBI"),
+        #     ("3RAJ", "1H0D"),
+        #     ("3RAJ", "5E94"),
+        #     ("3RAJ", "1WEJ"),
+        # ]
 
     if TEST:
         epochs = 3

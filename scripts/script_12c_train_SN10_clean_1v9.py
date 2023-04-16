@@ -20,16 +20,18 @@ from NegativeClassOptimization import config, ml, pipelines, preprocessing, util
 
 TEST = False
 
-experiment_id = "13"
-run_name = "dev-v0.1.2-3-with-replicates-linear"
-num_processes = 20
+experiment_id = 13
+run_name = "dev-v0.2-shuffled"
+num_processes = 10
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = False
+shuffle_antigen_labels = True
 swa = True
-seed_id = [0, 1, 2, 3]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
-model_type = "LogisticRegression"
+# seed_id = [0, 1, 2, 3]  # default was 0
+# load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+seed_id = [0]
+load_from_miniabsolut_split_seeds = []
+model_type = "SNN"  # "LogisticRegression"
 
 epochs = 50
 learning_rate = 0.001
