@@ -376,7 +376,7 @@ def plot_binding_distribution(figsize=(2 * 3.14, 3.14), dpi=600):
 
     # Add text, same y position, corresponding to each color
     fontsize = 8
-    texts = ["0-1%\nBinders", "1-5%\nLoose", "5-100%\nNon-binders"]
+    texts = ["0-1%\nBinders", "1-5%\nWeak", "5-100%\nNon-binders"]
     locations = [-97.5, -92.5, -77]
 
     for i in range(3):

@@ -18,6 +18,7 @@ import torch
 from NegativeClassOptimization import config, datasets, ml
 
 TEST = False
+DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip"
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML/")
 task_types = [
@@ -45,7 +46,7 @@ attributor_templates = [
     },
 ]
 loader = datasets.FrozenMiniAbsolutMLLoader(data_dir=data_dir)
-num_processes = 10
+num_processes = 20
 
 logging.basicConfig(
     level=logging.INFO,
@@ -96,12 +97,16 @@ def compute_attributions(task, save=True):
             output_dir.mkdir()
         output_dir = output_dir / analysis_name
         if output_dir.exists():
-            logger.error(
-                f"Output dir {output_dir} already exists (analysis_name conflict?)"
-            )
-            raise ValueError(
-                f"Output dir {output_dir} already exists (analysis_name conflict?)."
-            )
+            if DIR_EXISTS_HANDLE == "raise":
+                logger.error(
+                    f"Output dir {output_dir} already exists (analysis_name conflict?)"
+                )
+                raise ValueError(
+                    f"Output dir {output_dir} already exists (analysis_name conflict?)."
+                )
+            elif DIR_EXISTS_HANDLE == "skip":
+                logger.info(f"Output dir {output_dir} already exists. Skipping.")
+                return
 
     if type(model) == torch.optim.swa_utils.AveragedModel:
         # Unwrap the SWA model. We need a module class,
