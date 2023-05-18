@@ -128,6 +128,23 @@ def antigens_from_dataset_path(dataset_path: Path) -> List[str]:
     return summarize_data_files(dataset_path)["antigen"].unique().tolist()
 
 
+def convert_antigen_name_to_full_name(antigen_name: str) -> str:
+    """Convert antigen name to full name."""
+    convertor = {
+        "3VRL": "3VRL_C",
+        "1NSN": "1NSN_S",
+        "3RAJ": "3RAJ_A",
+        "5E94": "5E94_G",
+        "1H0D": "1H0D_C",
+        "1WEJ": "1WEJ_F",
+        "1ADQ": "1ADQ_A",
+        "1FBI": "1FBI_X",
+        "2YPV": "2YPV_A",
+        "1OB1": "1OB1_C",
+    }
+    return convertor[antigen_name]
+
+
 def shuffle_antigens(antigens: List[str], seed: int = config.SEED) -> List[str]:
     """Shuffle antigens.
 
