@@ -10,6 +10,7 @@ import json
 import logging
 import multiprocessing
 import time
+from itertools import permutations
 from pathlib import Path
 from typing import List
 
@@ -22,10 +23,13 @@ DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip"
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML/")
 task_types = [
-    datasets.ClassificationTaskType.ONE_VS_NINE,
-    datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    datasets.ClassificationTaskType.ONE_VS_ONE,
+    # datasets.ClassificationTaskType.ONE_VS_NINE,
+    # datasets.ClassificationTaskType.HIGH_VS_95LOW,
+    # datasets.ClassificationTaskType.HIGH_VS_LOOSER,
 ]
+task_split_seed_filter = ((42,), (0,))  # split, seed. Set to None for all.
+
 # Define attributor templates, which are used to generate attributors for each task.
 attributor_templates = [
     {
@@ -63,29 +67,38 @@ def task_generator(task_types=task_types, loader=loader):
     Generate tasks for which to compute attributions.
     """
     seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
-    for ag in config.ANTIGENS:
+    for ag_1, ag_2 in permutations(config.ANTIGENS, r=2):
         for seed_id, split_id in seed_split_ids:
             for task_type in task_types:
-                task = datasets.ClassificationTask(
-                    task_type=task_type,
-                    ag_pos=ag,
-                    ag_neg="auto",
-                    seed_id=seed_id,
-                    split_id=split_id,
-                )
+                if task_type == datasets.ClassificationTaskType.ONE_VS_ONE:
+                    task = datasets.ClassificationTask(
+                        task_type=task_type,
+                        ag_pos=ag_1,
+                        ag_neg=ag_2,
+                        seed_id=seed_id,
+                        split_id=split_id,
+                    )
+                else:
+                    task = datasets.ClassificationTask(
+                        task_type=task_type,
+                        ag_pos=ag_1,
+                        ag_neg="auto",
+                        seed_id=seed_id,
+                        split_id=split_id,
+                    )
                 yield task
 
 
 def compute_attributions(task, save=True):
-    print(repr(task))
+    # Get logger per process
+    logger = logging.getLogger()
+    logger.info(f"Task: {repr(task)}")
 
     # Load task.
     loader.load(task)
     model = task.model  # type: ignore
     test_dataset = task.test_dataset  # type: ignore
-
-    # Get logger per process
-    logger = logging.getLogger()
+    logger.info(f"Loaded task.")
 
     if save:
         # Build output dir.
@@ -206,6 +219,14 @@ def compute_attributions(task, save=True):
 
 if __name__ == "__main__":
     task_data = list(task_generator())
+    if task_split_seed_filter is not None:
+        task_data = [
+            task
+            for task in task_data
+            if task.split_id in task_split_seed_filter[0]
+            and task.seed_id in task_split_seed_filter[1]
+        ]
+    print(len(task_data))
     if TEST:
         task = task_data[0]
         compute_attributions(task, save=False)

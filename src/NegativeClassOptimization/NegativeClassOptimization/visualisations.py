@@ -15,7 +15,7 @@ from NegativeClassOptimization.ml import compute_pr_curve, compute_roc_curve
 map_task_type_to_clean = {
     "1v1": "vs 1",
     "1v9": "vs 9",
-    "high_vs_looser": "vs Loose",
+    "high_vs_looser": "vs Weak",
     "high_vs_95low": "vs Non-binder",
 }
 

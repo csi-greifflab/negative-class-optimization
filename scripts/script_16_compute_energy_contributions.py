@@ -17,7 +17,10 @@ import seaborn as sns
 
 from NegativeClassOptimization import config, ml, preprocessing, utils
 
-PATH = config.DATA_MINIABSOLUT
+# Default
+# PATH = config.DATA_MINIABSOLUT
+PATH = Path("data/MiniAbsolut_Splits/MiniAbsolut_Seed4")
+
 # Load from the env var
 ABSOLUTNOLIB_PATH = os.environ["ABSOLUTNOLIB_PATH"]
 

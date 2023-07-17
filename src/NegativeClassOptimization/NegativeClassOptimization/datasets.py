@@ -541,6 +541,7 @@ class FrozenMiniAbsolutMLLoader:
         task: ClassificationTask,
         load_model=True,
         load_test_dataset=True,
+        attributions_toload=None,
     ):
         """
         Loads the frozen MiniAbsolut dataset.
@@ -555,6 +556,15 @@ class FrozenMiniAbsolutMLLoader:
             hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
             test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"
             task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
+        if attributions_toload is not None:
+            attr_dir = basepath / "attributions" / attributions_toload
+            attr_records = attr_dir / "attribution_records.json"
+            assert (
+                attr_records.exists()
+            ), f"Attribution records not found at {attr_records}"
+            with open(attr_records, "r") as f:
+                attr_records = json.load(f)
+            task.attributions = attr_records  # type: ignore
 
         return task
 

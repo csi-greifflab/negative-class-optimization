@@ -592,6 +592,40 @@ def get_uid() -> str:
     return str(uuid.uuid4())[:8]
 
 
+def extract_contributions_from_string(string: str):
+    """Extract the contributions from a string.
+
+    Examples:
+        extract_contributions_from_string(df["contribPerAAparaBind"][0])
+        extract_contributions_from_string(df["contribPerAAparaFold"][3])
+    """
+
+    if type(string) != str and np.isnan(string):
+        return [0] * 11, [0.0] * 11
+
+    # Regex pattern to extract the contributions
+    # Pattern is {AA}{index as small letter}:{degree as integer}_{contribution as float}. Extract all as groups
+    pattern = re.compile(r"([A-Z])([a-z]):(\d+)_(-\d+\.\d+)")
+
+    # Extract the contributions
+    contributions = pattern.findall(string)
+    degrees_indexed = {}
+    energies_indexed = {}
+    for aa, index, degree, contribution in contributions:
+        degrees_indexed[index] = int(degree)
+        energies_indexed[index] = float(contribution)
+    degrees = []
+    energies = []
+    for index in "abcdefghijk":
+        if index not in degrees_indexed.keys():
+            degrees.append(0)
+            energies.append(0.0)
+        else:
+            degrees.append(degrees_indexed[index])
+            energies.append(energies_indexed[index])
+    return degrees, energies
+
+
 class MlflowAPI:
     """Class to interact with mlflow API.
 
