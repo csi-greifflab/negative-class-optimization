@@ -1,0 +1,18 @@
+,task,error
+0,ONE_VS_ONE__1NSN__1ADQ__1__42,Attribution records not found at ../data/Frozen_MiniAbsolut_ML/1v1/seed_1/split_42/1NSN__vs__1ADQ/attributions/v2.0-2/attribution_records.json
+1,ONE_VS_ONE__1NSN__1ADQ__2__42,Attribution records not found at ../data/Frozen_MiniAbsolut_ML/1v1/seed_2/split_42/1NSN__vs__1ADQ/attributions/v2.0-2/attribution_records.json
+2,ONE_VS_ONE__1NSN__1ADQ__3__42,Attribution records not found at ../data/Frozen_MiniAbsolut_ML/1v1/seed_3/split_42/1NSN__vs__1ADQ/attributions/v2.0-2/attribution_records.json
+3,ONE_VS_ONE__1NSN__1ADQ__0__0,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_0/1NSN__vs__1ADQ/swa_model/data/model.pth'
+4,ONE_VS_ONE__1NSN__1ADQ__0__1,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_1/1NSN__vs__1ADQ/swa_model/data/model.pth'
+5,ONE_VS_ONE__1NSN__1ADQ__0__2,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_2/1NSN__vs__1ADQ/swa_model/data/model.pth'
+6,ONE_VS_ONE__1NSN__1ADQ__0__3,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_3/1NSN__vs__1ADQ/swa_model/data/model.pth'
+7,ONE_VS_ONE__1NSN__1ADQ__0__4,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_4/1NSN__vs__1ADQ/swa_model/data/model.pth'
+8,ONE_VS_ONE__1ADQ__1NSN__0__42,[Errno 2] No such file or directory: '../data/MiniAbsolut/1ADQ/energy_contributions/high_test_5000_absolut_energy_contributions.tsv'
+9,ONE_VS_ONE__1ADQ__1NSN__1__42,[Errno 2] No such file or directory: '../data/MiniAbsolut/1ADQ/energy_contributions/high_test_5000_absolut_energy_contributions.tsv'
+10,ONE_VS_ONE__1ADQ__1NSN__2__42,[Errno 2] No such file or directory: '../data/MiniAbsolut/1ADQ/energy_contributions/high_test_5000_absolut_energy_contributions.tsv'
+11,ONE_VS_ONE__1ADQ__1NSN__3__42,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_3/split_42/1ADQ__vs__1NSN/swa_model/data/model.pth'
+12,ONE_VS_ONE__1ADQ__1NSN__0__0,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_0/1ADQ__vs__1NSN/swa_model/data/model.pth'
+13,ONE_VS_ONE__1ADQ__1NSN__0__1,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_1/1ADQ__vs__1NSN/swa_model/data/model.pth'
+14,ONE_VS_ONE__1ADQ__1NSN__0__2,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_2/1ADQ__vs__1NSN/swa_model/data/model.pth'
+15,ONE_VS_ONE__1ADQ__1NSN__0__3,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_3/1ADQ__vs__1NSN/swa_model/data/model.pth'
+16,ONE_VS_ONE__1ADQ__1NSN__0__4,[Errno 2] No such file or directory: '../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_4/1ADQ__vs__1NSN/swa_model/data/model.pth'

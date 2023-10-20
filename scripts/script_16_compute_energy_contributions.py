@@ -4,6 +4,7 @@ Uses the new feature of Absolut! developed by Philippe.
 Make sure to save as environment variable the path to the Absolut NoLib executable. (ABSOLUTNOLIB_PATH)
 """
 
+import itertools
 import logging
 import math
 import os
@@ -19,7 +20,8 @@ from NegativeClassOptimization import config, ml, preprocessing, utils
 
 # Default
 # PATH = config.DATA_MINIABSOLUT
-PATH = Path("data/MiniAbsolut_Splits/MiniAbsolut_Seed4")
+# PATH = Path("data/MiniAbsolut_Splits/MiniAbsolut_Seed4")
+PATH = Path("data/MiniAbsolut")
 
 # Load from the env var
 ABSOLUTNOLIB_PATH = os.environ["ABSOLUTNOLIB_PATH"]
@@ -36,7 +38,11 @@ if __name__ == "__main__":
         energy_contributions_dir = ag_path / "energy_contributions"
         energy_contributions_dir.mkdir(exist_ok=True)
         logging.info(f"Created {energy_contributions_dir}")
-        for test_slide_fp in ag_path.glob("*test_5000.tsv"):
+        for test_slide_fp in itertools.chain(
+            ag_path.glob("*train_15000.tsv"),
+            ag_path.glob("*test_5000.tsv"),
+            ag_path.glob("*rest.tsv"),
+        ):
             # Copy test file to a local folder
             test_slide_fp_for_energy_contributions = (
                 energy_contributions_dir / f"{test_slide_fp.stem}_absolut.tsv"

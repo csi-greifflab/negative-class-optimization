@@ -542,6 +542,7 @@ class FrozenMiniAbsolutMLLoader:
         load_model=True,
         load_test_dataset=True,
         attributions_toload=None,
+        load_zscores=False,
     ):
         """
         Loads the frozen MiniAbsolut dataset.
@@ -565,6 +566,12 @@ class FrozenMiniAbsolutMLLoader:
             with open(attr_records, "r") as f:
                 attr_records = json.load(f)
             task.attributions = attr_records  # type: ignore
+        if load_zscores:
+            zscores_path = basepath / "attributions/z_records.json"
+            assert zscores_path.exists(), f"Zscores not found at {zscores_path}"
+            with open(zscores_path, "r") as f:
+                z_records = json.load(f)
+            task.z_records = z_records  # type: ignore
 
         return task
 

@@ -1,6 +1,6 @@
-import yaml
 from pathlib import Path
 
+import yaml
 
 # ugly
 src_config_filepath = Path(__file__)  # assumes specific local install
@@ -40,6 +40,8 @@ DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurin
 DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
 
 DATA_XSTREME = DATA_BASE_PATH / "xstreme"
+
+DATA_LINEAR_ML = DATA_BASE_PATH / "Frozen_MiniAbsolut_Linear_ML"
 
 TMP_DIR = DATA_BASE_PATH / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
