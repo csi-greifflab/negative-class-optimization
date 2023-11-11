@@ -7,6 +7,7 @@ import logging
 from itertools import combinations
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 from docopt import docopt
@@ -15,6 +16,10 @@ import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
+from NegativeClassOptimization.utils import (
+    save_train_test_rest,
+    split_to_train_test_rest_dfs,
+)
 
 dataset_path: Path = config.DATA_SLACK_1_RAW_DIR
 
@@ -92,23 +97,24 @@ def process_downstream_and_save(out_dir, ags_open, df_wide):
         json.dump(metadata, fh)
 
 
-def split_to_train_test_rest_dfs(N_train, N_test, df_ag, random_state=None):
-    if random_state is None:
-        random_state = config.SEED
-    df_train = df_ag.sample(n=N_train, random_state=random_state)
-    df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(
-        n=N_test, random_state=random_state
-    )
-    df_rest = df_ag.loc[
-        ~df_ag.index.isin(df_train.index) & ~df_ag.index.isin(df_test.index)
-    ].copy()
-    return df_train, df_test, df_rest
+## Moved to utils.py
+# def split_to_train_test_rest_dfs(N_train, N_test, df_ag, random_state=None):
+#     if random_state is None:
+#         random_state = config.SEED
+#     df_train = df_ag.sample(n=N_train, random_state=random_state)
+#     df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(
+#         n=N_test, random_state=random_state
+#     )
+#     df_rest = df_ag.loc[
+#         ~df_ag.index.isin(df_train.index) & ~df_ag.index.isin(df_test.index)
+#     ].copy()
+#     return df_train, df_test, df_rest
 
 
-def save_train_test_rest(prefix, N_train, N_test, ag_dir, df_train, df_test, df_rest):
-    df_train.to_csv(ag_dir / f"{prefix}_train_{N_train}.tsv", sep="\t")
-    df_test.to_csv(ag_dir / f"{prefix}_test_{N_test}.tsv", sep="\t")
-    df_rest.to_csv(ag_dir / f"{prefix}_rest.tsv", sep="\t")
+# def save_train_test_rest(prefix, N_train, N_test, ag_dir, df_train, df_test, df_rest):
+#     df_train.to_csv(ag_dir / f"{prefix}_train_{N_train}.tsv", sep="\t")
+#     df_test.to_csv(ag_dir / f"{prefix}_test_{N_test}.tsv", sep="\t")
+#     df_rest.to_csv(ag_dir / f"{prefix}_rest.tsv", sep="\t")
 
 
 if __name__ == "__main__":
@@ -206,7 +212,7 @@ if __name__ == "__main__":
             df_wide = df_wide.loc[(mask_c) | (mask_o)].copy()
             out_dir = config.DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR
 
-        process_downstream_and_save(out_dir, ags_open, df_wide)
+        process_downstream_and_save(out_dir, ags_open, df_wide)  # type:ignore
 
     elif arguments["unzip_rawbindingsmurine"]:
         input_dir = Path("data/Absolut/data/RawBindingsMurine")
@@ -344,6 +350,12 @@ if __name__ == "__main__":
         # in a similar way as for the SN10, to achieve
         # compatibility with the Energy-logit code.
 
+        ## 2) Linear models with shuffled weights
+        ## We generate here (by differential commenting :))
+        ## the attributions for the linear models with shuffled weights.
+        ## Check the commented sections below for the code. They are
+        ## tagged with #SHUFFLED WEIGHTS.
+
         linear_dir = Path(config.DATA_LINEAR_ML)
 
         # Glob directories from Path
@@ -365,14 +377,24 @@ if __name__ == "__main__":
                         # Get linear weights
                         weights = (
                             model.state_dict()["module.linear.weight"].numpy().tolist()
-                        )
+                        )  # Shape 1x220
                         bias: float = float(
                             model.state_dict()["module.linear.bias"].numpy()[0]
                         )
 
+                        ## #SHUFFLED WEIGHTS
+                        ## Input shape 1x220, shuffle operates on first axis
+                        ## of array. That is why the operation is performed
+                        ## on weights[0].
+                        # np.random.shuffle(weights[0])
+
                         attributions_dir = task_dir / "attributions"
                         attributions_dir.mkdir(exist_ok=True, parents=False)
                         attributions_dir = attributions_dir / "v0.1.2-3"
+                        ## #SHUFFLED WEIGHTS: comment above line and uncomment below
+                        # attributions_dir = (
+                        #     attributions_dir / "v0.1.2-3_shuffled_weights"
+                        # )
                         attributions_dir.mkdir(exist_ok=True, parents=False)
 
                         # Get the test dataset

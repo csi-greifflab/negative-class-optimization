@@ -16,14 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import pearsonr, spearmanr
 
-from NegativeClassOptimization import (
-    config,
-    datasets,
-    ml,
-    preprocessing,
-    utils,
-    visualisations,
-)
+from NegativeClassOptimization import (config, datasets, ml, preprocessing,
+                                       utils, visualisations)
 
 task_types = (
     datasets.ClassificationTaskType.ONE_VS_ONE,
@@ -35,6 +29,24 @@ task_types = (
 loader = datasets.FrozenMiniAbsolutMLLoader(
     data_dir=Path("../data/Frozen_MiniAbsolut_ML/")
 )
+
+loader_linear = datasets.FrozenMiniAbsolutMLLoader(
+    data_dir=Path("../data/Frozen_MiniAbsolut_Linear_ML/")
+)
+
+palette = {
+    "1FBI": "#008080",
+    "3VRL": "#FFA07A",
+    "2YPV": "#000080",
+    "5E94": "#FFD700",
+    "1WEJ": "#228B22",
+    "1OB1": "#FF69B4",
+    "1NSN": "#800080",
+    "1H0D": "#FF6347",
+    "3RAJ": "#00FF00",
+    "1ADQ": "#FF1493",
+}
+task_order = ["high_vs_95low", "1v1", "1v9", "high_vs_looser"]
 
 
 def task_generator(task_types=task_types, loader=loader):
@@ -249,7 +261,7 @@ def get_onehotstack_from_records(records, y_true=(0, 1)):
 
 
 def load_energy_contributions_from_task_linear_version(
-    task, loader=loader, load_slide_df=False
+    task, loader=loader_linear, load_slide_df=False, attributions_toload="v0.1.2-3"
 ):
     # Get energy contributions and attributions
     df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
@@ -267,7 +279,7 @@ def load_energy_contributions_from_task_linear_version(
         ).tolist()
 
     # Get attributions per amino acid
-    task = loader.load(task, attributions_toload="v0.1.2-3")
+    task = loader.load(task, attributions_toload=attributions_toload)
     attributor_name = "weights"
     attr_stack = get_attr_from_records(
         task.attributions, attributor_name, (0, 1)  # type: ignore
@@ -476,3 +488,64 @@ def load_energy_contributions_from_task_nonlinear_version(task, load_slide_df=Fa
         return stats, slide_df
     else:
         return stats
+
+
+def plot_1v1_logits_energy(ag_pos, ag_neg, model="linear"):
+    if model == "linear":
+        fp = f"../data/Frozen_MiniAbsolut_Linear_ML/1v1/seed_0/split_42/{ag_pos}__vs__{ag_neg}/attributions/v0.1.2-3/attribution_records.json"
+
+    elif model == "SN10":
+        fp = f"../data/Frozen_MiniAbsolut_ML/1v1/seed_0/split_42/{ag_pos}__vs__{ag_neg}/attributions/v2.0-2/attribution_records.json"
+
+    fp_test_1 = f"../data/MiniAbsolut/{ag_pos}/high_test_5000.tsv"
+    fp_test_2 = f"../data/MiniAbsolut/{ag_neg}/high_test_5000.tsv"
+
+    df_test_1 = pd.read_csv(fp_test_1, sep="\t")
+    df_test_1["sample_class"] = "positive"
+    df_test_2 = pd.read_csv(fp_test_2, sep="\t")
+    df_test_2["sample_class"] = "negative"
+    df_test = pd.concat([df_test_1, df_test_2], axis=0)
+
+    # Open json from fp path into data variable
+    with open(fp, "r") as f:  # type:ignore
+        data = json.load(f)
+
+    df = pd.DataFrame.from_records(data)
+    df = pd.merge(df, df_test, left_on="slide", right_on="Slide")
+
+    fig, ax = plt.subplots(figsize=(3.14, 3.14), dpi=600)
+    sns.set_theme(context="paper")
+    sns.set_style("white")
+
+    cmap = [
+        "#f1593a",  # red
+        "#ffc40d",  # yellow
+        "#28a3dc",  # blue
+    ]
+
+    sns.scatterplot(
+        data=df,
+        x="Energy",
+        y="logits",
+        hue="sample_class",
+        ax=ax,
+        palette=cmap,
+    )
+
+    ax.set_xlabel("Energy, kcal/mol")
+    ax.set_ylabel("Logits")
+    ax.set_title(f"{ag_pos} vs {ag_neg}")
+    ax.set_xticks(np.arange(-110, -89, 5))
+
+    # Add a coefficient of correlation and coeficient of determination
+    r, p = pearsonr(
+        df.query("sample_class == 'positive'")["Energy"],
+        df.query("sample_class == 'positive'")["logits"],
+    )
+    r2 = r**2
+    ax.text(
+        -109,
+        -10,
+        f"r = {r:.2f}\n$r^2$ = {r2:.2f}",
+        bbox=dict(facecolor="white", alpha=0.5),
+    )

@@ -18,6 +18,10 @@ import numpy as np
 import pandas as pd
 import requests
 import torch
+from Bio import motifs
+from Bio.Seq import Seq
+from scipy.spatial.distance import jensenshannon
+from scipy.stats import entropy
 
 import mlflow
 import NegativeClassOptimization.config as config
@@ -74,12 +78,6 @@ def summarize_data_files(path: Path) -> pd.DataFrame:
             }
         )
     return pd.DataFrame.from_records(records)
-
-
-def unzip_file(path, output_path):
-    """Unzip a file to a given path."""
-    with zipfile.ZipFile(path, "r") as zip_ref:
-        zip_ref.extractall(output_path)
 
 
 def unzip_file(path, output_path):
@@ -626,6 +624,59 @@ def extract_contributions_from_string(string: str):
     return degrees, energies
 
 
+def pwm(seqs: List[str], alphabet=config.AMINOACID_ALPHABET) -> np.ndarray:
+    """Get the position weight matrix of a list of sequences."""
+
+    seqs_ = [Seq(s) for s in seqs]
+    m = motifs.create(seqs_, alphabet=alphabet)
+
+    # Get the position weight matrix
+    pwm: np.ndarray = pd.DataFrame(m.pwm).values
+    # pwm += 1e-20  # Avoid log(0)
+    return pwm
+
+
+def get_pwm(slides_1, slides_2):
+    # Create a list of Seq objects
+    seqs_1 = [Seq(slide) for slide in slides_1]
+    seqs_2 = [Seq(slide) for slide in slides_2]
+
+    # Create a motifs instance
+    m_1 = motifs.create(seqs_1, alphabet=config.AMINOACID_ALPHABET)  # type: ignore
+    m_2 = motifs.create(seqs_2, alphabet=config.AMINOACID_ALPHABET)  # type: ignore
+
+    # Get the position weight matrix
+    pwm_1: np.ndarray = pd.DataFrame(m_1.pwm).values
+    pwm_1 += 1e-20  # Avoid log(0)
+    pwm_2: np.ndarray = pd.DataFrame(m_2.pwm).values
+    pwm_2 += 1e-20  # Avoid log(0)
+    return pwm_1, pwm_2
+
+
+def jensen_shannon_divergence_slides(slides_1, slides_2):
+    pwm_1, pwm_2 = get_pwm(slides_1, slides_2)
+    return jensenshannon(pwm_1, pwm_2, axis=1, base=2).sum()  # type: ignore
+
+
+def split_to_train_test_rest_dfs(N_train, N_test, df_ag, random_state=None):
+    if random_state is None:
+        random_state = config.SEED
+    df_train = df_ag.sample(n=N_train, random_state=random_state)
+    df_test = df_ag.loc[~df_ag.index.isin(df_train.index)].sample(
+        n=N_test, random_state=random_state
+    )
+    df_rest = df_ag.loc[
+        ~df_ag.index.isin(df_train.index) & ~df_ag.index.isin(df_test.index)
+    ].copy()
+    return df_train, df_test, df_rest
+
+
+def save_train_test_rest(prefix, N_train, N_test, ag_dir, df_train, df_test, df_rest):
+    df_train.to_csv(ag_dir / f"{prefix}_train_{N_train}.tsv", sep="\t")
+    df_test.to_csv(ag_dir / f"{prefix}_test_{N_test}.tsv", sep="\t")
+    df_rest.to_csv(ag_dir / f"{prefix}_rest.tsv", sep="\t")
+
+
 class MlflowAPI:
     """Class to interact with mlflow API.
 
@@ -810,10 +861,12 @@ class MLFlowTaskAPI(MlflowAPI):
             dfs.append(df)
 
         df = pd.concat(dfs, axis=0)
-        df = df.loc[~df["mlflow.log-model.history"].isna()].copy()  # type: ignore
-        df["run_id"] = df["mlflow.log-model.history"].apply(
-            MLFlowTaskAPI.run_id_from_model_history
-        )
+
+        if "mlflow.log-model.history" in df.columns:
+            df = df.loc[~df["mlflow.log-model.history"].isna()].copy()  # type: ignore
+            df["run_id"] = df["mlflow.log-model.history"].apply(
+                MLFlowTaskAPI.run_id_from_model_history
+            )
 
         if classify_tasks:
             df["task_type"] = MLFlowTaskAPI.classify_tasks(df)

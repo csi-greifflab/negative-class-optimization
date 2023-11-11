@@ -14,7 +14,18 @@ import torch.nn.functional as F
 
 from NegativeClassOptimization import config, datasets, ml, preprocessing, utils
 
-COMPUTE_CLOSEDSET_PERFORMANCE = True
+COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
+
+# fp_results_closed = Path("data/closed_performance.tsv")
+# fp_results_open = Path("data/openset_performance.tsv")
+fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
+fp_results_open = Path("data/openset_performance_experimental_data.tsv")
+
+# run_name = "dev-v0.1.2-3-with-replicates"
+run_name = "dev-v0.1.3-expdata"
+
+# antigens = config.ANTIGENS
+antigens = ["HR2B", "HR2P"]  # Experimental dataset
 
 
 def evaluate_model(
@@ -34,10 +45,11 @@ def evaluate_model(
     return metrics
 
 
-experiment_ids = ["11", "13", "14"]
+# experiment_ids = ["11", "13", "14"]
+experiment_ids = ["14"]
 df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
     exp_list=experiment_ids,
-    run_name="dev-v0.1.2-3-with-replicates",
+    run_name=run_name,
     classify_tasks=True,
 )
 
@@ -48,17 +60,17 @@ seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
 
 ## Generate valid task pairings
 task_types_for_openset = [
-    datasets.ClassificationTaskType.ONE_VS_NINE,
+    # datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
 ]
 task_type_combinations = list(product(task_types_for_openset, task_types_for_openset))
 
 task_types_for_closedset = [
-    datasets.ClassificationTaskType.ONE_VS_NINE,
+    # datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
-    datasets.ClassificationTaskType.ONE_VS_ONE,
+    # datasets.ClassificationTaskType.ONE_VS_ONE,
 ]
 
 ## Load data
@@ -69,8 +81,8 @@ loader = datasets.FrozenMiniAbsolutMLLoader(
 ## Compute
 records = []
 if COMPUTE_CLOSEDSET_PERFORMANCE:
-    for ag1 in config.ANTIGENS:
-        for ag2 in config.ANTIGENS:
+    for ag1 in antigens:
+        for ag2 in antigens:
             for seed_id, split_id in seed_split_ids:
                 for task_type in task_types_for_closedset:
                     if (
@@ -103,7 +115,15 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
 
                     loader.load(task)
 
-                    model: nn.Module = task.model  # type: ignore
+                    # For experimental data, the state dict is loaded,
+                    # not the model. We adjust it here.
+                    if task.model is None:
+                        assert task.state_dict is not None  # type: ignore
+                        model = ml.load_model_from_state_dict(task.state_dict)  # type: ignore
+                        task.model = model  # type: ignore
+                    else:
+                        model: nn.Module = task.model  # type: ignore
+
                     test_dataset: pd.DataFrame = task.test_dataset  # type: ignore
 
                     metrics = evaluate_model(model, test_dataset)
@@ -115,9 +135,9 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                     )
 
                 df_open = pd.DataFrame(records)
-                df_open.to_csv("data/closed_performance.tsv", sep="\t", index=False)
+                df_open.to_csv(fp_results_closed, sep="\t", index=False)
 else:
-    for ag in config.ANTIGENS:
+    for ag in antigens:
         for seed_id, split_id in seed_split_ids:
             for task_type_1, task_type_2 in task_type_combinations:
                 task_1 = datasets.ClassificationTask(
@@ -137,7 +157,15 @@ else:
                 loader.load(task_1)
                 loader.load(task_2)
 
-                model = task_1.model  # type: ignore
+                # For experimental data, the state dict is loaded,
+                # not the model. We adjust it here.
+                if task_1.model is None:
+                    assert task_1.state_dict is not None  # type: ignore
+                    model = ml.load_model_from_state_dict(task_1.state_dict)  # type: ignore
+                    task_1.model = model  # type: ignore
+                else:
+                    model = task_1.model  # type: ignore
+
                 test_dataset = task_2.test_dataset  # type: ignore
 
                 metrics = evaluate_model(model, test_dataset)
@@ -150,4 +178,4 @@ else:
                 )
 
             df_open = pd.DataFrame(records)
-            df_open.to_csv("data/openset_performance.tsv", sep="\t", index=False)
+            df_open.to_csv(fp_results_open, sep="\t", index=False)

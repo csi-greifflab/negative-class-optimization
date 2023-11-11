@@ -6,8 +6,8 @@ import yaml
 src_config_filepath = Path(__file__)  # assumes specific local install
 
 
-def adjust_filepaths(p): return (
-    src_config_filepath / "../../../.." / p).resolve()
+def adjust_filepaths(p):
+    return (src_config_filepath / "../../../.." / p).resolve()
 
 
 def read_yaml(path: Path) -> dict:
@@ -27,44 +27,87 @@ PARAMS_PATH = adjust_filepaths(Path("params.yaml"))
 
 DATA_ABSOLUT_DIR = DATA_BASE_PATH / "Absolut/data"
 DATA_ABSOLUT_DOI = DATA_BASE_PATH / "Absolut/toc_doi10.11582_2021.00063.csv"
-DATA_ABSOLUT_DATASET3_AGLIST = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/ListAntigens142.txt"
-DATA_ABSOLUT_DATASET3_BINDINGMTX = DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/Treated142.txt"
+DATA_ABSOLUT_DATASET3_AGLIST = (
+    DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/ListAntigens142.txt"
+)
+DATA_ABSOLUT_DATASET3_BINDINGMTX = (
+    DATA_ABSOLUT_DIR / "Datasets3/nonRedundant_11mer-based/Treated142.txt"
+)
 DATA_ABSOLUT_PROCESSED_MULTICLASS_DIR = DATA_BASE_PATH / "Absolut/processed/multiclass"
 DATA_ABSOLUT_PROCESSED_MULTILABEL_DIR = DATA_BASE_PATH / "Absolut/processed/multilabel"
 
 DATA_MINIABSOLUT = DATA_BASE_PATH / "MiniAbsolut"
 DATA_MINIABSOLUT_SPLITS = DATA_BASE_PATH / "MiniAbsolut_Splits"
 
-DATA_SLACK_1_PARATOPES = DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Task4_Merged_Slice_ParaEpi.txt"
-DATA_SLACK_1_RAWBINDINGSMURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"
-DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
+DATA_SLACK_1_PARATOPES = (
+    DATA_BASE_PATH / "Absolut/processed/paratope_epitope/Task4_Merged_Slice_ParaEpi.txt"
+)
+DATA_SLACK_1_RAWBINDINGSMURINE = (
+    DATA_BASE_PATH / "Absolut/data/RawBindingsMurine/unzipped"
+)
+DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = (
+    DATA_BASE_PATH / "Absolut/data/RawBindingsPerClassMurine"
+)
 
 DATA_XSTREME = DATA_BASE_PATH / "xstreme"
 
 DATA_LINEAR_ML = DATA_BASE_PATH / "Frozen_MiniAbsolut_Linear_ML"
+
+# Experimental data paths
+DATA_EXPERIMENTAL_DIR = DATA_BASE_PATH / "Experimental_Datasets"
+DATA_BRIJ_DIR = DATA_EXPERIMENTAL_DIR / "Brij_Dataset"
+DATA_POREBSKI_DIR = DATA_EXPERIMENTAL_DIR / "Porebski_Dataset"
+DATA_POREBSKI_AFFMAT = (
+    DATA_POREBSKI_DIR / "fc079_fc080_her2_affmat_paired_translated.csv"
+)
+DATA_POREBSKI_MLLIB = (
+    DATA_POREBSKI_DIR / "fc081_fc082_her2_ml_lib_paired_translated.csv"
+)
 
 TMP_DIR = DATA_BASE_PATH / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
 
 DATA_EMB_DIR = DATA_BASE_PATH / "embeddings"
 
-SLIDE_AMINOACIDS = ['D', 'S', 'C', 'I', 'W', 'P', 'Y', 'M',
-                    'V', 'E', 'G', 'N', 'A', 'F', 'Q', 'K', 'R', 'H', 'L', 'T']
+SLIDE_AMINOACIDS = [
+    "D",
+    "S",
+    "C",
+    "I",
+    "W",
+    "P",
+    "Y",
+    "M",
+    "V",
+    "E",
+    "G",
+    "N",
+    "A",
+    "F",
+    "Q",
+    "K",
+    "R",
+    "H",
+    "L",
+    "T",
+]
 
 ANTIGENS = [
-    '3VRL',
-    '1NSN',
-    '3RAJ',
-    '5E94',
-    '1H0D',
-    '1WEJ',
-    '1ADQ',
-    '1FBI',
-    '2YPV',
-    '1OB1',
+    "3VRL",
+    "1NSN",
+    "3RAJ",
+    "5E94",
+    "1H0D",
+    "1WEJ",
+    "1ADQ",
+    "1FBI",
+    "2YPV",
+    "1OB1",
 ]
-ANTIGENS_CLOSEDSET = ['1FBI', '1NSN', '1OB1', '1WEJ', '3VRL', '5E94']
-ANTIGENS_OPENSET = ['1ADQ', '1H0D', '2YPV', '3RAJ']
+ANTIGENS_CLOSEDSET = ["1FBI", "1NSN", "1OB1", "1WEJ", "3VRL", "5E94"]
+ANTIGENS_OPENSET = ["1ADQ", "1H0D", "2YPV", "3RAJ"]
+ANTIGENS_EXPERIMENTAL = ["HR2B", "HR2P"]
+ANTIGENS_WITH_EXPERIMENTAL = ANTIGENS + ANTIGENS_EXPERIMENTAL
 
 NUM_CLOSED_ANTIGENS_ABSOLUT_DATASET3 = 102
 

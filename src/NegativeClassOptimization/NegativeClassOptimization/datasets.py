@@ -552,7 +552,17 @@ class FrozenMiniAbsolutMLLoader:
 
         if load_model:
             model_path = basepath / "swa_model/data/model.pth"
-            task.model = torch.load(model_path)
+            model_path_alt = (
+                basepath / "swa_model/swa_model.pt"
+            )  # Path for models on exp data.
+            if model_path.exists():
+                task.model = torch.load(model_path)
+            elif model_path_alt.exists():
+                # Path for models on exp data.
+                task.state_dict = torch.load(model_path_alt)  # type: ignore
+                task.model = None
+            else:
+                raise ValueError(f"Model not found at {model_path}")
         if load_test_dataset:
             hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
             test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"

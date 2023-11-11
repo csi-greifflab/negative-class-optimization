@@ -2,7 +2,6 @@
 Script to compute attributions, neuron activations and other features for tasks.
 Based on:
 - script_14_frozen_transfer_performance.py
-- 
 - notebook 07d_Activations.ipynb
 """
 
@@ -15,18 +14,22 @@ from pathlib import Path
 from typing import List
 
 import torch
+import torch.optim as optim
 
 from NegativeClassOptimization import config, datasets, ml
+from NegativeClassOptimization.ml import load_model_from_state_dict
 
 TEST = False
 DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip"
+EXPERIMENTAL_DATA_ONLY = True
+
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML/")
 task_types = [
-    datasets.ClassificationTaskType.ONE_VS_ONE,
+    # datasets.ClassificationTaskType.ONE_VS_ONE,
     # datasets.ClassificationTaskType.ONE_VS_NINE,
-    # datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    # datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    datasets.ClassificationTaskType.HIGH_VS_95LOW,
+    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
 ]
 task_split_seed_filter = ((42,), (0,))  # split, seed. Set to None for all.
 
@@ -89,6 +92,24 @@ def task_generator(task_types=task_types, loader=loader):
                 yield task
 
 
+def task_generator_for_experimental():
+    seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
+    for ag in ["HR2P", "HR2B"]:
+        for seed_id, split_id in seed_split_ids:
+            for task_type in [
+                datasets.ClassificationTaskType.HIGH_VS_95LOW,
+                datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+            ]:
+                task = datasets.ClassificationTask(
+                    task_type=task_type,
+                    ag_pos=ag,
+                    ag_neg="auto",
+                    seed_id=seed_id,
+                    split_id=split_id,
+                )
+                yield task
+
+
 def compute_attributions(task, save=True):
     # Get logger per process
     logger = logging.getLogger()
@@ -96,9 +117,20 @@ def compute_attributions(task, save=True):
 
     # Load task.
     loader.load(task)
+
+    # For experimental data, the state dict is loaded,
+    # not the model. We adjust it here.
+    if task.model is None:
+        assert task.state_dict is not None
+        model = load_model_from_state_dict(task.state_dict)
+        task.model = model
+
     model = task.model  # type: ignore
     test_dataset = task.test_dataset  # type: ignore
     logger.info(f"Loaded task.")
+
+    # import pdb
+    # pdb.set_trace()
 
     if save:
         # Build output dir.
@@ -138,7 +170,7 @@ def compute_attributions(task, save=True):
     # Compute attributions.
     t_start = time.time()
     df = ml.compute_and_collect_model_predictions_and_attributions(
-        test_dataset,
+        test_dataset if not TEST else test_dataset.iloc[:10],
         model,
         attributors,
         N=None,  # type: ignore
@@ -218,7 +250,13 @@ def compute_attributions(task, save=True):
 
 
 if __name__ == "__main__":
-    task_data = list(task_generator())
+    if EXPERIMENTAL_DATA_ONLY:
+        # Generate only the tasks from the experimental data
+        task_data = list(task_generator_for_experimental())
+    else:
+        # Generate all the tasks from Absolut
+        task_data = list(task_generator())
+
     if task_split_seed_filter is not None:
         task_data = [
             task
@@ -228,7 +266,7 @@ if __name__ == "__main__":
         ]
     print(len(task_data))
     if TEST:
-        task = task_data[0]
+        task = task_data[2]
         compute_attributions(task, save=False)
     else:
         with multiprocessing.Pool(processes=num_processes) as pool:

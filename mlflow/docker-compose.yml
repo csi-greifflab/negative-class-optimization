@@ -13,17 +13,22 @@ services:
             - nco_mlflow_net
         volumes:
             - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs:/home/mlflow
+            # - ${PROJECT_ABS_PATH}/data/nco_mlflow_runs:${PROJECT_ABS_PATH}/data/nco_mlflow_runs
         # Added gunicorn-opts to fix the issue with the MLFlow server timing out
         # when there are multiple experiments and runs.
         # https://github.com/mlflow/mlflow/issues/925#issuecomment-1055125656
         # didn't help: --gunicorn-opts "--worker-class gevent --threads 3 --workers 3 --timeout 300 --keep-alive 300 --log-level INFO"  
         command: >
           mlflow server 
-          --host 0.0.0.0 
+          --host 0.0.0.0
           --backend-store-uri ./backend_store
           --registry-store-uri sqlite:////home/mlflow/registry_store.db
           --default-artifact-root ftp://${FTP_USER}:${FTP_PASS}@${IP}/artifacts_store
           --gunicorn-opts "--timeout 0"
+        #   --backend-store-uri ${PROJECT_ABS_PATH}/data/nco_mlflow_runs/backend_store
+        #   --registry-store-uri sqlite:////${PROJECT_ABS_PATH}/data/nco_mlflow_runs/registry_store.db
+        #   --artifacts-destination ${PROJECT_ABS_PATH}/data/nco_mlflow_runs/ftp/artifacts_store
+        #   --default-artifact-root ${PROJECT_ABS_PATH}/data/nco_mlflow_runs/ftp/artifacts_store
         
     
     nco_ftp:
@@ -45,6 +50,7 @@ services:
             - LOCAL_UMASK=022
             - PASV_MIN_PORT=21100
             - PASV_MAX_PORT=21110
+            - LOG_STDOUT="True"
 
 networks:
     nco_mlflow_net:

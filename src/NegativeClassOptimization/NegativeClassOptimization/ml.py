@@ -453,6 +453,12 @@ class PositionalEncoding(nn.Module):
 class Attributor:
     """Class for computing attributions for a given model."""
 
+    allowed_shapes = [
+        (1, 220),  # Absolut
+        (1, 200),  # Brij
+        (1, 420),  # Porebski
+    ]
+
     def __init__(
         self,
         model: nn.Module,
@@ -526,7 +532,10 @@ class Attributor:
         return_baseline: bool = False,
     ):
         """Compute attributions for a given input using Integrated Gradients."""
-        assert X.shape == (1, 220), f"Expected input shape (1, 220), got {X.shape}"
+
+        assert (
+            X.shape in Attributor.allowed_shapes
+        ), f"Expected input shape in {Attributor.allowed_shapes}, got {X.shape}"
 
         if self.baseline_type == "zero":
             if type(self.attributor) == IntegratedGradients:
@@ -614,15 +623,16 @@ class Attributor:
         """Compute a baseline for one-hot encoded tensor by shuffling the rows
         and averaging the resulting one-hot encodings.
         """
-        assert onehot_vector.shape == (
-            1,
-            220,
-        ), f"Expected input shape (1, 220), got {onehot_vector.shape}"
+        assert (
+            onehot_vector.shape in Attributor.allowed_shapes
+        ), f"Expected input shape in {Attributor.allowed_shapes}, got {onehot_vector.shape}"
         shuffles = []
         for _ in range(num_shuffles):
             shuffles.append(
-                Attributor.shuffle_rows(onehot_vector.reshape((11, 20))).reshape(
-                    (1, 220)
+                # Attributor.shuffle_rows(onehot_vector.reshape((11, 20))).reshape(
+                #     (1, 220)
+                Attributor.shuffle_rows(onehot_vector.reshape((-1, 20))).reshape(
+                    (1, -1)
                 )
             )
         return shuffles
@@ -1229,3 +1239,19 @@ def get_logits_on_slide(slide: str, model: nn.Module):
     x = get_activations_on_slide(slide, model)
     x = model.module.linear_2(x)  # type: ignore
     return x
+
+
+def load_model_from_state_dict(state_dict):
+    """
+    For the experimental data, the state dict is loaded (through torch.save -> torch.load),
+    not the model, as through mlflow.
+    We harmonize this logic here.
+    """
+    assert state_dict is not None
+    input_dim = state_dict["module.linear_1.weight"].shape[1]
+    hidden_dim = 10
+    model = optim.swa_utils.AveragedModel(
+        SNN(input_dim=input_dim, num_hidden_units=hidden_dim)
+    )
+    model.load_state_dict(state_dict)
+    return model
