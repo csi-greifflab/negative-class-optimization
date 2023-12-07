@@ -20,7 +20,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 from captum.attr import DeepLift, IntegratedGradients
 from scipy.stats import rankdata
-
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
@@ -456,7 +455,8 @@ class Attributor:
     allowed_shapes = [
         (1, 220),  # Absolut
         (1, 200),  # Brij
-        (1, 420),  # Porebski
+        (1, 420),  # Porebski HER2
+        (1, 380),  # Porebski HELP
     ]
 
     def __init__(

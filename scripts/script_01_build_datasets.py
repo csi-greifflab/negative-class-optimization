@@ -16,10 +16,8 @@ import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
 import NegativeClassOptimization.utils as utils
-from NegativeClassOptimization.utils import (
-    save_train_test_rest,
-    split_to_train_test_rest_dfs,
-)
+from NegativeClassOptimization.utils import (save_train_test_rest,
+                                             split_to_train_test_rest_dfs)
 
 dataset_path: Path = config.DATA_SLACK_1_RAW_DIR
 
@@ -38,6 +36,7 @@ Usage:
     script_01_build_datasets.py miniabsolut
     script_01_build_datasets.py frozen_results
     script_01_build_datasets.py adapt_attributions_for_linear
+    script_01_build_datasets.py add_freq_based_attributions
 
 
 Options:
@@ -428,3 +427,60 @@ if __name__ == "__main__":
                             attributions_dir / "attribution_records.json", "w"
                         ) as f:
                             json.dump(records, f)
+
+    elif arguments["add_freq_based_attributions"]:
+        
+        # Adapted code based on "adapt_attributions_for_linear"
+
+        linear_dir = Path(config.DATA_ML)
+        # Glob directories from Path
+        task_type_dirs = list(linear_dir.glob("*"))
+
+        for task_type_dir in task_type_dirs:
+            # Get seed directories
+            seed_dirs = list(task_type_dir.glob("*"))
+            for seed_dir in seed_dirs:
+                # Get split directories
+                split_dirs = list(seed_dir.glob("*"))
+                for split_dir in split_dirs:
+                    # Get task directories
+                    task_dirs = list(split_dir.glob("*"))
+                    for task_dir in task_dirs:
+                        print("Processing:", task_dir)
+                        
+                        attributions_dir = task_dir / "attributions/v2.0-2"
+                        attribution_records_path = attributions_dir / "attribution_records.json"
+                        if not attribution_records_path.exists():
+                            continue
+
+                        with open(attribution_records_path, 'r') as f:
+                            attr_records = json.load(f)
+
+                        all_slides = [attr['slide'] for attr in attr_records]
+                        pos_slides = [attr['slide'] for attr in attr_records if attr['y_true'] == 1]
+                        neg_slides = [attr['slide'] for attr in attr_records if attr['y_true'] == 0]
+
+                        try:
+                            ohs_freq, ohs_freq_rel = preprocessing.compute_frequencies_and_relative(all_slides)
+                            ohs_freq_pos, ohs_freq_rel_pos = preprocessing.compute_frequencies_and_relative(pos_slides)
+                            ohs_freq_neg, ohs_freq_rel_neg = preprocessing.compute_frequencies_and_relative(neg_slides)
+                        except ValueError:
+                            print("Error computing frequencies for:", task_dir)
+                            continue
+
+                        freqs, rel_freqs = preprocessing.extract_frequences_as_features(all_slides, ohs_freq, ohs_freq_rel)
+                        freqs_pos, rel_freqs_pos = preprocessing.extract_frequences_as_features(all_slides, ohs_freq_pos, ohs_freq_rel_pos)
+                        freqs_neg, rel_freqs_neg = preprocessing.extract_frequences_as_features(all_slides, ohs_freq_neg, ohs_freq_rel_neg)
+
+                        for i, attr in enumerate(attr_records):
+                            attr['freq'] = freqs[i].tolist()
+                            attr['rel_freq'] = rel_freqs[i].tolist()
+                            attr['freq_pos'] = freqs_pos[i].tolist()
+                            attr['rel_freq_pos'] = rel_freqs_pos[i].tolist()
+                            attr['freq_neg'] = freqs_neg[i].tolist()
+                            attr['rel_freq_neg'] = rel_freqs_neg[i].tolist()
+
+                        # Save the updated records
+                        augmented_path = attributions_dir / "attribution_records_augmented.json"
+                        with open(augmented_path, "w") as f:
+                            json.dump(attr_records, f)

@@ -51,6 +51,7 @@ DATA_SLACK_1_RAWBINDINGS_PERCLASS_MURINE = (
 
 DATA_XSTREME = DATA_BASE_PATH / "xstreme"
 
+DATA_ML = DATA_BASE_PATH / "Frozen_MiniAbsolut_ML"
 DATA_LINEAR_ML = DATA_BASE_PATH / "Frozen_MiniAbsolut_Linear_ML"
 
 # Experimental data paths
@@ -62,6 +63,15 @@ DATA_POREBSKI_AFFMAT = (
 )
 DATA_POREBSKI_MLLIB = (
     DATA_POREBSKI_DIR / "fc081_fc082_her2_ml_lib_paired_translated.csv"
+)
+DATA_POREBSKI_IL7 = (
+        DATA_POREBSKI_DIR / "fc059_hs064_il7_paired_translated.csv"
+)
+DATA_POREBSKI_HEL_FACS = (
+        DATA_POREBSKI_DIR / "fc069_fc070_r3_facs_paired_translated.csv"
+)
+DATA_POREBSKI_HEL_MACS = (
+        DATA_POREBSKI_DIR / "fc071_hs065_r3_macs_paired_avg_translated.csv"
 )
 
 TMP_DIR = DATA_BASE_PATH / "tmp"

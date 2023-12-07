@@ -26,7 +26,7 @@ EXPERIMENTAL_DATA_ONLY = True
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML/")
 task_types = [
-    # datasets.ClassificationTaskType.ONE_VS_ONE,
+    datasets.ClassificationTaskType.ONE_VS_ONE,
     # datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
@@ -104,6 +104,23 @@ def task_generator_for_experimental():
                     task_type=task_type,
                     ag_pos=ag,
                     ag_neg="auto",
+                    seed_id=seed_id,
+                    split_id=split_id,
+                )
+                yield task
+
+
+def task_generator_for_experimental_randomized():
+    seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
+    for ag_1, ag_2 in [("HR2P", "HR2PSR"), ("HR2P", "HR2PIR")]:
+        for seed_id, split_id in seed_split_ids:
+            for task_type in [
+                datasets.ClassificationTaskType.ONE_VS_ONE,
+                ]:
+                task = datasets.ClassificationTask(
+                    task_type=task_type,
+                    ag_pos=ag_1,
+                    ag_neg=ag_2,
                     seed_id=seed_id,
                     split_id=split_id,
                 )
@@ -252,7 +269,8 @@ def compute_attributions(task, save=True):
 if __name__ == "__main__":
     if EXPERIMENTAL_DATA_ONLY:
         # Generate only the tasks from the experimental data
-        task_data = list(task_generator_for_experimental())
+        # task_data = list(task_generator_for_experimental())
+        task_data = list(task_generator_for_experimental_randomized())
     else:
         # Generate all the tasks from Absolut
         task_data = list(task_generator())

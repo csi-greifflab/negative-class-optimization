@@ -11,14 +11,8 @@ import torch
 from sklearn import metrics
 
 import mlflow
-from NegativeClassOptimization import (
-    config,
-    datasets,
-    ml,
-    preprocessing,
-    utils,
-    visualisations,
-)
+from NegativeClassOptimization import (config, datasets, ml, preprocessing,
+                                       utils, visualisations)
 
 
 class DataPipeline:
@@ -271,14 +265,24 @@ class BinaryclassPipeline(DataPipeline):
             pd.concat(test_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
         )
 
+        # Balance to the dataset that has less samples
+        # (relevant) for some of the exp. datasets
+        balance_to_smaller = True
+        if balance_to_smaller:
+            nrow_train = min(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
+            nrow_test = min(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+        else:
+            nrow_train = max(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
+            nrow_test = max(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+
         # Aggregate positive and negative dataframes and shuffle
         df_train_val = (
-            pd.concat([df_train_val_pos, df_train_val_neg], axis=0)
+            pd.concat([df_train_val_pos.iloc[:nrow_train, :], df_train_val_neg.iloc[:nrow_train, :]], axis=0)
             .sample(frac=1)
             .reset_index(drop=True)
         )
         df_test_closed = (
-            pd.concat([df_test_closed_pos, df_test_closed_neg], axis=0)
+            pd.concat([df_test_closed_pos.iloc[:nrow_test, :], df_test_closed_neg.iloc[:nrow_test, :]], axis=0)
             .sample(frac=1)
             .reset_index(drop=True)
         )

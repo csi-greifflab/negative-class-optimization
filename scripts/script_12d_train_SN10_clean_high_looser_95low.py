@@ -16,14 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import mlflow
-from NegativeClassOptimization import (
-    config,
-    datasets,
-    ml,
-    pipelines,
-    preprocessing,
-    utils,
-)
+from NegativeClassOptimization import (config, datasets, ml, pipelines,
+                                       preprocessing, utils)
 
 TEST = False
 LOG_ARTIFACTS = False
@@ -42,7 +36,8 @@ load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internall
 # load_from_miniabsolut_split_seeds = []
 model_type = "SNN"  # "LogisticRegression"
 
-antigens = ["HR2B", "HR2P"]  # None for the default 10 antigens from Absolut
+# antigens = ["HR2B", "HR2P"]  # None for the default 10 antigens from Absolut
+antigens = ["HELP"]
 
 epochs = 50
 learning_rate = 0.001
@@ -69,6 +64,8 @@ def get_input_dim_from_agpos(ag_pos: str) -> int:
         return 200
     elif ag == "HR2P":
         return 420
+    elif ag == "HELP":
+        return 380  # 19*20
     else:
         return 220
 

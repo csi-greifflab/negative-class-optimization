@@ -452,7 +452,7 @@ class ClassificationTask:
         """
         if "_" in ag:
             raise ValueError(f"Invalid antigen name: {ag}")
-        elif len(ag) != 4:
+        elif len(ag) < 4 or len(ag) > 6:
             raise ValueError(f"Invalid antigen name: {ag}")
 
     def get_nco_ag_pos(self):
@@ -542,6 +542,7 @@ class FrozenMiniAbsolutMLLoader:
         load_model=True,
         load_test_dataset=True,
         attributions_toload=None,
+        attribution_records_toload="attribution_records.json",
         load_zscores=False,
     ):
         """
@@ -569,7 +570,7 @@ class FrozenMiniAbsolutMLLoader:
             task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
         if attributions_toload is not None:
             attr_dir = basepath / "attributions" / attributions_toload
-            attr_records = attr_dir / "attribution_records.json"
+            attr_records = attr_dir / attribution_records_toload
             assert (
                 attr_records.exists()
             ), f"Attribution records not found at {attr_records}"

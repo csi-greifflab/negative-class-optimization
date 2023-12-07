@@ -240,15 +240,25 @@ class AA_Index:
 
 def get_attr_from_records(records, attributor_name, y_true):
     """Get the attributions for a given attributor and y_true."""
-    attr = np.stack(
-        list(
-            map(
-                lambda x: np.array(x[attributor_name]).reshape((11, 20)),
-                filter(lambda x: x["y_true"] in y_true, records),
+    if attributor_name.split("_")[0] == "DeepLIFT":  # For DeepLIFT we need to subset and reshape
+        attr = np.stack(
+            list(
+                map(
+                    # lambda x: np.array(x[attributor_name]).reshape((11, 20)),
+                    lambda x: np.array(x[attributor_name]).reshape((-1, 20)),
+                    filter(lambda x: x["y_true"] in y_true, records),
+                )
             )
         )
-    )
-
+    else:
+        attr = np.stack(
+            list(
+                map(
+                    lambda x: np.array(x[attributor_name]),
+                    filter(lambda x: x["y_true"] in y_true, records),
+                )
+            )
+        )
     return attr
 
 
@@ -261,7 +271,7 @@ def get_onehotstack_from_records(records, y_true=(0, 1)):
 
 
 def load_energy_contributions_from_task_linear_version(
-    task, loader=loader_linear, load_slide_df=False, attributions_toload="v0.1.2-3"
+    task, loader=loader_linear, load_slide_df=False, attributions_toload="v0.1.2-3", load_everything=False
 ):
     # Get energy contributions and attributions
     df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
@@ -370,13 +380,22 @@ def load_energy_contributions_from_task_linear_version(
         "mean_neg_total": mean_neg_total,
         "std_neg_total": std_neg_total,
     }
-    if load_slide_df:
+    if load_everything:
+        return stats, slide_df, energy_dict, attr_dict
+    elif load_slide_df:
         return stats, slide_df
     else:
         return stats
 
 
-def load_energy_contributions_from_task_nonlinear_version(task, load_slide_df=False):
+def load_energy_contributions_from_task_nonlinear_version(
+        task, 
+        load_slide_df=False, 
+        load_everything=False,
+        attributor_name="DeepLIFT_LOCAL_v2.0-2",
+        attribution_records_toload="attribution_records.json",
+        task_is_loaded=False,
+        ):
     # Get energy contributions and attributions
     df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
     energy_dict = df.set_index("Slide").to_dict(orient="index")
@@ -393,17 +412,22 @@ def load_energy_contributions_from_task_nonlinear_version(task, load_slide_df=Fa
         ).tolist()
 
     # Get attributions per amino acid
-    task = loader.load(task, attributions_toload="v2.0-2")
-    attributor_name = "DeepLIFT_LOCAL_v2.0-2"
-    attr_stack = get_attr_from_records(
-        task.attributions, attributor_name, (0, 1)  # type: ignore
-    )  # Nx11x20 # type: ignore
-    onehot_stack = get_onehotstack_from_records(
-        task.attributions, (0, 1)  # type: ignore
-    )  # Nx220 # type: ignore
-    attr_aa = attr_stack[onehot_stack.reshape((-1, 11, 20)) == 1].reshape(
-        -1, 11
-    )  # Nx11
+    if not task_is_loaded:
+        task = loader.load(task, attributions_toload="v2.0-2", attribution_records_toload=attribution_records_toload)
+    if attributor_name.split("_")[0] == "DeepLIFT":  # For DeepLIFT we need to subset and reshape
+        attr_stack = get_attr_from_records(
+            task.attributions, attributor_name, (0, 1)  # type: ignore
+        )  # Nx11x20 # type: ignore
+        onehot_stack = get_onehotstack_from_records(
+            task.attributions, (0, 1)  # type: ignore
+        )  # Nx220 # type: ignore
+        attr_aa = attr_stack[onehot_stack.reshape((-1, 11, 20)) == 1].reshape(
+            -1, 11
+        )  # Nx11
+    else:
+        attr_aa = get_attr_from_records(
+            task.attributions, attributor_name, (0, 1)  # type: ignore
+        )
     attr_dict = {
         record["slide"]: {**record, **{"attribution_existingaa": attr_aa[i, :]}}
         for i, record in enumerate(task.attributions)  # type: ignore
@@ -484,7 +508,10 @@ def load_energy_contributions_from_task_nonlinear_version(task, load_slide_df=Fa
         "mean_neg_total": mean_neg_total,
         "std_neg_total": std_neg_total,
     }
-    if load_slide_df:
+
+    if load_everything:
+        return stats, slide_df, energy_dict, attr_dict
+    elif load_slide_df:
         return stats, slide_df
     else:
         return stats

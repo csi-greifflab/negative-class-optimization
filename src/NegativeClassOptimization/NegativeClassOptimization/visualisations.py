@@ -17,6 +17,8 @@ map_task_type_to_clean = {
     "1v1_adapted": "vs 1 (adapted)",
     "1v9": "vs 9",
     "1v9_adapted": "vs 9 (adapted)",
+    "high_vs_randseq": "vs Randomized",
+    "high_vs_randpos": "vs Shuffled Pos",
     "high_vs_looser": "vs Weak",
     "high_vs_95low": "vs Non-binder",
 }

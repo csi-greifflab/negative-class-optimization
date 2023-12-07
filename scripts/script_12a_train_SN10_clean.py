@@ -15,24 +15,30 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from script_12d_train_SN10_clean_high_looser_95low import \
+    get_input_dim_from_agpos
 
 import mlflow
-from NegativeClassOptimization import config, ml, pipelines, preprocessing, utils
+from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
+                                       utils)
 
 TEST = False
+LOG_ARTIFACTS = False
+SAVE_LOCAL = True
+
 RESTRICTED_AG_COMBINATIONS = True
 
 experiment_id = 11
-run_name = "dev-v0.2-shuffled"
+run_name = "dev-v0.1.3-expdata"  # "dev-v0.2-shuffled"
 num_processes = 10
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = True
+shuffle_antigen_labels = False
 swa = True
-# seed_id = [0, 1, 2, 3]  # default was 0
-# load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
-seed_id = [0]
-load_from_miniabsolut_split_seeds = []
+seed_id = [0, 1, 2, 3]  # default was 0
+load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+# seed_id = [0]
+# load_from_miniabsolut_split_seeds = []
 model_type = "SNN"  # "LogisticRegression"
 
 epochs = 50
@@ -60,9 +66,25 @@ def multiprocessing_wrapper_script_12a(
         description=f"{ag_pos} vs {ag_neg}",
         tags={"mlflow.runName": run_name},
     ):
+        
+        # Adjust the load_from_miniabsolut_split_seed
+        if load_from_miniabsolut_split_seed is None:
+            split_seed = 42
+        else:
+            split_seed = load_from_miniabsolut_split_seed
+
+        local_dir = Path(
+            f"data/Frozen_MiniAbsolut_ML/1v1/seed_{seed_id}/split_{split_seed}/"
+            f"{ag_pos}__vs__{ag_neg}/"
+        )
+        local_dir.mkdir(parents=True, exist_ok=True)
+
         pipe = pipelines.BinaryclassPipeline(
             log_mlflow=True,
-            save_model_mlflow=True,
+            save_model_mlflow=False,
+            log_artifacts=LOG_ARTIFACTS,
+            save_local=SAVE_LOCAL,
+            local_dir=local_dir,
         )
 
         pipe.step_1_process_data(
@@ -76,6 +98,7 @@ def multiprocessing_wrapper_script_12a(
         )
 
         pipe.step_2_train_model(
+            input_dim=get_input_dim_from_agpos(ag_pos),
             epochs=epochs,
             learning_rate=learning_rate,
             optimizer_type=optimizer_type,
@@ -98,7 +121,13 @@ if __name__ == "__main__":
     ag_perms = list(itertools.permutations(antigens, 2))
 
     if RESTRICTED_AG_COMBINATIONS:
-        ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
+        ag_perms = [
+            ("HR2P", "HR2PSR"),
+            ("HR2P", "HR2PIR"),
+        ]
+
+        # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
+        
         # ag_perms = [
         #     ("1H0D", "1NSN"),
         #     ("3RAJ", "1OB1"),
