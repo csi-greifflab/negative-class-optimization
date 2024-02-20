@@ -49,7 +49,7 @@ palette = {
 task_order = ["high_vs_95low", "1v1", "1v9", "high_vs_looser"]
 
 
-def task_generator(task_types=task_types, loader=loader):
+def task_generator(task_types=task_types, loader=loader, without_1v1=False):
     """
     Generate tasks for which to compute attributions.
     """
@@ -72,7 +72,7 @@ def task_generator(task_types=task_types, loader=loader):
                 )
                 yield task
 
-    if datasets.ClassificationTaskType.ONE_VS_ONE in task_types:
+    if datasets.ClassificationTaskType.ONE_VS_ONE in task_types and not without_1v1:
         seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
         for ag_1, ag_2 in permutations(config.ANTIGENS, r=2):
             for seed_id, split_id in seed_split_ids:
@@ -129,6 +129,26 @@ def get_miniabsolut_dataframes(task, load_energy_contributions=False):
         df_neg = pd.DataFrame()
 
     df = pd.concat([df_pos, df_neg], axis=0)  # type:ignore
+
+    return df
+
+
+def get_miniabsolut_dataframes_for_shuffled(task, load_energy_contributions=False):
+    """
+    Similar to get_miniabsolut_dataframes, but for shuffled data. It has to 
+    account for the fact that when we shuffle pos and neg antigens, we preserve
+    the Energy data just for the positive dataset that remains positive after
+    shuffling.
+    """
+    df = get_miniabsolut_dataframes(task, load_energy_contributions=load_energy_contributions)
+    
+    assert task.test_dataset is not None, "Task has no test dataset."
+    df_test = task.test_dataset.copy()
+    df = pd.merge(df, df_test[["Slide", "y"]], on="Slide", how="inner")    
+
+    # Redefine positive and negative classes based on y
+    df.loc[df["y"] == 1, "class"] = "positive"
+    df.loc[df["y"] == 0, "class"] = "negative"
 
     return df
 
@@ -395,9 +415,17 @@ def load_energy_contributions_from_task_nonlinear_version(
         attributor_name="DeepLIFT_LOCAL_v2.0-2",
         attribution_records_toload="attribution_records.json",
         task_is_loaded=False,
+        load_miniabsolut_for_shuffled=False,
         ):
     # Get energy contributions and attributions
-    df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
+
+    if not task_is_loaded:
+        task = loader.load(task, attributions_toload="v2.0-2", attribution_records_toload=attribution_records_toload)
+    if load_miniabsolut_for_shuffled:
+        df = get_miniabsolut_dataframes_for_shuffled(task, load_energy_contributions=True)
+    else:
+        df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
+    
     energy_dict = df.set_index("Slide").to_dict(orient="index")
     for slide in energy_dict.keys():
         energy_dict[slide]["energies"] = utils.extract_contributions_from_string(
@@ -412,8 +440,7 @@ def load_energy_contributions_from_task_nonlinear_version(
         ).tolist()
 
     # Get attributions per amino acid
-    if not task_is_loaded:
-        task = loader.load(task, attributions_toload="v2.0-2", attribution_records_toload=attribution_records_toload)
+
     if attributor_name.split("_")[0] == "DeepLIFT":  # For DeepLIFT we need to subset and reshape
         attr_stack = get_attr_from_records(
             task.attributions, attributor_name, (0, 1)  # type: ignore
@@ -576,3 +603,19 @@ def plot_1v1_logits_energy(ag_pos, ag_neg, model="linear"):
         f"r = {r:.2f}\n$r^2$ = {r2:.2f}",
         bbox=dict(facecolor="white", alpha=0.5),
     )
+
+
+def get_energy_contributions_foldx():
+    """
+    Return a dataframe with the energy contributions
+    from FoldX, computed by Puneet for the Brij dataset.
+    """
+    path = Path("../data/Experimental_Datasets/energy_contribution_8anstrom/energy_contacts_Tz_hb_CDRH3.csv")
+    df_e = pd.read_csv(path)
+    df_e["Slide"] = df_e["pdb"].str.split(".").str[0]
+    df_e["res_pos"] = df_e["resi_name"].str.split(":").str[0].astype(int)
+    df_e["slide_idx"] = df_e["res_pos"] - 99
+    df_e = df_e[["Slide", "slide_idx", "res_pos", "total_e"]].copy()
+    df_e = df_e.sort_values(["Slide", "slide_idx"])
+    df_e = df_e.pivot(index="Slide", columns="slide_idx", values="total_e")
+    return df_e

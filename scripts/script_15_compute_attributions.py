@@ -8,6 +8,7 @@ Based on:
 import json
 import logging
 import multiprocessing
+import shutil
 import time
 from itertools import permutations
 from pathlib import Path
@@ -20,14 +21,14 @@ from NegativeClassOptimization import config, datasets, ml
 from NegativeClassOptimization.ml import load_model_from_state_dict
 
 TEST = False
-DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip"
-EXPERIMENTAL_DATA_ONLY = True
+DIR_EXISTS_HANDLE = "ignore"  # "raise" or "skip" or "overwrite" or "ignore"
+EXPERIMENTAL_DATA_ONLY = False
 
 analysis_name = "v2.0-2"
-data_dir = Path("data/Frozen_MiniAbsolut_ML/")
+data_dir = Path("data/Frozen_MiniAbsolut_ML_shuffled/")  # "data/Frozen_MiniAbsolut_ML
 task_types = [
-    datasets.ClassificationTaskType.ONE_VS_ONE,
-    # datasets.ClassificationTaskType.ONE_VS_NINE,
+    # datasets.ClassificationTaskType.ONE_VS_ONE,
+    datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
 ]
@@ -157,6 +158,7 @@ def compute_attributions(task, save=True):
         if not output_dir.exists():
             logger.info(f"Creating output dir {output_dir}.")
             output_dir.mkdir()
+        
         output_dir = output_dir / analysis_name
         if output_dir.exists():
             if DIR_EXISTS_HANDLE == "raise":
@@ -169,6 +171,12 @@ def compute_attributions(task, save=True):
             elif DIR_EXISTS_HANDLE == "skip":
                 logger.info(f"Output dir {output_dir} already exists. Skipping.")
                 return
+            elif DIR_EXISTS_HANDLE == "overwrite":
+                # Remove and recreate the dir.
+                shutil.rmtree(output_dir)
+                output_dir.mkdir()
+            elif DIR_EXISTS_HANDLE == "ignore":
+                pass
 
     if type(model) == torch.optim.swa_utils.AveragedModel:
         # Unwrap the SWA model. We need a module class,
@@ -237,7 +245,9 @@ def compute_attributions(task, save=True):
         logger.info(f"Saving results to {output_dir}.")
 
         # Save the results.
-        output_dir.mkdir()
+        # The output_dir should have been generated previously, same function.
+        assert output_dir.exists(), f"Output dir {output_dir} does not exist."
+
         output_file = output_dir / f"attribution_records.json"
         with open(output_file, "w") as f:
             json.dump(records_serializable, f)

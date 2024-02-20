@@ -19,13 +19,18 @@ SKIP_LOADING_ERRORS = True
 COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
 COMPUTE_OPENSET_FROM_CLOSEDSET = True
 
+# fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
 # fp_results_closed = Path("data/closed_performance.tsv")
 # fp_results_open = Path("data/openset_performance.tsv")
-fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
-fp_results_open = Path("data/openset_performance_experimental_data.tsv")
+# fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
+# fp_results_open = Path("data/openset_performance_experimental_data.tsv")
 
-# run_name = "dev-v0.1.2-3-with-replicates"
-run_name = "dev-v0.1.3-expdata"
+## For shuffled
+fp_loader = Path("data/Frozen_MiniAbsolut_ML_shuffled/")
+# fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance.tsv")
+# fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance.tsv")
+fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance_experimental_data.tsv")
+fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance_experimental_data.tsv")
 
 # antigens = config.ANTIGENS
 antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
@@ -48,13 +53,17 @@ def evaluate_model(
     return metrics
 
 
+## We don't use this anymore.
+# run_name = "dev-v0.1.2-3-with-replicates"
+# run_name = "dev-v0.1.3-expdata"
+## We don't use this anymore.
 # experiment_ids = ["11", "13", "14"]
-experiment_ids = ["14"]
-df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
-    exp_list=experiment_ids,
-    run_name=run_name,
-    classify_tasks=True,
-)
+# experiment_ids = ["14"]
+# df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
+#     exp_list=experiment_ids,
+#     run_name=run_name,
+#     classify_tasks=True,
+# )
 
 
 ## Generate valid seed_id and split_id combinations
@@ -78,7 +87,7 @@ task_types_for_closedset = [
 
 ## Load data
 loader = datasets.FrozenMiniAbsolutMLLoader(
-    data_dir=Path("data/Frozen_MiniAbsolut_ML/")
+    data_dir=Path(fp_loader)
 )
 
 ## Compute

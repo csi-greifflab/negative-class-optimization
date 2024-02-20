@@ -231,8 +231,10 @@ class BinaryclassPipeline(DataPipeline):
             ag_neg = [ag_neg]
 
         # Check that ag_neg is a list of length 1 with a string
+        if isinstance(ag_neg, tuple):
+            ag_neg = list(ag_neg)
         assert (
-            isinstance(ag_neg, list) and len(ag_neg) == 1 and isinstance(ag_neg[0], str)
+            isinstance(ag_neg, list) and isinstance(ag_neg[0], str)
         ), "ag_neg must be a string or a list of length 1 with a string."
 
         N_neg = len(ag_neg)

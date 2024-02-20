@@ -26,17 +26,19 @@ TEST = False
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 
-RESTRICTED_AG_COMBINATIONS = True
+RESTRICTED_AG_COMBINATIONS = False
 
 experiment_id = 11
-run_name = "dev-v0.1.3-expdata"  # "dev-v0.2-shuffled"
+run_name =  "dev-v0.1.2-3-with-replicates" # "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata" "dev-v0.1.2-3-with-replicates"
 num_processes = 10
+local_dir_base = "data/Frozen_MiniAbsolut_ML"
+# local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
 
 load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
-seed_id = [0, 1, 2, 3]  # default was 0
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
+seed_id = [0]  # default was 0. # [0, 1, 2, 3]
+load_from_miniabsolut_split_seeds = [] # default None --(internally)--> 42. # [0, 1, 2, 3, 4]
 # seed_id = [0]
 # load_from_miniabsolut_split_seeds = []
 model_type = "SNN"  # "LogisticRegression"
@@ -74,7 +76,7 @@ def multiprocessing_wrapper_script_12a(
             split_seed = load_from_miniabsolut_split_seed
 
         local_dir = Path(
-            f"data/Frozen_MiniAbsolut_ML/1v1/seed_{seed_id}/split_{split_seed}/"
+            f"{local_dir_base}/1v1/seed_{seed_id}/split_{split_seed}/"
             f"{ag_pos}__vs__{ag_neg}/"
         )
         local_dir.mkdir(parents=True, exist_ok=True)
