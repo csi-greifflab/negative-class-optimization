@@ -50,11 +50,11 @@ if __name__ == "__main__":
                 if path.name == "v2.0-2":
 
                     # If no attribution_templates.json file is found, skip the directory.
-                    if not (path / "attribution_templates.json").exists():
-                        raise FileNotFoundError(f"No attribution_templates.json file found at {path}")
+                    if not (path / "attributor_templates.json").exists():
+                        raise FileNotFoundError(f"No attributor_templates.json file found at {path}")
                     # Read attribution_templates.json
-                    with open(path / "attribution_templates.json", "r") as f:
+                    with open(path / "attributor_templates.json", "r") as f:
                         attribution_templates = f.read()
                         if len(attribution_templates) == 2:
-                            print(f"Less 2 templates in attribution_templates.json at {path}")
+                            print(f"Less 2 templates in attributor_templates.json at {path}")
                             continue

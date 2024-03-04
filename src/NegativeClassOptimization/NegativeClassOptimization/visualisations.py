@@ -24,6 +24,30 @@ map_task_type_to_clean = {
 }
 
 
+class FinalPlotParams:
+    
+    cmap_tasks = {
+        'vs 9' : '#FF5733',
+        'vs Non-binder':'#00A6ED',
+        'vs Weak':'#FFC300',
+        'vs 1': '#8B5F4D',
+        'Randomized': '#00BFA0',
+    }
+
+    antigens_palette =['#008080','#FFA07A','#000080','#FFD700','#228B22','#FF69B4','#800080','#FF6347','#00FF00','#FF1493']
+    ag_order = [
+        "1FBI",
+        "3VRL",
+        "2YPV",
+        "5E94",
+        "1WEJ",
+        "1OB1",
+        "1NSN",
+        "1H0D",
+        "3RAJ",
+        "1ADQ",
+    ]
+
 class PlotParams:
     """
     Class for storing plotting parameters for the NCO project.
