@@ -52,3 +52,5 @@ dependencies:
       - tensorflow
       - multicoretsne
       - tqdm
+      - img2pdf
+      - black
