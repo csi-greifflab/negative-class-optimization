@@ -28,6 +28,7 @@ dependencies:
       - dask
       - git+https://github.com/uio-bmi/immuneML.git
       - scikit-learn
+      - scikit-image
       - joypy
       - networkx==2.6.3
       - mlflow
@@ -45,3 +46,9 @@ dependencies:
       - docker
       - pykeops
       - geomloss
+      - wget
+      - Bio
+      # - cmake
+      - tensorflow
+      - multicoretsne
+      - tqdm

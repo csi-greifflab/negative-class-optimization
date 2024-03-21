@@ -550,6 +550,7 @@ class FrozenMiniAbsolutMLLoader:
         """
 
         basepath = self.infer_task_basepath(task)
+        task.basepath = basepath
 
         if load_model:
             model_path = basepath / "swa_model/data/model.pth"
