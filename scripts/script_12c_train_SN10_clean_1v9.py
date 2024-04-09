@@ -22,14 +22,16 @@ from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
 TEST = False
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
+EPITOPE_BASED = True
 
 experiment_id = 13
-run_name = "dev-v0.2.1-shuffled"
+run_name = "dev-v0.2.1-epitopes"
 num_processes = 10
-local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
+# local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
+local_dir_base = "data/Frozen_MiniAbsolut_ML"
 
 load_from_miniabsolut = True
-shuffle_antigen_labels = True
+shuffle_antigen_labels = False
 swa = True
 # seed_id = [0, 1, 2, 3]  # default was 0
 # load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
@@ -119,10 +121,17 @@ if __name__ == "__main__":
     # Generate all 1 vs 9 antigens combinations
     ags_1_vs_9 = []
     for ag in antigens:
+        if EPITOPE_BASED:
+            if ag in config.ANTIGEN_TO_ANTIGEN_EPITOPES.keys():
+                ag_epitope = config.ANTIGEN_TO_ANTIGEN_EPITOPES[ag]
+                ags_1_vs_9.append((ag_epitope, tuple(ag_i for ag_i in antigens if ag_i != ag)))    
+                continue
+            else:
+                pass
         ags_1_vs_9.append((ag, tuple(ag_i for ag_i in antigens if ag_i != ag)))
 
     if TEST:
-        epochs = 3
+        epochs = 3 
         learning_rate = 0.001
         optimizer_type = "Adam"
         momentum = 0.9

@@ -26,11 +26,11 @@ TEST = False
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 
-RESTRICTED_AG_COMBINATIONS = False
+RESTRICTED_AG_COMBINATIONS = True
 
 experiment_id = 11
-run_name =  "dev-v0.1.2-3-with-replicates" # "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata" "dev-v0.1.2-3-with-replicates"
-num_processes = 10
+run_name =  "dev-v0.2.1-epitopes"  # "dev-v0.2.1-epitopes" "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata" "dev-v0.1.2-3-with-replicates"
+num_processes = 20
 local_dir_base = "data/Frozen_MiniAbsolut_ML"
 # local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
 
@@ -119,17 +119,19 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     experiment = mlflow.set_experiment(experiment_id=experiment_id)  # type: ignore
 
-    antigens: List[str] = config.ANTIGENS
+    antigens: List[str] = config.ANTIGENS + config.ANTIGEN_EPITOPES
     ag_perms = list(itertools.permutations(antigens, 2))
 
     if RESTRICTED_AG_COMBINATIONS:
-        ag_perms = [
-            ("HR2P", "HR2PSR"),
-            ("HR2P", "HR2PIR"),
-        ]
+        # ag_perms = [
+        #     ("HR2P", "HR2PSR"),
+        #     ("HR2P", "HR2PIR"),
+        # ]
 
         # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
         
+        ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+
         # ag_perms = [
         #     ("1H0D", "1NSN"),
         #     ("3RAJ", "1OB1"),

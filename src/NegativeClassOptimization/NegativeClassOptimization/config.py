@@ -114,6 +114,30 @@ ANTIGENS = [
     "2YPV",
     "1OB1",
 ]
+
+ANTIGEN_EPITOPES = [
+    "1H0DE1", "1OB1E1", "1WEJE1"
+]
+
+ANTIGEN_TO_ANTIGEN_EPITOPES = {
+    "1H0D": "1H0DE1", 
+    "1OB1": "1OB1E1", 
+    "1WEJ": "1WEJE1",
+}
+
+ANTIGENS_WCHAINS = [
+    '1ADQ_A', 
+    '1FBI_X',
+    '1H0D_C',
+    '1NSN_S',
+    '1OB1_C',
+    '1WEJ_F',
+    '2YPV_A',
+    '3RAJ_A',
+    '3VRL_C',
+    '5E94_G',
+]
+
 ANTIGENS_CLOSEDSET = ["1FBI", "1NSN", "1OB1", "1WEJ", "3VRL", "5E94"]
 ANTIGENS_OPENSET = ["1ADQ", "1H0D", "2YPV", "3RAJ"]
 ANTIGENS_EXPERIMENTAL = ["HR2B", "HR2P"]

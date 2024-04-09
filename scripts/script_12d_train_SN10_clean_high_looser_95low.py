@@ -24,8 +24,8 @@ LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 
 experiment_id = 14
-run_name = "dev-v0.2.1-shuffled"  # "dev-v0.2-shuffled" "dev-v0.1.3-expdata"
-num_processes = 10
+run_name = "dev-v0.2.1-epitopes"  # "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata"
+num_processes = 20
 # local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
 local_dir_base = "data/Frozen_MiniAbsolut_ML"
 
@@ -33,8 +33,8 @@ local_dir_base = "data/Frozen_MiniAbsolut_ML"
 load_from_miniabsolut = True
 shuffle_antigen_labels = False
 swa = True
-seed_id = [0, 1, 2, 3] # default was 0  [0, 1, 2, 3]
-load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42  [0, 1, 2, 3, 4]
+seed_id = [0] # default was 0  [0, 1, 2, 3]
+load_from_miniabsolut_split_seeds = []  # default None --(internally)--> 42  [0, 1, 2, 3, 4]
 # seed_id = [0]
 # load_from_miniabsolut_split_seeds = []
 model_type = "SNN"  # "LogisticRegression"
@@ -42,7 +42,7 @@ model_type = "SNN"  # "LogisticRegression"
 # antigens = None  # None for the default 10 antigens from Absolut
 # antigens = ["HR2B", "HR2P"]
 # antigens = ["HELP"]
-antigens = ["HR2P"]
+antigens = config.ANTIGEN_EPITOPES
 
 epochs = 50
 learning_rate = 0.001

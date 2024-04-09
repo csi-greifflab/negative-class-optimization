@@ -23,11 +23,12 @@ from NegativeClassOptimization.ml import load_model_from_state_dict
 TEST = False
 DIR_EXISTS_HANDLE = "ignore"  # "raise" or "skip" or "overwrite" or "ignore"
 EXPERIMENTAL_DATA_ONLY = False
+EPITOPES_ONLY = True
 
 analysis_name = "v2.0-2"
-data_dir = Path("data/Frozen_MiniAbsolut_ML_shuffled/")  # "data/Frozen_MiniAbsolut_ML
+data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
 task_types = [
-    # datasets.ClassificationTaskType.ONE_VS_ONE,
+    datasets.ClassificationTaskType.ONE_VS_ONE,
     datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
@@ -126,6 +127,42 @@ def task_generator_for_experimental_randomized():
                     split_id=split_id,
                 )
                 yield task
+
+
+def task_generator_for_epitopes(task_types=task_types, loader=loader):
+    """
+    Generate tasks for which to compute attributions.
+    """
+    seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
+    for ag_1 in config.ANTIGEN_EPITOPES:
+        for ag_2 in config.ANTIGENS:
+
+            if ag_1.split("E1")[0] == ag_2:
+                continue
+
+            for seed_id, split_id in seed_split_ids:
+                
+                if not (seed_id == 0 and split_id == 42):
+                    continue
+
+                for task_type in task_types:
+                    if task_type == datasets.ClassificationTaskType.ONE_VS_ONE:
+                        task = datasets.ClassificationTask(
+                            task_type=task_type,
+                            ag_pos=ag_1,
+                            ag_neg=ag_2,
+                            seed_id=seed_id,
+                            split_id=split_id,
+                        )
+                    else:
+                        task = datasets.ClassificationTask(
+                            task_type=task_type,
+                            ag_pos=ag_1,
+                            ag_neg="auto",
+                            seed_id=seed_id,
+                            split_id=split_id,
+                        )
+                    yield task
 
 
 def compute_attributions(task, save=True):
@@ -281,6 +318,8 @@ if __name__ == "__main__":
         # Generate only the tasks from the experimental data
         # task_data = list(task_generator_for_experimental())
         task_data = list(task_generator_for_experimental_randomized())
+    elif EPITOPES_ONLY:
+        task_data = list(task_generator_for_epitopes())
     else:
         # Generate all the tasks from Absolut
         task_data = list(task_generator())

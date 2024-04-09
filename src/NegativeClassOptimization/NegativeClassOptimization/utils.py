@@ -706,6 +706,73 @@ def extract_frequences_as_features(slides, ohs_freq, ohs_freq_rel):
     return freqs, rel_freqs
 
 
+def build_dataset_into_Absolut(N_train, N_test, MAKE_SPLITS, seed, ag, df):
+    """
+    Used initially in 01b to fit experimental data into MiniAbsolut data structure.
+    Later used to fit into MiniAbsolut the epitope-based sequences.
+    CAVE: The naming of the files is not consistent with the naming of the files in MiniAbsolut,
+          but it makes our life much easier to preserve the naming. (15k, 5k sequences)
+    """
+    if MAKE_SPLITS:
+        base_p = Path(config.DATA_MINIABSOLUT_SPLITS) / f"MiniAbsolut_Seed{seed}"
+        base_p.mkdir(exist_ok=True, parents=False)
+    else:
+        base_p = config.DATA_MINIABSOLUT
+        base_p.mkdir(exist_ok=True, parents=False)
+
+
+    ag_dir = base_p / ag
+    ag_dir.mkdir(exist_ok=True, parents=False)
+
+    # Get the high binders.
+    df_high = df[df["binder_type"] == f"{ag}_high"].copy()
+    df_high.drop(columns=["binder_type"], inplace=True)
+    df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+        N_train,
+        N_test,
+        df_high,
+        random_state=seed,
+    )
+    # save_train_test_rest(
+    #     "high", N_train, N_test, ag_dir, df_train, df_test, df_rest
+    # )
+    ## Hack to fit naming of files.
+    ## Even though for some experimental datasets,
+    ## such as Porebski, we don't have 15k and 5k sequences,
+    ## it makes our life much easier to preserve the naming.
+    save_train_test_rest(
+        "high", 15000, 5000, ag_dir, df_train, df_test, df_rest
+    )
+
+    # Get the weak binders
+    df_weak = df[df["binder_type"] == f"{ag}_looserX"].copy()
+    df_weak.drop(columns=["binder_type"], inplace=True)
+    df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+        N_train,
+        N_test,
+        df_weak,
+        random_state=seed,
+    )
+    # See note from above for explaining the 2 numbers.
+    save_train_test_rest(
+        "looserX", 15000, 5000, ag_dir, df_train, df_test, df_rest
+    )
+
+    # Get the nonbinders
+    df_nonbinder = df[df["binder_type"] == f"{ag}_95low"].copy()
+    df_nonbinder.drop(columns=["binder_type"], inplace=True)
+    df_train, df_test, df_rest = split_to_train_test_rest_dfs(
+        N_train,
+        N_test,
+        df_nonbinder,
+        random_state=seed,
+    )
+    # See note from above for explaining the 2 numbers.
+    save_train_test_rest(
+        "95low", 15000, 5000, ag_dir, df_train, df_test, df_rest
+    )
+
+
 class MlflowAPI:
     """Class to interact with mlflow API.
 
