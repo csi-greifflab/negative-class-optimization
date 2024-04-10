@@ -21,6 +21,8 @@ from NegativeClassOptimization import config, datasets, ml
 from NegativeClassOptimization.ml import load_model_from_state_dict
 
 TEST = False
+TEST_TASKLIST = False
+
 DIR_EXISTS_HANDLE = "ignore"  # "raise" or "skip" or "overwrite" or "ignore"
 EXPERIMENTAL_DATA_ONLY = False
 EPITOPES_ONLY = True
@@ -28,10 +30,10 @@ EPITOPES_ONLY = True
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
 task_types = [
-    datasets.ClassificationTaskType.ONE_VS_ONE,
-    datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    datasets.ClassificationTaskType.ONE_VS_ONE,
+    # datasets.ClassificationTaskType.ONE_VS_NINE,
 ]
 task_split_seed_filter = ((42,), (0,))  # split, seed. Set to None for all.
 
@@ -45,14 +47,14 @@ attributor_templates = [
         "compute_on": "logits",
         "multiply_by_inputs": True,
     },
-    {
-        "name": f"DeepLIFT_GLOBAL_R10_{analysis_name}",
-        "type": "deep_lift",
-        "baseline_type": "shuffle",
-        "num_shuffles": 10,
-        "compute_on": "logits",
-        "multiply_by_inputs": False,
-    },
+    # {
+    #     "name": f"DeepLIFT_GLOBAL_R10_{analysis_name}",
+    #     "type": "deep_lift",
+    #     "baseline_type": "shuffle",
+    #     "num_shuffles": 10,
+    #     "compute_on": "logits",
+    #     "multiply_by_inputs": False,
+    # },
 ]
 loader = datasets.FrozenMiniAbsolutMLLoader(data_dir=data_dir)
 num_processes = 20
@@ -134,18 +136,19 @@ def task_generator_for_epitopes(task_types=task_types, loader=loader):
     Generate tasks for which to compute attributions.
     """
     seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
-    for ag_1 in config.ANTIGEN_EPITOPES:
-        for ag_2 in config.ANTIGENS:
+    
+    for task_type in task_types:
+        for ag_1 in config.ANTIGEN_EPITOPES:
+            for ag_2 in config.ANTIGENS:
 
-            if ag_1.split("E1")[0] == ag_2:
-                continue
-
-            for seed_id, split_id in seed_split_ids:
-                
-                if not (seed_id == 0 and split_id == 42):
+                if ag_1.split("E1")[0] == ag_2:
                     continue
 
-                for task_type in task_types:
+                for seed_id, split_id in seed_split_ids:
+                    
+                    if not (seed_id == 0 and split_id == 42):
+                        continue
+                
                     if task_type == datasets.ClassificationTaskType.ONE_VS_ONE:
                         task = datasets.ClassificationTask(
                             task_type=task_type,
@@ -195,6 +198,8 @@ def compute_attributions(task, save=True):
         if not output_dir.exists():
             logger.info(f"Creating output dir {output_dir}.")
             output_dir.mkdir()
+        elif output_dir.exists():
+            logger.info(f"Output dir already exists: {output_dir}")
         
         output_dir = output_dir / analysis_name
         if output_dir.exists():
@@ -214,6 +219,9 @@ def compute_attributions(task, save=True):
                 output_dir.mkdir()
             elif DIR_EXISTS_HANDLE == "ignore":
                 pass
+        else:
+            logger.info(f"Creating output dir {output_dir}.")
+            Path(output_dir).mkdir()
 
     if type(model) == torch.optim.swa_utils.AveragedModel:
         # Unwrap the SWA model. We need a module class,
@@ -312,6 +320,9 @@ def compute_attributions(task, save=True):
                 f,
             )
 
+    if TEST:
+        print(records_serializable)
+
 
 if __name__ == "__main__":
     if EXPERIMENTAL_DATA_ONLY:
@@ -335,6 +346,9 @@ if __name__ == "__main__":
     if TEST:
         task = task_data[2]
         compute_attributions(task, save=False)
+    elif TEST_TASKLIST:
+        for task in task_data:
+            print(task)
     else:
         with multiprocessing.Pool(processes=num_processes) as pool:
             pool.starmap(

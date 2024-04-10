@@ -619,3 +619,41 @@ def get_energy_contributions_foldx():
     df_e = df_e.sort_values(["Slide", "slide_idx"])
     df_e = df_e.pivot(index="Slide", columns="slide_idx", values="total_e")
     return df_e
+
+
+def load_trainrest_from_miniabsolut(ag, base_path = None):
+
+    if base_path is None:
+        base_path = config.DATA_MINIABSOLUT / f"{ag}/energy_contributions"
+
+    df_high_train = pd.read_csv(base_path / "high_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_high_rest = pd.read_csv(base_path / "high_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_weak_train = pd.read_csv(base_path / "looserX_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_weak_rest = pd.read_csv(base_path / "looserX_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_nonb_train = pd.read_csv(base_path / "95low_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_nonb_rest = pd.read_csv(base_path / "95low_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_high_train["binder_type"] = f"{ag}_high"
+    df_high_rest["binder_type"] = f"{ag}_high"
+
+    df_weak_train["binder_type"] = f"{ag}_looserX"
+    df_weak_rest["binder_type"] = f"{ag}_looserX"
+
+    df_nonb_train["binder_type"] = f"{ag}_95low"
+    df_nonb_rest["binder_type"] = f"{ag}_95low"
+
+    # Concatenate all
+    df = pd.concat(
+        [
+            df_high_train,
+            df_high_rest,
+            df_weak_train,
+            df_weak_rest,
+            df_nonb_train,
+            df_nonb_rest,
+        ]
+    )
+    
+    return df
