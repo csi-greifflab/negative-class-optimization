@@ -130,7 +130,11 @@ if __name__ == "__main__":
 
         # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
         
-        ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+        # Using epitopes only
+        # 1) most
+        # ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+        # 2) 1v1 within epitopes
+        ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES and x[1] in config.ANTIGEN_EPITOPES, ag_perms))
 
         # ag_perms = [
         #     ("1H0D", "1NSN"),

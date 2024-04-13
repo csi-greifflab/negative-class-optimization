@@ -24,7 +24,7 @@ LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 
 experiment_id = 14
-run_name = "dev-v0.2.1-epitopes"  # "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata"
+run_name = "dev-v0.2.1-simdif"  # "dev-v0.2.1-epitopes" "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata"
 num_processes = 20
 # local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
 local_dir_base = "data/Frozen_MiniAbsolut_ML"
@@ -42,7 +42,8 @@ model_type = "SNN"  # "LogisticRegression"
 # antigens = None  # None for the default 10 antigens from Absolut
 # antigens = ["HR2B", "HR2P"]
 # antigens = ["HELP"]
-antigens = config.ANTIGEN_EPITOPES
+# antigens = config.ANTIGEN_EPITOPES
+antigens = [f"{ag}SIM" for ag in config.ANTIGENS] + [f"{ag}DIF" for ag in config.ANTIGENS]
 
 epochs = 50
 learning_rate = 0.001

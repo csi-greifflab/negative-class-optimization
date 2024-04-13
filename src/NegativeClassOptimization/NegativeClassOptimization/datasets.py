@@ -450,10 +450,11 @@ class ClassificationTask:
         """
         Validates an antigen name.
         """
-        if "_" in ag:
-            raise ValueError(f"Invalid antigen name: {ag}")
-        elif len(ag) < 4 or len(ag) > 6:
-            raise ValueError(f"Invalid antigen name: {ag}")
+        # if "_" in ag:
+        #     raise ValueError(f"Invalid antigen name: {ag}")
+        # elif len(ag) < 4 or len(ag) > 6:
+        #     raise ValueError(f"Invalid antigen name: {ag}")
+        pass
 
     def get_nco_ag_pos(self):
         """

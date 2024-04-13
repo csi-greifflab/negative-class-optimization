@@ -16,25 +16,42 @@ from NegativeClassOptimization import (config, datasets, ml, preprocessing,
                                        utils)
 
 SKIP_LOADING_ERRORS = True
+SKIP_COMPUTED_TASKS = True
 COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
-COMPUTE_OPENSET_FROM_CLOSEDSET = True
+COMPUTE_OPENSET_FROM_CLOSEDSET = True  # True > openset from closedset
 
-# fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
+fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
 # fp_results_closed = Path("data/closed_performance.tsv")
 # fp_results_open = Path("data/openset_performance.tsv")
 # fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
 # fp_results_open = Path("data/openset_performance_experimental_data.tsv")
+# fp_results_closed = Path("data/closed_performance_epitopes.tsv")  # epitopes
+# fp_results_open = Path("data/openset_performance_epitopes.tsv")  # epitopes
+# fp_results_closed = Path("data/closed_performance_similar.tsv")  # similar antigens
+# fp_results_open = Path("data/openset_performance_similar.tsv")  # dissimilar antigens
+fp_results_closed = Path("data/closed_performance_dissimilar.tsv")  # similar antigens
+fp_results_open = Path("data/openset_performance_dissimilar.tsv")  # dissimilar antigens
+
 
 ## For shuffled
-fp_loader = Path("data/Frozen_MiniAbsolut_ML_shuffled/")
+# fp_loader = Path("data/Frozen_MiniAbsolut_ML_shuffled/")
 # fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance.tsv")
 # fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance.tsv")
-fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance_experimental_data.tsv")
-fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance_experimental_data.tsv")
+# fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance_experimental_data.tsv")
+# fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance_experimental_data.tsv")
 
 # antigens = config.ANTIGENS
-antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
-
+# antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
+# antigens_2 = antigens  # in most cases, exception for epitope-based analysis
+## Epitope-based
+# antigens = ["1WEJE1", "1OB1E1", "1H0DE1"]
+# antigens_2 = config.ANTIGENS + config.ANTIGEN_EPITOPES
+## Similar antigens
+# antigens = [ag + "SIM" for ag in config.ANTIGENS]
+# antigens_2 = [ag + "SIM" for ag in config.ANTIGENS]
+## Dissimilar antigens
+antigens = [ag + "DIF" for ag in config.ANTIGENS]
+antigens_2 = [ag + "DIF" for ag in config.ANTIGENS]
 
 def evaluate_model(
     model: torch.nn.Module,
@@ -79,9 +96,9 @@ task_types_for_openset = [
 task_type_combinations = list(product(task_types_for_openset, task_types_for_openset))
 
 task_types_for_closedset = [
-    # datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.ONE_VS_ONE,
 ]
 
@@ -91,10 +108,14 @@ loader = datasets.FrozenMiniAbsolutMLLoader(
 )
 
 ## Compute
+try:
+    df_closed = pd.read_csv(fp_results_closed, sep="\t")
+except FileNotFoundError:
+    df_closed = pd.DataFrame()
 records = []
 if COMPUTE_CLOSEDSET_PERFORMANCE:
     for ag1 in antigens:
-        for ag2 in antigens:
+        for ag2 in antigens + antigens_2:
             for seed_id, split_id in seed_split_ids:
                 for task_type in task_types_for_closedset:
                     if (
@@ -125,6 +146,10 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                             split_id=split_id,
                         )
 
+                    if df_closed.shape[0] > 0 and str(task) in df_closed["task"].values and SKIP_COMPUTED_TASKS:
+                        print(f"Skipping {task} because it was already computed.")
+                        continue
+
                     if SKIP_LOADING_ERRORS:
                         try:
                             loader.load(task)
@@ -153,8 +178,8 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                         }
                     )
 
-                df_open = pd.DataFrame(records)
-                df_open.to_csv(fp_results_closed, sep="\t", index=False)
+                df_closed = pd.DataFrame(records)
+                df_closed.to_csv(fp_results_closed, sep="\t", index=False)
 
 # First run for compute closedset performance
 # Then from those, seek all combinations,
@@ -164,6 +189,10 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
     assert COMPUTE_CLOSEDSET_PERFORMANCE is False, "Cannot compute openset and closedset at same time."
 
     df_closed = pd.read_csv(fp_results_closed, sep="\t")
+    try:
+        df_open = pd.read_csv(fp_results_open, sep="\t")
+    except FileNotFoundError:
+        df_open = pd.DataFrame()
 
     task_str_combinations = list(product(df_closed["task"], df_closed["task"]))
 
@@ -172,6 +201,15 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
         task_1 = datasets.ClassificationTask.init_from_str(task_str_1)
         task_2 = datasets.ClassificationTask.init_from_str(task_str_2)
         
+        if (
+            df_open.shape[0] > 0 
+            and str(task_1) in df_open["task_1"].values 
+            and str(task_2) in df_open["task_2"].values 
+            and SKIP_COMPUTED_TASKS
+        ):
+            print(f"Skipping {task_1} -> {task_2} because it was already computed.")
+            continue
+
         if SKIP_LOADING_ERRORS:
             try:
                 loader.load(task_1)

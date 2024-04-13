@@ -23,15 +23,19 @@ from NegativeClassOptimization.ml import load_model_from_state_dict
 TEST = False
 TEST_TASKLIST = False
 
-DIR_EXISTS_HANDLE = "ignore"  # "raise" or "skip" or "overwrite" or "ignore"
+DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip" or "overwrite" or "ignore"
+
+# One of the below make true, or all false
 EXPERIMENTAL_DATA_ONLY = False
 EPITOPES_ONLY = True
+SIMILAR_ANTIGENS_ONLY = False
+DISSIMILAR_ANTIGENS_ONLY = False
 
 analysis_name = "v2.0-2"
 data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
 task_types = [
-    datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    # datasets.ClassificationTaskType.HIGH_VS_95LOW,
+    # datasets.ClassificationTaskType.HIGH_VS_LOOSER,
     datasets.ClassificationTaskType.ONE_VS_ONE,
     # datasets.ClassificationTaskType.ONE_VS_NINE,
 ]
@@ -139,7 +143,52 @@ def task_generator_for_epitopes(task_types=task_types, loader=loader):
     
     for task_type in task_types:
         for ag_1 in config.ANTIGEN_EPITOPES:
-            for ag_2 in config.ANTIGENS:
+            for ag_2 in config.ANTIGENS + config.ANTIGEN_EPITOPES:
+
+                if ag_1.split("E1")[0] == ag_2:
+                    continue
+
+                if ag_1 == ag_2:
+                    continue
+
+                for seed_id, split_id in seed_split_ids:
+                    
+                    if not (seed_id == 0 and split_id == 42):
+                        continue
+                
+                    if task_type == datasets.ClassificationTaskType.ONE_VS_ONE:
+                        task = datasets.ClassificationTask(
+                            task_type=task_type,
+                            ag_pos=ag_1,
+                            ag_neg=ag_2,
+                            seed_id=seed_id,
+                            split_id=split_id,
+                        )
+                    else:
+                        task = datasets.ClassificationTask(
+                            task_type=task_type,
+                            ag_pos=ag_1,
+                            ag_neg="auto",
+                            seed_id=seed_id,
+                            split_id=split_id,
+                        )
+                    yield task
+
+
+def task_generator_for_similar_or_dissimilar(similar=True, task_types=task_types, loader=loader):
+    """
+    Generate tasks for which to compute attributions.
+    """
+    seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
+    
+    if similar:
+        ag_list = [ag + "SIM" for ag in config.ANTIGENS]
+    else:
+        ag_list = [ag + "DIF" for ag in config.ANTIGENS]
+
+    for task_type in task_types:
+        for ag_1 in ag_list:
+            for ag_2 in ag_list:
 
                 if ag_1.split("E1")[0] == ag_2:
                     continue
@@ -166,6 +215,7 @@ def task_generator_for_epitopes(task_types=task_types, loader=loader):
                             split_id=split_id,
                         )
                     yield task
+
 
 
 def compute_attributions(task, save=True):
@@ -239,6 +289,7 @@ def compute_attributions(task, save=True):
 
     # Compute attributions.
     t_start = time.time()
+    logger.info(f"Computing attributions for task {task}.")
     df = ml.compute_and_collect_model_predictions_and_attributions(
         test_dataset if not TEST else test_dataset.iloc[:10],
         model,
@@ -331,6 +382,10 @@ if __name__ == "__main__":
         task_data = list(task_generator_for_experimental_randomized())
     elif EPITOPES_ONLY:
         task_data = list(task_generator_for_epitopes())
+    elif SIMILAR_ANTIGENS_ONLY:
+        task_data = list(task_generator_for_similar_or_dissimilar(similar=True))
+    elif DISSIMILAR_ANTIGENS_ONLY:
+        task_data = list(task_generator_for_similar_or_dissimilar(similar=False))
     else:
         # Generate all the tasks from Absolut
         task_data = list(task_generator())
