@@ -3,13 +3,23 @@ We verify dates of some attributions in the frozen dataset.
 """
 
 import datetime
+import json
 import os
 import sys
 from pathlib import Path
+from typing import List
 
-data_dir = Path("data/Frozen_MiniAbsolut_ML_shuffled")
+from NegativeClassOptimization import datasets
+
+# data_dir = Path("data/Frozen_MiniAbsolut_ML_shuffled")
+data_dir = Path("data/Frozen_MiniAbsolut_ML")
 REMOVE = False
-VERIFY_MODE = "attribution_type"  # "date": created/modifed; "attribution_type": "GLOBAL and LOCAL" attributions
+
+## Verify mode
+# "date": created/modifed; "attribution_type": "GLOBAL and LOCAL" attributions
+# "attribution_exists": if {analysis_name} attribution json exists, and the weight
+# "attribution_exists_simdis": same as before, for sim / dis analysis
+VERIFY_MODE = "attribution_exists_simdis"  
 
 if __name__ == "__main__":
     
@@ -58,3 +68,55 @@ if __name__ == "__main__":
                         if len(attribution_templates) == 2:
                             print(f"Less 2 templates in attributor_templates.json at {path}")
                             continue
+    
+    elif VERIFY_MODE == "attribution_exists":
+        
+        from script_15_compute_attributions import (
+            loader, task_generator_for_epitopes)
+
+        # attr_analysis_name = "v2.0-3-epi"
+        attr_analysis_name = "v2.0-2"
+
+        tasks = task_generator_for_epitopes()  # note directory hardcoded in the other script!
+        tasks = list(set([t for t in tasks]))
+
+        for task in tasks:
+
+            loader.load(task)
+            bp = task.basepath
+            fp = bp / f"attributions/{attr_analysis_name}/attribution_records.json"
+            # Load json
+            if not fp.exists():
+                print(f"{task}: attribution_records.json not found at {fp}")
+            else:
+                with open(fp, "r") as f:
+                    attr_json = json.load(f)
+                    print(f"{task}: {len(attr_json)} records")
+    
+    elif VERIFY_MODE == "attribution_exists_simdis":
+
+        from script_15_compute_attributions import (
+            loader, task_generator_for_similar_or_dissimilar)
+
+        attr_analysis_name = "v2.0-2"
+
+        tasks = task_generator_for_similar_or_dissimilar(similar=True)  # note directory hardcoded in the other script!
+        tasks = list(filter(lambda x: x.task_type in [
+            datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+            datasets.ClassificationTaskType.HIGH_VS_95LOW,
+        ], tasks))
+        tasks = list(set([t for t in tasks]))
+
+        for task in tasks:
+
+            loader.load(task)
+            bp = task.basepath
+            fp = bp / f"attributions/{attr_analysis_name}/attribution_records.json"
+            # Load json
+            if not fp.exists():
+                print(f"{task}: attribution_records.json not found at {fp}")
+            else:
+                with open(fp, "r") as f:
+                    attr_json = json.load(f)
+                    print(f"{task}: {len(attr_json)} records")
+    

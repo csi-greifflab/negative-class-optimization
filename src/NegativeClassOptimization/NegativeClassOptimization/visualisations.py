@@ -15,6 +15,7 @@ from NegativeClassOptimization.ml import compute_pr_curve, compute_roc_curve
 map_task_type_to_clean = {
     "1v1": "vs 1",
     "1v1_adapted": "vs 1 (adapted)",
+    "1v1_epitope": "vs 1 (Epitopes)",
     "1v9": "vs 9",
     "1v9_adapted": "vs 9 (adapted)",
     "high_vs_randseq": "vs Randomized",
@@ -63,6 +64,7 @@ class PlotParams:
         "#e6d800",  # Yellow
         "#0bb4ff",  # Blue
         "#e60049",  # Red
+        "#ffa300",  # Orange
     ]
     cmap_tasks_no1v1 = [
         # Selection from Dutch Field

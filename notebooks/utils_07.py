@@ -230,6 +230,29 @@ def compute_for_logits_associations(task, return_df=False):
     return record
 
 
+def get_miniabsolut_for_epitopes(task):
+    df = pd.DataFrame.from_records(task.attributions)
+        
+        # Get MiniAbsolut
+    df_miniabs_pos = pd.read_csv(f"../data/MiniAbsolut/{task.ag_pos}/highepi_test_3000.tsv", sep='\t')
+    assert all(df.query("y_true == 1").slide.isin(df_miniabs_pos["Slide"])), "Not all positive slides in MiniAbsolut."
+    del df_miniabs_pos
+
+        # Get Energies
+    df_energies = load_testrest_from_miniabsolut(task.ag_pos.split("E1")[0])
+    assert all(df.query("y_true == 1").slide.isin(df_energies["Slide"])), "Not all positive slides in Energies."
+
+    df = df.merge(df_energies, left_on="slide", right_on="Slide", how="left")
+
+    # Drop duplicated slides
+    df = df.sort_values("Energy", ascending=True)
+    df = df.drop_duplicates(subset="slide")
+    assert df.query("y_true == 1").shape[0] in [3000, 5000]
+    df["class"] = np.where(df["y_true"] == 1, "positive", "negative")
+
+    return df
+
+
 class AA_Index:
     """Class for representing an amino acid and index couple."""
 
@@ -416,15 +439,25 @@ def load_energy_contributions_from_task_nonlinear_version(
         attribution_records_toload="attribution_records.json",
         task_is_loaded=False,
         load_miniabsolut_for_shuffled=False,
+        attr_analysis_name="v2.0-2",
+        load_miniabsolut_type="standard",
         ):
     # Get energy contributions and attributions
 
     if not task_is_loaded:
-        task = loader.load(task, attributions_toload="v2.0-2", attribution_records_toload=attribution_records_toload)
+        task = loader.load(task, attributions_toload=attr_analysis_name, attribution_records_toload=attribution_records_toload)
+    
     if load_miniabsolut_for_shuffled:
         df = get_miniabsolut_dataframes_for_shuffled(task, load_energy_contributions=True)
     else:
-        df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
+        if load_miniabsolut_type == "standard":
+            df = get_miniabsolut_dataframes(task, load_energy_contributions=True)
+        elif load_miniabsolut_type == "epitope_analysis":
+            df = get_miniabsolut_for_epitopes(task)
+            # Dropna from class == negative
+            df = df.loc[~((df["Energy"].isna()) & (df["class"] == "negative"))].copy()
+        else:
+            raise ValueError(f"load_miniabsolut_type {load_miniabsolut_type} not recognized.")
     
     energy_dict = df.set_index("Slide").to_dict(orient="index")
     for slide in energy_dict.keys():
@@ -463,16 +496,29 @@ def load_energy_contributions_from_task_nonlinear_version(
     # Combine dictionaries
     slide_records = []
     for slide in energy_dict.keys():
-        dataset_class = energy_dict[slide]["class"]
-        energies = energy_dict[slide]["energies"]
-        energies_fold = energy_dict[slide]["energies_fold"]
-        energies_total = energy_dict[slide]["energies_total"]
-        attrs = attr_dict[slide]["attribution_existingaa"]
+        
+        try:
+            
+            dataset_class = energy_dict[slide]["class"]
+            energies = energy_dict[slide]["energies"]
+            energies_fold = energy_dict[slide]["energies_fold"]
+            energies_total = energy_dict[slide]["energies_total"]
+            attrs = attr_dict[slide]["attribution_existingaa"]
 
-        # Correlation between energy and attribution with scipy
-        r, p = pearsonr(energies, attrs)
-        r_fold, p_fold = pearsonr(energies_fold, attrs)
-        r_total, p_total = pearsonr(energies_total, attrs)
+            # Correlation between energy and attribution with scipy
+            r, p = pearsonr(energies, attrs)
+            r_fold, p_fold = pearsonr(energies_fold, attrs)
+            r_total, p_total = pearsonr(energies_total, attrs)
+
+        except:
+            print(f"Error in slide {slide}")
+            r, p, r_fold, p_fold, r_total, p_total = np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            dataset_class = np.nan
+            energies = np.nan
+            energies_fold = np.nan
+            energies_total = np.nan
+            attrs = np.nan
+
         slide_records.append(
             {
                 "slide": slide,
@@ -652,6 +698,50 @@ def load_trainrest_from_miniabsolut(ag, base_path = None):
             df_weak_train,
             df_weak_rest,
             df_nonb_train,
+            df_nonb_rest,
+        ]
+    )
+    
+    return df
+
+
+def load_testrest_from_miniabsolut(ag, base_path = None):
+
+    if base_path is None:
+        base_path = config.DATA_MINIABSOLUT / f"{ag}/energy_contributions"
+
+    df_high_test = pd.read_csv(base_path / "high_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_high_rest = pd.read_csv(base_path / "high_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_weak_test = pd.read_csv(base_path / "looserX_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_weak_rest = pd.read_csv(base_path / "looserX_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_nonb_test = pd.read_csv(base_path / "95low_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_nonb_rest = pd.read_csv(base_path / "95low_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_high_test["binder_type"] = f"{ag}_high"
+    df_high_test["origin"] = "test"
+    df_high_rest["binder_type"] = f"{ag}_high"
+    df_high_rest["origin"] = "rest"
+
+    df_weak_test["binder_type"] = f"{ag}_looserX"
+    df_weak_test["origin"] = "test"
+    df_weak_rest["binder_type"] = f"{ag}_looserX"
+    df_weak_rest["origin"] = "rest"
+
+    df_nonb_test["binder_type"] = f"{ag}_95low"
+    df_nonb_test["origin"] = "test"
+    df_nonb_rest["binder_type"] = f"{ag}_95low"
+    df_nonb_rest["origin"] = "rest"
+
+    # Concatenate all
+    df = pd.concat(
+        [
+            df_high_test,
+            df_high_rest,
+            df_weak_test,
+            df_weak_rest,
+            df_nonb_test,
             df_nonb_rest,
         ]
     )

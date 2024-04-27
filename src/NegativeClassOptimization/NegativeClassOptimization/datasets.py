@@ -494,7 +494,7 @@ class ClassificationTask:
         return str(self)
 
     @staticmethod
-    def init_from_str(task_str: str):
+    def init_from_str(task_str: str) -> "ClassificationTask":
         """
         Returns a Task object from a string.
         """
@@ -542,6 +542,7 @@ class FrozenMiniAbsolutMLLoader:
         task: ClassificationTask,
         load_model=True,
         load_test_dataset=True,
+        load_train_dataset=False,
         attributions_toload=None,
         attribution_records_toload="attribution_records.json",
         load_zscores=False,
@@ -574,6 +575,14 @@ class FrozenMiniAbsolutMLLoader:
                 raise
             test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"
             task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
+        if load_train_dataset:
+            try:
+                hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
+            except:
+                print(basepath, list(basepath.glob("*tsv")))
+                raise
+            train_dataset_path = basepath / f"{hash_val}_train_dataset.tsv"
+            task.train_dataset = pd.read_csv(train_dataset_path, sep="\t")  # type: ignore
         if attributions_toload is not None:
             attr_dir = basepath / "attributions" / attributions_toload
             attr_records = attr_dir / attribution_records_toload
@@ -609,16 +618,19 @@ class FrozenMiniAbsolutMLLoader:
         return task.basepath
 
     @staticmethod
-    def generate_seed_split_ids():
+    def generate_seed_split_ids(standard_split_only=False):
         """
         Generate valid seed_id and split_id combinations,
         used in FrozenMiniAbsolutML dataset.
         """
-        seed_split_ids = []
-        for seed in [0, 1, 2, 3]:
-            split_id_default = 42
-            seed_split_ids.append((seed, split_id_default))
-        for split_id in [0, 1, 2, 3, 4]:
-            seed_id_default = 0
-            seed_split_ids.append((seed_id_default, split_id))
-        return seed_split_ids
+        if standard_split_only:
+            return [(0, 42)]
+        else:
+            seed_split_ids = []
+            for seed in [0, 1, 2, 3]:
+                split_id_default = 42
+                seed_split_ids.append((seed, split_id_default))
+            for split_id in [0, 1, 2, 3, 4]:
+                seed_id_default = 0
+                seed_split_ids.append((seed_id_default, split_id))
+            return seed_split_ids

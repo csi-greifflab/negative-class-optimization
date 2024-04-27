@@ -845,3 +845,131 @@ class NDB1_Assymetry_from_Absolut_Builder:
 
         self.frames = frames
         self.step_02_done = True
+
+
+def get_test_dataset_for_epitope_analysis(task, test_set="NonEpitope"):
+
+    # Because of a previous bug and for more certainty and control
+    # we rebuild the test set, instead of loading it from the Frozen_MiniAbsolut_ML
+    # The test set from there currently is erroneous.
+
+    # We reproduce the data processing part of the ml pipeline 
+    # and correct the error in labeling the antigen in the test set. 
+    # Reproduce initial pipeline
+    ag_pos = task.get_nco_ag_pos()
+
+    if task.task_type in [datasets.ClassificationTaskType.ONE_VS_ONE, datasets.ClassificationTaskType.ONE_VS_NINE]:
+        
+        if task.task_type == datasets.ClassificationTaskType.ONE_VS_ONE:
+            ag_neg = task.get_nco_ag_neg()
+        else:
+            ag_neg = config.ANTIGENS[:]
+            ag_neg.remove(task.get_nco_ag_pos().replace("E1", ""))
+        
+        pipe = BinaryclassPipeline(
+            log_mlflow=False,
+            save_model_mlflow=False,
+            log_artifacts=False,
+            save_local=False,
+            local_dir="",
+        )
+        pipe.step_1_process_data(
+            ag_pos=task.get_nco_ag_pos(),
+            ag_neg=ag_neg,
+            sample_train=None,
+            batch_size=64,
+            shuffle_antigen_labels=False,
+            load_from_miniabsolut=True,
+            load_from_miniabsolut_split_seed=None,
+        )
+
+        # Corect test set by rerunning the preprocessing                    
+        df_test_closed = pipe.df_test_closed.copy()
+        ag_pos_from_task = task.get_nco_ag_pos()
+        ag_pos_from_task_noepitope = ag_pos_from_task.replace("E1", "")
+        df_test_closed["Antigen"].replace({ag_pos_from_task_noepitope: ag_pos_from_task}, inplace=True)
+        (
+            _,
+            _,
+            _,
+            test_loader,
+        ) = preprocessing.preprocess_data_for_pytorch_binary(
+            df_train_val=pipe.df_train_val,
+            df_test_closed=df_test_closed,
+            ag_pos=[ag_pos],
+            batch_size=64,
+            scale_X=False,
+            sample_train=None,
+        )
+        test_dataset = test_loader.dataset.df
+
+    elif task.task_type in [datasets.ClassificationTaskType.HIGH_VS_95LOW, datasets.ClassificationTaskType.HIGH_VS_LOOSER]:
+        # For these tasks, no bug occurred.
+        test_dataset = task.test_dataset.copy()
+
+
+    # Compute according to test set strategy
+    if test_set == "NonEpitope":
+        # Calculate metrics
+        pass  # Leave test_dataset unchanged
+    
+    elif test_set in ["PositiveSet_Epitope", "Positive_and_NegativeSet_Epitope"]:
+        print(test_set)
+        if task.task_type in [datasets.ClassificationTaskType.HIGH_VS_95LOW, datasets.ClassificationTaskType.HIGH_VS_LOOSER]:
+            # For these tasks, ag adjustment needed
+            ag_pos = task.ag_pos  # getting it from task.get_nco_ag_pos() would be wrong (would containg ag_high)
+            ag_neg = task.ag_neg
+
+        # New positive test set
+        df_test_new_pos = pd.read_csv(
+            config.DATA_BASE_PATH / "MiniAbsolut" / ag_pos / "highepi_test_3000.tsv",
+            sep='\t',
+        )
+        df_test_new_pos = df_test_new_pos[["Slide"]]
+        df_test_new_pos["binds_a_pos_ag"] = 1
+        df_test_new_pos["y"] = 1
+        df_test_new_pos = preprocessing.onehot_encode_df(df_test_new_pos)
+        df_test_new_pos["X"] = df_test_new_pos["Slide_onehot"]
+        
+        # New negative test set
+        if test_set == "PositiveSet_Epitope":
+            try:
+                df_test_new_neg = test_dataset[test_dataset["binds_a_pos_ag"] == 0].sample(n=3000, random_state=42)
+            except ValueError:
+                print(f"Negative dataset sampling error in {task}, {test_dataset[test_dataset['binds_a_pos_ag'] == 0].shape[0]} < 3000 samples")
+                return None
+
+        elif test_set == "Positive_and_NegativeSet_Epitope":
+            
+            if task.task_type in [datasets.ClassificationTaskType.ONE_VS_NINE]:
+                print(f"Skipping {task} because not applicable.")
+                return None  # Not applicable
+            
+            if task.task_type in [datasets.ClassificationTaskType.HIGH_VS_95LOW]:
+                ag_neg = ag_pos  # Same antigen
+                test_neg_filename = "95lowepi_test_3000.tsv"
+            elif task.task_type in [datasets.ClassificationTaskType.HIGH_VS_LOOSER]:
+                ag_neg = ag_pos  # Same antigen
+                test_neg_filename = "looserXepi_test_3000.tsv"
+            elif task.task_type in [datasets.ClassificationTaskType.ONE_VS_ONE]:
+                ag_neg = task.ag_neg
+                test_neg_filename = "highepi_test_3000.tsv"
+            
+            df_test_new_neg = pd.read_csv(
+                config.DATA_BASE_PATH / "MiniAbsolut" / ag_neg / test_neg_filename,
+                sep='\t',
+            )
+            df_test_new_neg = df_test_new_neg[["Slide"]]
+            df_test_new_neg["binds_a_pos_ag"] = 0
+            df_test_new_neg["y"] = 0
+            df_test_new_neg = preprocessing.onehot_encode_df(df_test_new_neg)
+            df_test_new_neg["X"] = df_test_new_neg["Slide_onehot"]
+
+        # Aggregate
+        df_test_new = pd.concat([df_test_new_pos, df_test_new_neg], ignore_index=True)
+        test_dataset = df_test_new
+
+    else:
+        raise ValueError(f"Invalid TESTSET: {test_set}.")
+
+    return test_dataset

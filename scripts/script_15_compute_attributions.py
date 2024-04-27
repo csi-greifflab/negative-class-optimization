@@ -16,6 +16,8 @@ from typing import List
 
 import torch
 import torch.optim as optim
+from script_14b_epi_frozen_transfer_performance import \
+    get_test_dataset as get_test_dataset_epi
 
 from NegativeClassOptimization import config, datasets, ml
 from NegativeClassOptimization.ml import load_model_from_state_dict
@@ -23,21 +25,22 @@ from NegativeClassOptimization.ml import load_model_from_state_dict
 TEST = False
 TEST_TASKLIST = False
 
-DIR_EXISTS_HANDLE = "skip"  # "raise" or "skip" or "overwrite" or "ignore"
+DIR_EXISTS_HANDLE = "overwrite"  # "raise" or "skip" or "overwrite" or "ignore"
 
 # One of the below make true, or all false
 EXPERIMENTAL_DATA_ONLY = False
 EPITOPES_ONLY = True
+EPITOPES_TEST_SET = "PositiveSet_Epitope"  # see script_14b for meaning
 SIMILAR_ANTIGENS_ONLY = False
 DISSIMILAR_ANTIGENS_ONLY = False
 
-analysis_name = "v2.0-2"
+analysis_name = "v2.0-3-epipos"  # v2.0-2 most of the time, for the epitopes v2.0-3-epi
 data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
 task_types = [
-    # datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    # datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    datasets.ClassificationTaskType.HIGH_VS_95LOW,
+    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
     datasets.ClassificationTaskType.ONE_VS_ONE,
-    # datasets.ClassificationTaskType.ONE_VS_NINE,
+    datasets.ClassificationTaskType.ONE_VS_NINE,
 ]
 task_split_seed_filter = ((42,), (0,))  # split, seed. Set to None for all.
 
@@ -135,7 +138,7 @@ def task_generator_for_experimental_randomized():
                 yield task
 
 
-def task_generator_for_epitopes(task_types=task_types, loader=loader):
+def task_generator_for_epitopes(task_types=task_types):
     """
     Generate tasks for which to compute attributions.
     """
@@ -234,7 +237,12 @@ def compute_attributions(task, save=True):
         task.model = model
 
     model = task.model  # type: ignore
-    test_dataset = task.test_dataset  # type: ignore
+    
+    if EPITOPES_ONLY:
+        test_dataset = get_test_dataset_epi(task, test_set=EPITOPES_TEST_SET)
+    else:
+        test_dataset = task.test_dataset  # type: ignore
+    
     logger.info(f"Loaded task.")
 
     # import pdb

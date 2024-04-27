@@ -1,6 +1,7 @@
 # From Notebook 25, for Manuscript Section 1C.
 
 import math
+import multiprocessing
 from itertools import product
 from pathlib import Path
 
@@ -20,17 +21,35 @@ SKIP_COMPUTED_TASKS = True
 COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
 COMPUTE_OPENSET_FROM_CLOSEDSET = True  # True > openset from closedset
 
+# Most cases None. 
+# If "pos_epitope", use only epitope specific sequences in positive set.
+# If "pos_and_epitope", use epitope specific sequences in positive and negative set.
+USE_ALTERNATIVE_TESTSET = None  
+
+num_processes = 10
+
 fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
+# fp_loader = Path("data/Frozen_MiniAbsolut_Linear_ML/")
+
 # fp_results_closed = Path("data/closed_performance.tsv")
 # fp_results_open = Path("data/openset_performance.tsv")
+
+fp_results_closed = Path("data/closed_performance_logistic.tsv")
+fp_results_open = Path("data/openset_performance_logistic.tsv")
+
 # fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
 # fp_results_open = Path("data/openset_performance_experimental_data.tsv")
+
 # fp_results_closed = Path("data/closed_performance_epitopes.tsv")  # epitopes
 # fp_results_open = Path("data/openset_performance_epitopes.tsv")  # epitopes
-# fp_results_closed = Path("data/closed_performance_similar.tsv")  # similar antigens
+# fp_results_closed = Path("data/closed_performance_epitopes_with_sizes.tsv")  # for debugging
+# fp_results_closed = Path("data/closed_performance_epitopes_pos.tsv")  # epitopes
+# fp_results_open = Path("data/openset_performance_epitopes_pos.tsv")  # epitopes
+
+# fp_results_closed = Path("data/closed_performance_similar_wcounts.tsv")  # similar antigens
 # fp_results_open = Path("data/openset_performance_similar.tsv")  # dissimilar antigens
-fp_results_closed = Path("data/closed_performance_dissimilar.tsv")  # similar antigens
-fp_results_open = Path("data/openset_performance_dissimilar.tsv")  # dissimilar antigens
+# fp_results_closed = Path("data/closed_performance_dissimilar.tsv")  # similar antigens
+# fp_results_open = Path("data/openset_performance_dissimilar.tsv")  # dissimilar antigens
 
 
 ## For shuffled
@@ -40,9 +59,9 @@ fp_results_open = Path("data/openset_performance_dissimilar.tsv")  # dissimilar 
 # fp_results_closed = Path("data/Frozen_MiniAbsolut_ML_shuffled/closed_performance_experimental_data.tsv")
 # fp_results_open = Path("data/Frozen_MiniAbsolut_ML_shuffled/openset_performance_experimental_data.tsv")
 
-# antigens = config.ANTIGENS
+antigens = config.ANTIGENS
 # antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
-# antigens_2 = antigens  # in most cases, exception for epitope-based analysis
+antigens_2 = antigens[:]  # in most cases, exception for epitope-based analysis
 ## Epitope-based
 # antigens = ["1WEJE1", "1OB1E1", "1H0DE1"]
 # antigens_2 = config.ANTIGENS + config.ANTIGEN_EPITOPES
@@ -50,8 +69,8 @@ fp_results_open = Path("data/openset_performance_dissimilar.tsv")  # dissimilar 
 # antigens = [ag + "SIM" for ag in config.ANTIGENS]
 # antigens_2 = [ag + "SIM" for ag in config.ANTIGENS]
 ## Dissimilar antigens
-antigens = [ag + "DIF" for ag in config.ANTIGENS]
-antigens_2 = [ag + "DIF" for ag in config.ANTIGENS]
+# antigens = [ag + "DIF" for ag in config.ANTIGENS]
+# antigens_2 = [ag + "DIF" for ag in config.ANTIGENS]
 
 def evaluate_model(
     model: torch.nn.Module,
@@ -88,12 +107,6 @@ def evaluate_model(
 seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
 
 ## Generate valid task pairings
-task_types_for_openset = [
-    # datasets.ClassificationTaskType.ONE_VS_NINE,
-    datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
-]
-task_type_combinations = list(product(task_types_for_openset, task_types_for_openset))
 
 task_types_for_closedset = [
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
@@ -101,6 +114,14 @@ task_types_for_closedset = [
     datasets.ClassificationTaskType.ONE_VS_NINE,
     datasets.ClassificationTaskType.ONE_VS_ONE,
 ]
+
+task_types_for_openset = [
+    datasets.ClassificationTaskType.ONE_VS_ONE,
+    datasets.ClassificationTaskType.ONE_VS_NINE,
+    datasets.ClassificationTaskType.HIGH_VS_95LOW,
+    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+]
+task_type_combinations = list(product(task_types_for_openset, task_types_for_openset))
 
 ## Load data
 loader = datasets.FrozenMiniAbsolutMLLoader(
@@ -115,7 +136,7 @@ except FileNotFoundError:
 records = []
 if COMPUTE_CLOSEDSET_PERFORMANCE:
     for ag1 in antigens:
-        for ag2 in antigens + antigens_2:
+        for ag2 in antigens_2:
             for seed_id, split_id in seed_split_ids:
                 for task_type in task_types_for_closedset:
                     if (
@@ -152,12 +173,12 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
 
                     if SKIP_LOADING_ERRORS:
                         try:
-                            loader.load(task)
+                            loader.load(task, load_train_dataset=False)
                         except ValueError:
                             print(f"Skipping {task} because it does not exist.")
                             continue
                     else:
-                        loader.load(task)
+                        loader.load(task, load_train_dataset=False)
 
                     # For experimental data, the state dict is loaded,
                     # not the model. We adjust it here.
@@ -169,11 +190,13 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                         model: nn.Module = task.model  # type: ignore
 
                     test_dataset: pd.DataFrame = task.test_dataset  # type: ignore
-
                     metrics = evaluate_model(model, test_dataset)
+
                     records.append(
                         {
                             "task": str(task),
+                            "N_pos": (test_dataset["y"] == 1).sum(),
+                            "N_neg": (test_dataset["y"] == 0).sum(),
                             **metrics,
                         }
                     )
@@ -196,6 +219,7 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
 
     task_str_combinations = list(product(df_closed["task"], df_closed["task"]))
 
+    pairs = []
     for task_str_1, task_str_2 in task_str_combinations:
     
         task_1 = datasets.ClassificationTask.init_from_str(task_str_1)
@@ -210,18 +234,34 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
             print(f"Skipping {task_1} -> {task_2} because it was already computed.")
             continue
 
+        if task_1.task_type not in task_types_for_openset or task_2.task_type not in task_types_for_openset:
+            print(f"Skipping {task_1} -> {task_2} because not an openset task.")
+            continue
+
+        if task_1.ag_pos != task_2.ag_pos:
+            print(f"Skipping {task_1} -> {task_2} because antigens do not match.")
+            continue
+
+        print(f"Computing openset performance for {task_1} and {task_2}.")
+
+        pair = (task_1, task_2)
+        pairs.append(pair)
+
+    def compute_openset_on_task_pair(task_pair):
+
+        task_1 = task_pair[0]
+        task_2 = task_pair[1]
+
         if SKIP_LOADING_ERRORS:
             try:
                 loader.load(task_1)
                 loader.load(task_2)
             except ValueError:
                 print(f"Skipping {task_1} because it does not exist.")
-                continue
+                return {}
         else:
             loader.load(task_1)
             loader.load(task_2)
-
-        print(f"Computing openset performance for {task_1} and {task_2}.")
 
         # For experimental data, the state dict is loaded,
         # not the model. We adjust it here.
@@ -238,19 +278,30 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
             try:
                 metrics = evaluate_model(model, test_dataset)
             except RuntimeError:
-                print(f"Skipping {task_1} because it does not exist.")
-                continue
+                print(f"Error in {task_1} -> {task_2}.")
+                return None
 
-        records.append(
-            {
-                "task_1": str(task_1),
-                "task_2": str(task_2),
-                **metrics,
-            }
-        )
+        record = {
+            "task_1": str(task_1),
+            "task_2": str(task_2),
+            **metrics,
+        }
+        return record
 
-    df_open = pd.DataFrame(records)
-    df_open.to_csv(fp_results_open, sep="\t", index=False)
+
+    records = []
+    for i in range(0, len(pairs), num_processes):
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            for record in pool.starmap(
+                compute_openset_on_task_pair,
+                [(task_pair,) for task_pair in pairs[i : i + num_processes]],
+            ):
+                if record is not None:
+                    records.append(record)
+    
+        df_open = pd.DataFrame(records)
+        df_open.to_csv(fp_results_open, sep="\t", index=False)
+
 else:
     for ag in antigens:
         for seed_id, split_id in seed_split_ids:
