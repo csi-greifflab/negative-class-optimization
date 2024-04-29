@@ -28,8 +28,8 @@ USE_ALTERNATIVE_TESTSET = None
 
 num_processes = 10
 
-fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
-# fp_loader = Path("data/Frozen_MiniAbsolut_Linear_ML/")
+# fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
+fp_loader = Path("data/Frozen_MiniAbsolut_Linear_ML/")
 
 # fp_results_closed = Path("data/closed_performance.tsv")
 # fp_results_open = Path("data/openset_performance.tsv")
