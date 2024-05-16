@@ -3,26 +3,29 @@ Script to compute decision boundaries.
 """
 
 
-import os
-from pathlib import Path
 import json
 import logging
+import math
 import multiprocessing
+import os
 import shutil
 import time
 from itertools import permutations
 from pathlib import Path
 from typing import List
-import numpy as np
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import torch
 import torch.optim as optim
-
+import tqdm
 from sklearn.utils.extmath import cartesian
 
-from NegativeClassOptimization import config, datasets, preprocessing, ml, decision_boundaries
-import tqdm
-
+from NegativeClassOptimization import (config, datasets, decision_boundaries,
+                                       ml, preprocessing, visualisations)
+from NegativeClassOptimization.decision_boundaries import (
+    compute_decision_boundary_coords, rotate)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,7 +36,7 @@ logging.basicConfig(
     ],
 )
 
-
+SKIP_v1_PLOTS = True
 TEST = False
 DIR_EXISTS_HANDLE = "ignore"  # "raise" or "skip" or "overwrite" or "ignore"
 
@@ -93,6 +96,44 @@ def get_model_from_task(task):
         return task.model
 
 
+def get_df_perf():
+    """
+    Load the performance dataframe.
+    """
+    df_id = pd.read_csv("data/closed_performance.tsv", sep='\t')
+    df_id["task_type"] = df_id["task"].apply(lambda x: datasets.ClassificationTask.init_from_str(x).task_type.to_str())
+    df_id["ag_pos"] = df_id["task"].apply(lambda x: datasets.ClassificationTask.init_from_str(x).ag_pos)
+    df_id["ag_neg"] = df_id["task"].apply(lambda x: datasets.ClassificationTask.init_from_str(x).ag_neg)
+    df_id["seed_id"] = df_id["task"].apply(lambda x: datasets.ClassificationTask.init_from_str(x).seed_id)
+    df_id["split_id"] = df_id["task"].apply(lambda x: datasets.ClassificationTask.init_from_str(x).split_id)
+
+    df_rd_logits = pd.read_csv(
+        "data/Frozen_MiniAbsolut_ML/07e_LogitEnergyCorrelations_final.tsv",
+    )
+    df_rd_logits["corr_logits"] = df_rd_logits["r_pos"]
+
+    df_rd_attr = pd.read_csv(
+        "data/Frozen_MiniAbsolut_ML/07e_EnergyContributions.tsv",
+        sep='\t',
+    )
+    df_rd_attr["corr_attr"] = df_rd_attr["mean_pos_total"]
+
+    # Merge
+    on_cols = ["task_type", "ag_pos", "ag_neg", "seed_id", "split_id"]
+    df_perf = pd.merge(
+        df_id[on_cols + ["acc", "task"]],
+        df_rd_logits[on_cols + ["corr_logits"]], 
+        on=on_cols,
+        how="right",
+    )
+    df_perf = pd.merge(
+        df_perf,
+        df_rd_attr[on_cols + ["corr_attr"]],
+        on=on_cols,
+        how="right",
+    )
+    return df_perf
+
 
 def compute_decisionboundaries(task):
 
@@ -151,7 +192,7 @@ def compute_decisionboundaries(task):
     out_name = f"{clf_name}_{grid_size}x{grid_size}_{dataset_name}"
     out_file = os.path.join(output_dir, out_name + "_ssnp.npy")
 
-    if os.path.exists(out_file):
+    if os.path.exists(out_file) and not SKIP_v1_PLOTS:
         
         # If grid already saved
         
@@ -260,6 +301,55 @@ def compute_decisionboundaries(task):
             suffix=suffix,
             output_dir=output_dir,
         )
+    
+    
+    # Do the nicer plots, developed in 07i_Decision_boundaries_2
+    try:
+        decision_boundary_coords = compute_decision_boundary_coords(clf, ssnpgt, X_ssnpgt, grid_size)
+        
+        fig, ax = plt.subplots()
+
+        X_ssnpgt_neg = X_ssnpgt[np.where(y == 0.)]
+        X_ssnpgt_pos = X_ssnpgt[np.where(y == 1.)]
+
+        ax.plot(X_ssnpgt_neg[:, 0], X_ssnpgt_neg[:, 1], '.', color="red", alpha=0.1)
+        ax.plot(X_ssnpgt_pos[:, 0], X_ssnpgt_pos[:, 1], '.', color="green", alpha=0.1)
+        ax.plot(decision_boundary_coords[:, 0], decision_boundary_coords[:, 1], '.', color="black", alpha=0.9)
+
+
+        # X_ssnpgt_rot = np.concatenate([X_ssnpgt_rot_neg, X_ssnpgt_rot_pos])
+        ax.set_xlim(X_ssnpgt[:, 0].min(), X_ssnpgt[:, 0].max())
+        ax.set_ylim(X_ssnpgt[:, 1].min(), X_ssnpgt[:, 1].max())
+
+        # Extra
+        df_perf = get_df_perf()
+        acc = df_perf.query("task == @task")["acc"]
+        rd_seq = df_perf.query("task == @task")["corr_logits"]
+        rd_res = df_perf.query("task == @task")["corr_attr"]
+        task_type_clean = visualisations.map_task_type_to_clean[task.task_type.to_str()]
+        ag_pos = task.ag_pos
+        ag_neg = task.ag_neg
+        if ag_neg == "auto":
+            ag_neg = task_type_clean
+        elif ag_neg == "9":
+            ag_neg = task_type_clean
+        else:
+            ag_neg = f"vs {ag_neg}"
+
+        ax.set_title(
+            f"Decision boundary for {ag_pos} {ag_neg} \nacc={acc.values[0]:.2f}  "
+            + r"$RD_{seq}$=" + f"{rd_seq.values[0]:.2f}"
+            + r"  $RD_{res}$=" + f"{rd_res.values[0]:.2f}"
+        )
+        ax.set_xlabel("SSNP 1")
+        ax.set_ylabel("SSNP 2")
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        fig.savefig(os.path.join(output_dir, f"{out_name}_nice.png"))
+        logger.info(f"Saved {os.path.join(output_dir, f'{out_name}_nice.png')}")
+    except Exception as error:
+        logger.error(f"Error in plotting: {error}")
 
 
 

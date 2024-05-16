@@ -13,21 +13,21 @@ Resources:
 
 
 import os
+
+import matplotlib.cm as cm
 import numpy as np
-from sklearn.preprocessing import LabelBinarizer
 import tensorflow as tf
+import torch
+from PIL import Image
+from skimage.color import hsv2rgb, rgb2hsv
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils.extmath import cartesian
 from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.initializers import Constant
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
-
-from PIL import Image
-import matplotlib.cm as cm
-from skimage.color import rgb2hsv, hsv2rgb
-
-
 
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
@@ -252,6 +252,7 @@ def results_to_png(
     data_hsv[:, :, 2] = prob_matrix
     data_hsv = hsv2rgb(data_hsv)
 
+    imgs = []
     rescaled_vanilla = (data_vanilla * 255.0).astype(np.uint8)
     im = Image.fromarray(rescaled_vanilla)
     print(
@@ -263,6 +264,7 @@ def results_to_png(
             f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_vanilla{suffix}.png",
         )
     )
+    imgs.append(im)
 
     rescaled_alpha = (255.0 * data_alpha).astype(np.uint8)
     im = Image.fromarray(rescaled_alpha)
@@ -273,6 +275,7 @@ def results_to_png(
             f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_alpha{suffix}.png",
         )
     )
+    imgs.append(im)
 
     rescaled_hsv = (255.0 * data_hsv).astype(np.uint8)
     im = Image.fromarray(rescaled_hsv)
@@ -283,3 +286,71 @@ def results_to_png(
             f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_hsv{suffix}.png",
         )
     )
+    imgs.append(im)
+    
+    return imgs
+
+
+def compute_decision_boundary_coords(clf, ssnpgt, X_ssnpgt, grid_size):
+    """Compute the decision boundary coordinates."""
+
+    # Do the nicer plots, developed in 07i_Decision_boundaries_2
+    xmin_ssnp = np.min(X_ssnpgt[:, 0])
+    xmax_ssnp = np.max(X_ssnpgt[:, 0])
+    ymin_ssnp = np.min(X_ssnpgt[:, 1])
+    ymax_ssnp = np.max(X_ssnpgt[:, 1])
+
+    x_intrvls_ssnp = np.linspace(xmin_ssnp, xmax_ssnp, num=grid_size)
+    y_intrvls_ssnp = np.linspace(ymin_ssnp, ymax_ssnp, num=grid_size)
+    pts_ssnp = cartesian((x_intrvls_ssnp, y_intrvls_ssnp))
+
+    x_grid = np.linspace(0, grid_size - 1, num=grid_size)
+    y_grid = np.linspace(0, grid_size - 1, num=grid_size)
+    pts_grid = cartesian((x_grid, y_grid))
+    pts_grid = pts_grid.astype(int)
+
+    pred_pts = clf.predict(torch.tensor(
+        ssnpgt.inverse_transform(pts_ssnp)
+    )).detach().numpy()
+
+    # Pred matrix
+    pred_matrix = np.zeros((grid_size, grid_size))
+    for i, (x, y) in enumerate(pts_grid):
+        pred_matrix[x, y] = pred_pts[i]
+
+    # Boundary matrix
+    boundary_matrix = np.zeros((grid_size, grid_size))
+    i_last = -1
+    for i in range(grid_size):
+        j_last = -1
+        for j in range(grid_size):
+            curr_val = round(pred_matrix[i, j])
+            if j_last == -1:
+                j_last = j
+                continue
+            if curr_val != round(pred_matrix[i, j_last]):
+                boundary_matrix[i, j] = 1
+            j_last = j
+            
+
+    # Boundary coordinates in real coordinates (not grid)
+    decision_boundary_pts = np.where(boundary_matrix == 1)
+    decision_boundary_coords = []
+    for i in range(decision_boundary_pts[0].shape[0]):
+        x = decision_boundary_pts[0][i]
+        y = decision_boundary_pts[1][i]
+        x_real = x_intrvls_ssnp[x]
+        y_real = y_intrvls_ssnp[y]  
+        decision_boundary_coords.append([x_real, y_real])
+
+    decision_boundary_coords = np.array((sorted(decision_boundary_coords, key=lambda x: x[0])))
+    return decision_boundary_coords
+
+
+def rotate(p, origin=(0, 0), degrees=0):
+    angle = np.deg2rad(degrees)
+    R = np.array([[np.cos(angle), -np.sin(angle)],
+                  [np.sin(angle),  np.cos(angle)]])
+    o = np.atleast_2d(origin)
+    p = np.atleast_2d(p)
+    return np.squeeze((R @ (p.T-o.T) + o.T).T)
