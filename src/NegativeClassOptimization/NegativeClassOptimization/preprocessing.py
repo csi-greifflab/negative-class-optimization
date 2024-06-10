@@ -10,12 +10,8 @@ from typing import List, Optional, Tuple, Union
 import farmhash
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import (
-    LabelEncoder,
-    MultiLabelBinarizer,
-    OneHotEncoder,
-    StandardScaler,
-)
+from sklearn.preprocessing import (LabelEncoder, MultiLabelBinarizer,
+                                   OneHotEncoder, StandardScaler)
 from torch.utils.data import DataLoader, Dataset
 
 import NegativeClassOptimization.config as config
@@ -689,3 +685,32 @@ def convert_wide_to_global(df_wide):
     df = df.drop(columns=["Binding"])
     df["Slide_farmhash_mod_10"] = df["Slide"].apply(farmhash_mod_10)
     return df
+
+
+def compute_frequencies_and_relative(slides):
+    ohs = []
+    for slide in slides:
+        ohs.append(onehot_encode(slide))
+
+    ohs = np.array(ohs)
+    ohs_freq = np.sum(ohs, axis=0) / len(ohs)
+    ohs_freq_m = ohs_freq.reshape(11, 20)
+    ohs_freq_m_sd = np.std(ohs_freq_m, axis=1)
+    ohs_freq_rel_m = ohs_freq_m / np.array([ohs_freq_m_sd for _ in range(20)]).T
+    ohs_freq_rel = ohs_freq_rel_m.reshape(220)
+    return ohs_freq,ohs_freq_rel
+
+
+def extract_frequences_as_features(slides, ohs_freq, ohs_freq_rel):
+    ## Compute freq per slide
+    freqs = []
+    for slide in slides:
+        freqs.append(ohs_freq[onehot_encode(slide) == 1])
+
+    ## Compute relative freq per slide
+    rel_freqs = []
+    for slide in slides:
+        freq_rel = ohs_freq_rel[onehot_encode(slide) == 1]
+        rel_freqs.append(freq_rel)
+    
+    return freqs, rel_freqs
