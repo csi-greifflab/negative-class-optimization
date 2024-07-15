@@ -170,14 +170,15 @@ class BinaryclassPipeline(DataPipeline):
                     # / f"{uid}_test_dataset.tsv"
                 )
 
-            if self.save_local:
-                assert self.local_dir is not None
-                train_data.df.to_csv(
-                    self.local_dir / f"{uid}_train_dataset.tsv", sep="\t", index=False
-                )
-                test_data.df.to_csv(
-                    self.local_dir / f"{uid}_test_dataset.tsv", sep="\t", index=False
-                )
+        if self.save_local:
+            uid = utils.get_uid()
+            assert self.local_dir is not None
+            train_data.df.to_csv(
+                self.local_dir / f"train_dataset.tsv", sep="\t", index=False
+            )
+            test_data.df.to_csv(
+                self.local_dir / f"test_dataset.tsv", sep="\t", index=False
+            )
 
         self.ag_pos = ag_pos
         self.ag_neg = ag_neg
@@ -194,6 +195,36 @@ class BinaryclassPipeline(DataPipeline):
         self.is_step_1_complete = True
 
     def _miniabsolut_reader(self, ag, name, split_seed=None):
+        
+
+        # The extra code is required to adapt to cases
+        # in which MiniAbsolut was done with other train and test sizes.
+        # A hack.
+        # Infer N_train from filenames
+        try:
+            print(f"Inferring train and test sizes: {ag}, {name}")
+            example_train = list(Path(config.DATA_MINIABSOLUT / ag).glob("*train*[0-9]?*"))[0]
+            N_train = int(example_train.name.split("_")[-1].split(".")[0])
+
+            # Infer N_test from filenames
+            example_test = list(Path(config.DATA_MINIABSOLUT / ag).glob("*test*[0-9]?*"))[0]
+            N_test = int(example_test.name.split("_")[-1].split(".")[0])
+        except Exception as e:
+            print(f"Error for: {ag}, {name}")
+            raise e
+
+        if "train" in name:
+            N = N_train
+            to_replace = "15000"
+        elif "test" in name:
+            N = N_test
+            to_replace = "5000"
+        else:
+            N = None
+
+        if N is not None:
+            name = name.replace(to_replace, str(N))
+        
         if split_seed is None:
             path = config.DATA_MINIABSOLUT / ag / name
         else:
@@ -201,7 +232,7 @@ class BinaryclassPipeline(DataPipeline):
                 config.DATA_MINIABSOLUT_SPLITS
                 / f"MiniAbsolut_Seed{split_seed}"
                 / ag
-                / name
+                / name 
             )
 
         return pd.read_csv(path, sep="\t", dtype={"Antigen": str})

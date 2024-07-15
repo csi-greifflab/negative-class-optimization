@@ -26,7 +26,7 @@ dependencies:
       - docopt
       - upsetplot
       - dask
-      - git+https://github.com/uio-bmi/immuneML.git
+      # - git+https://github.com/uio-bmi/immuneML.git
       - scikit-learn
       - scikit-image
       - joypy
@@ -50,7 +50,7 @@ dependencies:
       - Bio
       # - cmake
       - tensorflow
-      - multicoretsne
+      # - multicoretsne
       - tqdm
       - img2pdf
       - black

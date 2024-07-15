@@ -539,6 +539,7 @@ def process_epoch_metrics(epoch_metrics: dict) -> dict:
 def download_absolut(
     out_dir: Path = config.DATA_ABSOLUT_DIR,
     doi_csv: Path = config.DATA_ABSOLUT_DOI,
+    antigens_only = False,
 ) -> None:
     """Download Absolut raw data (https://ns9999k.webs.sigma2.no/10.11582_2021.00063).
     Args:
@@ -549,6 +550,15 @@ def download_absolut(
 
     df = pd.read_csv(doi_csv, header=None)
     url_paths: List[str] = df.iloc[:, 1].to_list()
+
+    url_paths_new = []
+    if antigens_only:
+        for path in url_paths:
+            for ag in config.ANTIGENS:
+                if ag in str(path):
+                    url_paths_new.append(path)
+    url_paths = url_paths_new[:]
+    del url_paths_new    
 
     URL = "https://ns9999k.webs.sigma2.no/10.11582_2021.00063"
     for url_path in url_paths:

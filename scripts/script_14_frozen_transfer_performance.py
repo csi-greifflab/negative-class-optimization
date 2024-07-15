@@ -12,30 +12,50 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from docopt import docopt
 
 from NegativeClassOptimization import (config, datasets, ml, preprocessing,
                                        utils)
 
+docopt_doc = """Compute metrics and save in convenient form.
+
+Usage:
+    script_14_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
+
+Options:
+    -h --help   Show help.
+"""
+
+
+arguments = docopt(docopt_doc, version="NCO")
+
+
 SKIP_LOADING_ERRORS = True
 SKIP_COMPUTED_TASKS = True
-COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
-COMPUTE_OPENSET_FROM_CLOSEDSET = True  # True > openset from closedset
+num_processes = 10
+
+
+COMPUTE_CLOSEDSET_PERFORMANCE = bool(arguments["<closed>"])  # True > closedset, False > openset
+COMPUTE_OPENSET_FROM_CLOSEDSET = bool(arguments["<open>"])  # True > openset from closedset
 
 # Most cases None. 
 # If "pos_epitope", use only epitope specific sequences in positive set.
 # If "pos_and_epitope", use epitope specific sequences in positive and negative set.
-USE_ALTERNATIVE_TESTSET = None  
+USE_ALTERNATIVE_TESTSET = None 
 
-num_processes = 10
-
+fp_loader = Path(arguments["<input_dir>"])
 # fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
-fp_loader = Path("data/Frozen_MiniAbsolut_Linear_ML/")
+# fp_loader = Path("data/Frozen_MiniAbsolut_Linear_ML/")
+
+
+fp_results_closed = Path(arguments["<closed_out>"])
+fp_results_open = Path(arguments["<open_out>"])
 
 # fp_results_closed = Path("data/closed_performance.tsv")
 # fp_results_open = Path("data/openset_performance.tsv")
 
-fp_results_closed = Path("data/closed_performance_logistic.tsv")
-fp_results_open = Path("data/openset_performance_logistic.tsv")
+# fp_results_closed = Path("data/closed_performance_logistic.tsv")
+# fp_results_open = Path("data/openset_performance_logistic.tsv")
 
 # fp_results_closed = Path("data/closed_performance_experimental_data.tsv")
 # fp_results_open = Path("data/openset_performance_experimental_data.tsv")
@@ -87,19 +107,6 @@ def evaluate_model(
         y_true = test_dataset["binds_a_pos_ag"].values
         metrics = ml.compute_binary_metrics(y_pred, y_true)
     return metrics
-
-
-## We don't use this anymore.
-# run_name = "dev-v0.1.2-3-with-replicates"
-# run_name = "dev-v0.1.3-expdata"
-## We don't use this anymore.
-# experiment_ids = ["11", "13", "14"]
-# experiment_ids = ["14"]
-# df = utils.MLFlowTaskAPI.mlflow_results_as_dataframe(  # type: ignore
-#     exp_list=experiment_ids,
-#     run_name=run_name,
-#     classify_tasks=True,
-# )
 
 
 ## Generate valid seed_id and split_id combinations
