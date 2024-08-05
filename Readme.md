@@ -4,6 +4,12 @@
 
 [Preprint](https://www.biorxiv.org/content/10.1101/2024.06.17.599333v2.abstract)
 
+# TODO
+- ADD DEMO TEST (with RUN TIME)
+- RUN TIME General
+- Systems on which was tested (LINUX)
+- ADD GNU AFFERO V3 LICENSE
+
 ## Setup
 
 ### A. Environment
@@ -95,11 +101,10 @@ python scripts/script_15_compute_attributions.py "TEST" "data/Frozen_MiniAbsolut
 
 ## Analyse
 
-Once we have almost everything precomputed, we perform the analyses using notebooks.
+Once we have the precomputations (either downloaded or precomputed from scratch using the steps from above), we perform the analyses using notebooks.
 
 Section 1: Training dataset sequence composition influences prediction performance in ID and OOD binary classification tasks
-- ID and OOD on synthetic data: ""
-- Sequence similarity: ""
+- ID and OOD on synthetic data and sequence similarity: `notebooks/25_Section_1.ipynb`.
 - ID and OOD on experimental data: TODO
 
 Section 2: Training dataset composition determines the accuracy of biological rule recovery
@@ -108,14 +113,14 @@ Section 2: Training dataset composition determines the accuracy of biological ru
 
 Supplementary Materials
 - Negative control: shuffled positive and negative in training sets labels
-  -  
+  -  .
 - Logistic models
   - Correlations between ground truth energy per sequence and per amino acid and logits / attributions: 
   - Negative control (correlations with logits after shuffling the weights): 
 
 Supplementary Text 1: Evaluation of the impact of sequence and label similarity between train and test on prediction accuracy 
-- 
+- .
 
 Supplementary Text 2: Antigen versus epitope-based analysis: ID, OOD, rule discovery
-- 
+- .
 
