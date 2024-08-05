@@ -39,9 +39,9 @@ if __name__ == "__main__":
         energy_contributions_dir.mkdir(exist_ok=True)
         logging.info(f"Created {energy_contributions_dir}")
         for test_slide_fp in itertools.chain(
-            ag_path.glob("*train_15000.tsv"),
-            ag_path.glob("*test_5000.tsv"),
-            ag_path.glob("*rest.tsv"),
+            ag_path.glob("*train*tsv"),
+            ag_path.glob("*test*tsv"),
+            # ag_path.glob("*rest.tsv"),
         ):
             # Copy test file to a local folder
             test_slide_fp_for_energy_contributions = (

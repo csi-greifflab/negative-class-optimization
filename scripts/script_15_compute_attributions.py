@@ -16,11 +16,26 @@ from typing import List
 
 import torch
 import torch.optim as optim
-from script_14b_epi_frozen_transfer_performance import \
-    get_test_dataset as get_test_dataset_epi
+from docopt import docopt
 
-from NegativeClassOptimization import config, datasets, ml
+from NegativeClassOptimization import config, datasets, ml, pipelines
 from NegativeClassOptimization.ml import load_model_from_state_dict
+
+# from script_14b_epi_frozen_transfer_performance import \
+    # get_test_dataset as get_test_dataset_epi  # now done through pipelines
+
+
+docopt_doc = """Compute attributions.
+
+Usage:
+    script_15_compute_attributions.py <analysis_name> <input_dir>
+    script_15_compute_attributions.py <analysis_name> <input_dir> --epitopes_only <epitopes_test_set>
+
+Options:
+    -h --help   Show help.
+"""
+
+arguments = docopt(docopt_doc, version="NCO")
 
 TEST = False
 TEST_TASKLIST = False
@@ -29,19 +44,26 @@ DIR_EXISTS_HANDLE = "overwrite"  # "raise" or "skip" or "overwrite" or "ignore"
 
 # One of the below make true, or all false
 EXPERIMENTAL_DATA_ONLY = False
-EPITOPES_ONLY = True
-EPITOPES_TEST_SET = "PositiveSet_Epitope"  # see script_14b for meaning
+EPITOPES_ONLY = False
+# EPITOPES_ONLY = True
+# EPITOPES_TEST_SET = "PositiveSet_Epitope"  # see script_14b for meaning
+EPITOPES_TEST_SET = arguments["<epitopes_test_set>"]
 SIMILAR_ANTIGENS_ONLY = False
 DISSIMILAR_ANTIGENS_ONLY = False
 
-analysis_name = "v2.0-3-epipos"  # v2.0-2 most of the time, for the epitopes v2.0-3-epi
-data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
+analysis_name = arguments["<analysis_name>"]
+# analysis_name = "v2.0-3-epipos"  # v2.0-2 most of the time, for the epitopes v2.0-3-epi
+
+data_dir = Path(arguments["<input_dir>"])
+# data_dir = Path("data/Frozen_MiniAbsolut_ML")  # "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML_shuffled/"
+
 task_types = [
     datasets.ClassificationTaskType.HIGH_VS_95LOW,
     datasets.ClassificationTaskType.HIGH_VS_LOOSER,
     datasets.ClassificationTaskType.ONE_VS_ONE,
     datasets.ClassificationTaskType.ONE_VS_NINE,
 ]
+
 task_split_seed_filter = ((42,), (0,))  # split, seed. Set to None for all.
 
 # Define attributor templates, which are used to generate attributors for each task.
@@ -239,7 +261,7 @@ def compute_attributions(task, save=True):
     model = task.model  # type: ignore
     
     if EPITOPES_ONLY:
-        test_dataset = get_test_dataset_epi(task, test_set=EPITOPES_TEST_SET)
+        test_dataset = pipelines.get_test_dataset_for_epitope_analysis(task, test_set=EPITOPES_TEST_SET)
     else:
         test_dataset = task.test_dataset  # type: ignore
     
@@ -273,8 +295,8 @@ def compute_attributions(task, save=True):
                 return
             elif DIR_EXISTS_HANDLE == "overwrite":
                 # Remove and recreate the dir.
-                shutil.rmtree(output_dir)
-                output_dir.mkdir()
+                # shutil.rmtree(output_dir)
+                output_dir.mkdir(exist_ok=True)
             elif DIR_EXISTS_HANDLE == "ignore":
                 pass
         else:

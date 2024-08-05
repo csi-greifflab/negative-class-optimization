@@ -569,11 +569,18 @@ class FrozenMiniAbsolutMLLoader:
                 raise ValueError(f"Model not found at {model_path}")
         if load_test_dataset:
             try:
-                hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
+                tsv_name_split = list(basepath.glob("*tsv"))[0].name.split("_")
+                if len(tsv_name_split) <= 2:
+                    hash_val = None
+                else:
+                    hash_val = list(basepath.glob("*tsv"))[0].name.split("_")[0]
             except:
                 print(basepath, list(basepath.glob("*tsv")))
                 raise
-            test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"
+            if hash_val is None:
+                test_dataset_path = basepath / "test_dataset.tsv"
+            else:
+                test_dataset_path = basepath / f"{hash_val}_test_dataset.tsv"
             task.test_dataset = pd.read_csv(test_dataset_path, sep="\t")  # type: ignore
         if load_train_dataset:
             try:

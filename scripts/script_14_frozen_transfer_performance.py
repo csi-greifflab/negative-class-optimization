@@ -35,8 +35,8 @@ SKIP_COMPUTED_TASKS = True
 num_processes = 10
 
 
-COMPUTE_CLOSEDSET_PERFORMANCE = bool(arguments["<closed>"])  # True > closedset, False > openset
-COMPUTE_OPENSET_FROM_CLOSEDSET = bool(arguments["<open>"])  # True > openset from closedset
+COMPUTE_CLOSEDSET_PERFORMANCE = bool(arguments["<closed>"] == "1")  # True > closedset, False > openset
+COMPUTE_OPENSET_FROM_CLOSEDSET = bool(arguments["<open>"] == "1")  # True > openset from closedset
 
 # Most cases None. 
 # If "pos_epitope", use only epitope specific sequences in positive set.
@@ -225,6 +225,7 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
         df_open = pd.DataFrame()
 
     task_str_combinations = list(product(df_closed["task"], df_closed["task"]))
+    print(f"Num combinations: {len(task_str_combinations)}")
 
     pairs = []
     for task_str_1, task_str_2 in task_str_combinations:
@@ -287,6 +288,8 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
             except RuntimeError:
                 print(f"Error in {task_1} -> {task_2}.")
                 return None
+        else:
+            metrics = evaluate_model(model, test_dataset)
 
         record = {
             "task_1": str(task_1),
