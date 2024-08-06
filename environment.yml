@@ -29,6 +29,7 @@ dependencies:
       # - git+https://github.com/uio-bmi/immuneML.git
       - scikit-learn
       - scikit-image
+      - statsmodels
       - joypy
       - networkx==2.6.3
       - mlflow

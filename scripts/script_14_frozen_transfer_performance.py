@@ -30,7 +30,7 @@ Options:
 arguments = docopt(docopt_doc, version="NCO")
 
 
-SKIP_LOADING_ERRORS = True
+SKIP_LOADING_ERRORS = False
 SKIP_COMPUTED_TASKS = True
 num_processes = 10
 

@@ -74,9 +74,9 @@ python scripts/script_12d_train_SN10_clean_high_looser_95low.py "Test" "data/Fro
 
 ```
 # Compute ID
-python scripts/script_14_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbsolut_ML" "data/closed_performance.tsv" "data/openset_performance.tsv"
+python scripts/script_14_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance.tsv"
 # Compute OOD
-python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/closed_performance.tsv" "data/openset_performance.tsv"
+python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance.tsv"
 ```
 
 4. Run the interpretability pipeline.
@@ -103,13 +103,20 @@ python scripts/script_15_compute_attributions.py "TEST" "data/Frozen_MiniAbsolut
 
 Once we have the precomputations (either downloaded or precomputed from scratch using the steps from above), we perform the analyses using notebooks.
 
+Prerequisites
+- Frozen_ML:
+  - closed/open perf
+  - Attribution/LogitEnergyCorrelations.tsv (correction of error? check old nb on server TODO)
+- 
+
 Section 1: Training dataset sequence composition influences prediction performance in ID and OOD binary classification tasks
-- ID and OOD on synthetic data and sequence similarity: `notebooks/25_Section_1.ipynb`.
+- ID and OOD on synthetic data and sequence similarity: `0a1_Section_1.ipynb`.
 - ID and OOD on experimental data: TODO
 
 Section 2: Training dataset composition determines the accuracy of biological rule recovery
-- Correlations between ground truth energy per sequence and per amino acid and logits / attributions:
-- Correlation between binding strength and logit in the experimental dataset: 
+- Correlations between ground truth energy per sequence and per amino acid and logits / attributions: `0b_Section_2.ipynb`
+  - TODO: attributions name: remove or add "Test" or add as parameter!
+- Correlation between binding strength and logit in the experimental dataset: TODO
 
 Supplementary Materials
 - Negative control: shuffled positive and negative in training sets labels

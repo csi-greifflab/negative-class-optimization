@@ -106,25 +106,19 @@ def get_miniabsolut_dataframes(task, load_energy_contributions=False):
         suffix = ""
         header = 0
 
-    df_pos = pd.read_csv(
-        ag_pos_dir / f"high_test_5000{suffix}.tsv", sep="\t", header=header
-    )
+    fn = list(ag_pos_dir.glob(f"high_test_[0-9]*{suffix}.tsv"))[0]
+    df_pos = pd.read_csv(fn, sep="\t", header=header)
     df_pos["class"] = "positive"
 
     if task.task_type == datasets.ClassificationTaskType.HIGH_VS_95LOW:
-        df_neg = pd.read_csv(
-            ag_pos_dir / f"95low_test_5000{suffix}.tsv", sep="\t", header=header
-        )
+        fn = list(ag_pos_dir.glob(f"95low_test_[0-9]*{suffix}.tsv"))[0]
+        df_neg = pd.read_csv(fn, sep='\t', header=header)
         df_neg["class"] = "negative"
     elif task.task_type == datasets.ClassificationTaskType.HIGH_VS_LOOSER:
-        df_neg = pd.read_csv(
-            ag_pos_dir / f"looserX_test_5000{suffix}.tsv", sep="\t", header=header
-        )
+        fn = list(ag_pos_dir.glob(f"looserX_test_[0-9]*{suffix}.tsv"))[0]
+        df_neg = pd.read_csv(fn, sep='\t', header=header)
         df_neg["class"] = "negative"
-    elif task.task_type in (
-        datasets.ClassificationTaskType.ONE_VS_ONE,
-        datasets.ClassificationTaskType.ONE_VS_NINE,
-    ):
+    elif task.task_type in (datasets.ClassificationTaskType.ONE_VS_ONE, datasets.ClassificationTaskType.ONE_VS_NINE):
         # raise ValueError("Not implemented.")
         df_neg = pd.DataFrame()
 
