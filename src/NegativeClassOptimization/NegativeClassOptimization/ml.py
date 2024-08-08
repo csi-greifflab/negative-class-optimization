@@ -1248,10 +1248,21 @@ def load_model_from_state_dict(state_dict):
     We harmonize this logic here.
     """
     assert state_dict is not None
-    input_dim = state_dict["module.linear_1.weight"].shape[1]
-    hidden_dim = 10
-    model = optim.swa_utils.AveragedModel(
-        SNN(input_dim=input_dim, num_hidden_units=hidden_dim)
-    )
-    model.load_state_dict(state_dict)
+
+    if "module.linear_1.weight" in state_dict.keys():
+        input_dim = state_dict["module.linear_1.weight"].shape[1]
+        hidden_dim = 10
+        model = optim.swa_utils.AveragedModel(
+            SNN(input_dim=input_dim, num_hidden_units=hidden_dim)
+        )
+        model.load_state_dict(state_dict)
+    elif "module.linear.weight" in state_dict.keys():
+        input_dim = state_dict["module.linear.weight"].shape[1]
+        model = optim.swa_utils.AveragedModel(
+            LogisticRegression(input_dim=input_dim)
+        )
+        model.load_state_dict(state_dict)
+    else:
+        raise Exception("Unrecognized state dict / model.")
+
     return model

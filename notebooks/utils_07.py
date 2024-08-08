@@ -663,17 +663,31 @@ def get_energy_contributions_foldx():
 
 def load_trainrest_from_miniabsolut(ag, base_path = None):
 
+    def mask_sample_size_in_filename(fn: str) -> str:
+        spl = fn.split("_")
+        if all(i.isdigit() for i in spl[2]):
+            fn_new_rgx = "_".join(spl[:2] + ["[0-9]*"] + spl[3:])
+            return fn_new_rgx
+        else:
+            return fn
+
     if base_path is None:
         base_path = config.DATA_MINIABSOLUT / f"{ag}/energy_contributions"
 
-    df_high_train = pd.read_csv(base_path / "high_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
-    df_high_rest = pd.read_csv(base_path / "high_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("high_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_high_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("high_rest_absolut_energy_contributions.tsv")))[0]
+    df_high_rest = pd.read_csv(fp, sep='\t', header=1)
 
-    df_weak_train = pd.read_csv(base_path / "looserX_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
-    df_weak_rest = pd.read_csv(base_path / "looserX_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("looserX_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_weak_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("looserX_rest_absolut_energy_contributions.tsv")))[0]
+    df_weak_rest = pd.read_csv(fp, sep='\t', header=1)
 
-    df_nonb_train = pd.read_csv(base_path / "95low_train_15000_absolut_energy_contributions.tsv", sep='\t', header=1)
-    df_nonb_rest = pd.read_csv(base_path / "95low_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("95low_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_nonb_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("95low_rest_absolut_energy_contributions.tsv")))[0]
+    df_nonb_rest = pd.read_csv(fp, sep='\t', header=1)
 
     df_high_train["binder_type"] = f"{ag}_high"
     df_high_rest["binder_type"] = f"{ag}_high"

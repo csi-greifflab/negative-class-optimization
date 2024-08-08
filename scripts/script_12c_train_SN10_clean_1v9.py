@@ -24,7 +24,8 @@ docopt_doc = """Run 1v9 training.
 
 Usage:
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids>
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels --logistic_regression
+    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
+    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
 
 Options:
     -h --help   Show help.

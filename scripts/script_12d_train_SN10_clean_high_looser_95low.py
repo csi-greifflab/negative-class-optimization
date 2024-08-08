@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from docopt import docopt
+from script_utils import get_input_dim_from_agpos
 
 # import mlflow
 from NegativeClassOptimization import (config, datasets, ml, pipelines,
@@ -24,8 +25,9 @@ docopt_doc = """Run 1v1 training.
 
 Usage:
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids>
-    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels --logistic_regression
-
+    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels
+    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
+    
 Options:
     -h --help   Show help.
 """
@@ -79,27 +81,6 @@ momentum = 0.9
 weight_decay = 0
 batch_size = 64
 sample_train = None
-
-
-def get_input_dim_from_agpos(ag_pos: str) -> int:
-    """
-    Tmp solution to get the dimension based on the antigen name.
-     - if HR2B -> 10*20 = 200
-     - if HR2P -> 21*20 = 420
-     - otherwise -> 11*20 = 220
-
-    This is an adaptation, so that we can reuse the code for the
-    experimental datasets from Brij and Porebski.
-    """
-    ag = ag_pos.split("_")[0]
-    if ag == "HR2B":
-        return 200
-    elif ag == "HR2P":
-        return 420
-    elif ag == "HELP":
-        return 380  # 19*20
-    else:
-        return 220
 
 
 def multiprocessing_wrapper_script_12d(

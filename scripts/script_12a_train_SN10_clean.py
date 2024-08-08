@@ -16,8 +16,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from docopt import docopt
-from script_12d_train_SN10_clean_high_looser_95low import \
-    get_input_dim_from_agpos
+from script_utils import get_input_dim_from_agpos
 
 import mlflow
 from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
@@ -27,7 +26,8 @@ docopt_doc = """Run 1v1 training.
 
 Usage:
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids>
-    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels --logistic_regression
+    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
+    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
 
 Options:
     -h --help   Show help.
@@ -35,7 +35,6 @@ Options:
 
 
 arguments = docopt(docopt_doc, version="NCO")
-
 
 TEST = False
 LOG_ARTIFACTS = False
