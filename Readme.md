@@ -1,6 +1,6 @@
 # Negative dataset optimization
 
-![version badge](https://img.shields.io/badge/version-0.1.2-green)
+![version badge](https://img.shields.io/badge/version-0.99-yellow)
 
 This is the `Readme` for the `NegativeDatasetOptimization` project, internally abbreviated as `nco`. This is the closest representative term, as the scope of the project is dynamic. Follow this readme to setup everything and run.
 
