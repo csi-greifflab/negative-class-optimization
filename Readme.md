@@ -10,6 +10,8 @@
 - Systems on which was tested (LINUX)
 - ADD GNU AFFERO V3 LICENSE
 
+- Add Data without attributions, but with the precomputed files for generating everything (attributions weight a lot!)
+
 ## Setup
 
 ### A. Environment
@@ -51,6 +53,12 @@ Alternatively, if you want to run the precomputations, follow the further instru
 # Build main dataset components, based on Absolut, called collectively MiniAbsolut 
 python scripts/script_01_build_datasets.py miniabsolut 15000 5000
 # For testing we recommend: python scripts/script_01_build_datasets.py miniabsolut 50 10
+
+# Process the experimental dataset
+python scripts/script_01c_build_experimental.py
+
+# Process the per-epitope datasets
+# TODO
 ```
 
 TODO: ADD TEST/DEMO Instructions.
@@ -59,25 +67,30 @@ Note: the experimental datasets and the epitope-based datasets are build using n
 2. Train the various models on the various datasets. SN10 and Logistic Regression models are trained. Datasets: Absolut data, experimental data, shuffled controls, single epitope-only data, TODO. Results are saved at TODO (Frozen_...).
 
 TODO: RERUN ON Server the generation of train/test data for ML (no uid)
+- reevaluate if needed, current code supports both with and without uid
+- for logistic
+- for experimental
+- for per-epitope
 
 ```
 # SN10: Absolut Synthetic Dataset
-python scripts/script_12a_train_SN10_clean.py "Test" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
-python scripts/script_12c_train_SN10_clean_1v9.py "Test" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
-python scripts/script_12d_train_SN10_clean_high_looser_95low.py "Test" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
+python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
+python scripts/script_12c_train_SN10_clean_1v9.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
+python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4"
 
 # SN10: Shuffled Negative Controls
-python scripts/script_12a_train_SN10_clean.py "Test" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
-python scripts/script_12c_train_SN10_clean_1v9.py "Test" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
-python scripts/script_12d_train_SN10_clean_high_looser_95low.py "Test" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
+python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
+python scripts/script_12c_train_SN10_clean_1v9.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
+python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_shuffled" "0,1,2,3" "0,1,2,3,4" --shuffle_labels 
 
 # Logistic Regression: Absolut Synthetic Dataset
-python scripts/script_12a_train_SN10_clean.py "Test" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression 
-python scripts/script_12c_train_SN10_clean_1v9.py "Test" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression
-python scripts/script_12d_train_SN10_clean_high_looser_95low.py "Test" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression 
+python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression 
+python scripts/script_12c_train_SN10_clean_1v9.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression
+python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML_Linear" "0,1,2,3" "0,1,2,3,4" --logistic_regression 
 
 # SN10: Porebski Experimental Dataset
-# TODO
+python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --experimental
+python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --experimental
 
 # SN10: Per-epitope datasets
 # TODO
@@ -99,6 +112,13 @@ python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbs
 python scripts/script_14_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_Linear" "data/Frozen_MiniAbsolut_ML_Linear/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Linear/openset_performance.tsv"
 python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_Linear" "data/Frozen_MiniAbsolut_ML_Linear/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Linear/openset_performance.tsv"
 
+# ID, OOD: Experimental Dataset
+python scripts/script_14_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_experimental_data.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_experimental_data.tsv"
+python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_experimental_data.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_experimental_data.tsv"
+
+# ID, OOD: Per-epitope datasets
+# TODO
+
 ```
 
 4. Run the interpretability pipeline.
@@ -108,7 +128,7 @@ Get [Absolut!](https://github.com/csi-greifflab/Absolut): clone the library, ins
 ```
 export ABSOLUTNOLIB_PATH=$PWD/AbsolutNoLib
 
-# Compute the energy contributions using Absolut. Note: to restrict computational costs the computation is done only for the main MiniAbsolut train/test split and seed. 
+# Compute the energy contributions using Absolut. Note: to restrict computational costs the computation is done only for the main MiniAbsolut train/test split and one of the seeds. 
 python scripts/script_16_compute_energy_contributions.py
 ```
 
@@ -124,38 +144,35 @@ python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut
 python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut_ML_shuffled"
 
 # Interpretability: Logistic Regression: No need to run DeepLift, it's based on the model weights (done in Analyses).
+
+# Interpretability: Experimental Dataset
+python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut_ML" --experimental
+
+# Interpretability: Per-epitope datasets
+# TODO
 ```
 
 ## Analyse
 
 Once we have the precomputations (either downloaded or precomputed from scratch using the steps from above), we perform the analyses using notebooks.
 
-Prerequisites
-- Per Frozen_ML:
-  - closed/open perf
-  - Attribution/LogitEnergyCorrelations.tsv (correction of error? check old nb on server TODO)
-
-TODO:
-- Section 1: Visualisation bug on demo in code for the multiplots with tables inside? (!)
-
 Section 1: Training dataset sequence composition influences prediction performance in ID and OOD binary classification tasks
 - ID and OOD on synthetic data and sequence similarity: `0a1_Section_1.ipynb`.
-- ID and OOD on experimental data: TODO
+- ID and OOD on experimental data: `0a3_Section_1_experimental.ipynb`.
 
 Section 2: Training dataset composition determines the accuracy of biological rule recovery
-- Correlations between ground truth energy per sequence and per amino acid and logits / attributions: `0b_Section_2.ipynb`
-  - TODO: attributions name: remove or add "Test" or add as parameter!
-- Correlation between binding strength and logit in the experimental dataset: TODO
+- Correlations between ground truth energy per sequence and per amino acid and logits / attributions: `0b_Section_2.ipynb`.
+- Correlation between binding strength and logit in the experimental dataset: `0b3_Section_2_experimental.ipynb`.
 
 Supplementary Materials
-- Negative control: shuffled positive and negative in training sets labels: `0a2_Section_1_shuffled.ipynb`, TODO
+- Negative control: shuffled positive and negative in training sets labels: `0a2_Section_1_shuffled.ipynb`, `0b2_Section_2_shuffled.ipynb`
 - Logistic models
-  - Correlations between ground truth energy per sequence and per amino acid and logits / attributions: 
-  - Negative control (correlations with logits after shuffling the weights): 
+  - Correlations between ground truth energy per sequence and per amino acid and logits / attributions: TODO
+  - Negative control (correlations with logits after shuffling the weights): TODO
 
 Supplementary Text 1: Evaluation of the impact of sequence and label similarity between train and test on prediction accuracy 
 - TODO
 
 Supplementary Text 2: Antigen versus epitope-based analysis: ID, OOD, rule discovery
-- .
+- TODO
 

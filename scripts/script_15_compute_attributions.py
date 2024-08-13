@@ -29,6 +29,7 @@ docopt_doc = """Compute attributions.
 
 Usage:
     script_15_compute_attributions.py <analysis_name> <input_dir>
+    script_15_compute_attributions.py <analysis_name> <input_dir> --experimental
     script_15_compute_attributions.py <analysis_name> <input_dir> --epitopes_only <epitopes_test_set>
 
 Options:
@@ -43,7 +44,12 @@ TEST_TASKLIST = False
 DIR_EXISTS_HANDLE = "overwrite"  # "raise" or "skip" or "overwrite" or "ignore"
 
 # One of the below make true, or all false
-EXPERIMENTAL_DATA_ONLY = False
+
+if arguments["--experimental"]:
+    EXPERIMENTAL_DATA_ONLY = True
+else:
+    EXPERIMENTAL_DATA_ONLY = False
+
 EPITOPES_ONLY = False
 # EPITOPES_ONLY = True
 # EPITOPES_TEST_SET = "PositiveSet_Epitope"  # see script_14b for meaning

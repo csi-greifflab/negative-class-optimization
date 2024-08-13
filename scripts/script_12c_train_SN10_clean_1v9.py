@@ -24,6 +24,7 @@ docopt_doc = """Run 1v9 training.
 
 Usage:
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids>
+    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
 
@@ -83,6 +84,7 @@ def multiprocessing_wrapper_script_12c(
     sample_train,
     seed_id,
     load_from_miniabsolut_split_seed,
+    only_generate_datasets=False,
 ):
     # with mlflow.start_run(
     #     experiment_id=experiment_id,
@@ -101,7 +103,11 @@ def multiprocessing_wrapper_script_12c(
         f"{local_dir_base}/1v9/seed_{seed_id}/split_{split_seed}/"
         f"{ag_pos}__vs__9/"
     )
-    local_dir.mkdir(parents=True, exist_ok=True)
+
+    if local_dir.exists():
+        pass
+    else:
+        local_dir.mkdir(parents=True)
 
     pipe = pipelines.BinaryclassPipeline(
         log_mlflow=False,
@@ -120,6 +126,9 @@ def multiprocessing_wrapper_script_12c(
         load_from_miniabsolut=load_from_miniabsolut,
         load_from_miniabsolut_split_seed=load_from_miniabsolut_split_seed,
     )
+
+    if only_generate_datasets:
+        return
 
     pipe.step_2_train_model(
         epochs=epochs,
@@ -193,6 +202,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 seed,
                                 None,
+                                arguments["--only_generate_datasets"],
                             )
                             for ag_perm in ags_1_vs_9_batch
                         ],
@@ -212,6 +222,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 0,
                                 load_from_miniabsolut_split_seed,
+                                arguments["--only_generate_datasets"],
                             )
                             for ag_perm in ags_1_vs_9_batch
                         ],

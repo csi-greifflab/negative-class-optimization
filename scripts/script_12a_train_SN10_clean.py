@@ -26,8 +26,10 @@ docopt_doc = """Run 1v1 training.
 
 Usage:
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids>
+    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
+    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
 
 Options:
     -h --help   Show help.
@@ -36,10 +38,12 @@ Options:
 
 arguments = docopt(docopt_doc, version="NCO")
 
+if arguments["--experimental"]:
+    RESTRICTED_AG_COMBINATIONS = True
+
 TEST = False
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
-RESTRICTED_AG_COMBINATIONS = False
 load_from_miniabsolut = True
 experiment_id = 11
 num_processes = 20
@@ -87,6 +91,7 @@ def multiprocessing_wrapper_script_12a(
     sample_train,
     seed_id,
     load_from_miniabsolut_split_seed,
+    only_generate_datasets=False,
 ):
     # with mlflow.start_run(
     #     experiment_id=experiment_id,
@@ -105,7 +110,11 @@ def multiprocessing_wrapper_script_12a(
         f"{local_dir_base}/1v1/seed_{seed_id}/split_{split_seed}/"
         f"{ag_pos}__vs__{ag_neg}/"
     )
-    local_dir.mkdir(parents=True, exist_ok=True)
+
+    if local_dir.exists():
+        pass
+    else:
+        local_dir.mkdir(parents=True)
 
     pipe = pipelines.BinaryclassPipeline(
         log_mlflow=False,
@@ -124,6 +133,9 @@ def multiprocessing_wrapper_script_12a(
         load_from_miniabsolut=load_from_miniabsolut,
         load_from_miniabsolut_split_seed=load_from_miniabsolut_split_seed,
     )
+
+    if only_generate_datasets:
+        return
 
     pipe.step_2_train_model(
         input_dim=get_input_dim_from_agpos(ag_pos),
@@ -150,10 +162,11 @@ if __name__ == "__main__":
     ag_perms = list(itertools.permutations(antigens, 2))
 
     if RESTRICTED_AG_COMBINATIONS:
-        # ag_perms = [
-        #     ("HR2P", "HR2PSR"),
-        #     ("HR2P", "HR2PIR"),
-        # ]
+        if arguments["--experimental"]:
+            ag_perms = [
+                ("HR2P", "HR2PSR"),
+                ("HR2P", "HR2PIR"),
+            ]
 
         # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
         
@@ -163,19 +176,19 @@ if __name__ == "__main__":
         # 2) 1v1 within epitopes
         # ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES and x[1] in config.ANTIGEN_EPITOPES, ag_perms))
 
-        ag_perms = [
-            ("1H0D", "1NSN"),
-            ("3RAJ", "1OB1"),
-            ("1H0D", "3VRL"),
-            ("5E94", "1NSN"),
-            ("5E94", "1OB1"),
-            ("5E94", "1ADQ"),
-            ("5E94", "1FBI"),
-            ("3RAJ", "1FBI"),
-            ("3RAJ", "1H0D"),
-            ("3RAJ", "5E94"),
-            ("3RAJ", "1WEJ"),
-        ]
+        # ag_perms = [
+        #     ("1H0D", "1NSN"),
+        #     ("3RAJ", "1OB1"),
+        #     ("1H0D", "3VRL"),
+        #     ("5E94", "1NSN"),
+        #     ("5E94", "1OB1"),
+        #     ("5E94", "1ADQ"),
+        #     ("5E94", "1FBI"),
+        #     ("3RAJ", "1FBI"),
+        #     ("3RAJ", "1H0D"),
+        #     ("3RAJ", "5E94"),
+        #     ("3RAJ", "1WEJ"),
+        # ]
 
     if TEST:
         epochs = 3
@@ -213,6 +226,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 seed,
                                 None,
+                                arguments["--only_generate_datasets"],
                             )
                             for ag_perm in ag_perms_batch
                         ],
@@ -233,6 +247,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 0,
                                 load_from_miniabsolut_split_seed,
+                                arguments["--only_generate_datasets"],
                             )
                             for ag_perm in ag_perms_batch
                         ],

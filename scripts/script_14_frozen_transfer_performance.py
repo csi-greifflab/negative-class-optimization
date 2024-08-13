@@ -21,6 +21,7 @@ docopt_doc = """Compute metrics and save in convenient form.
 
 Usage:
     script_14_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
+    script_14_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental
 
 Options:
     -h --help   Show help.
@@ -81,6 +82,10 @@ fp_results_open = Path(arguments["<open_out>"])
 
 antigens = config.ANTIGENS
 # antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
+
+if arguments["--experimental"]:
+    antigens = ["HR2P", "HR2PSR", "HR2PIR"]
+
 antigens_2 = antigens[:]  # in most cases, exception for epitope-based analysis
 ## Epitope-based
 # antigens = ["1WEJE1", "1OB1E1", "1H0DE1"]

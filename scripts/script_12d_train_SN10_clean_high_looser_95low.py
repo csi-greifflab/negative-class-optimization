@@ -25,9 +25,11 @@ docopt_doc = """Run 1v1 training.
 
 Usage:
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids>
+    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
-    
+    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
+        
 Options:
     -h --help   Show help.
 """
@@ -67,6 +69,10 @@ model_type = "SNN" if arguments["--logistic_regression"] == False else "Logistic
 
 
 antigens = None  # None for the default 10 antigens from Absolut
+
+if arguments["--experimental"]:
+    antigens = ["HR2P"]
+
 # antigens = ["HR2B", "HR2P"]
 # antigens = ["HELP"]
 # antigens = config.ANTIGEN_EPITOPES
@@ -91,6 +97,7 @@ def multiprocessing_wrapper_script_12d(
     sample_train,
     seed_id,
     load_from_miniabsolut_split_seed,
+    only_generate_datasets=False,
 ):
     # with mlflow.start_run(
     #     experiment_id=experiment_id,
@@ -116,7 +123,11 @@ def multiprocessing_wrapper_script_12d(
         f"{local_dir_base}/{task}/seed_{seed_id}/split_{split_seed}/"
         f"{ag_pos}__vs__{ag_neg}/"
     )
-    local_dir.mkdir(parents=True, exist_ok=True)
+
+    if local_dir.exists():
+        pass
+    else:
+        local_dir.mkdir(parents=True)
 
     pipe = pipelines.BinaryclassBindersPipeline(
         log_mlflow=False,
@@ -135,6 +146,9 @@ def multiprocessing_wrapper_script_12d(
         load_from_miniabsolut=load_from_miniabsolut,
         load_from_miniabsolut_split_seed=load_from_miniabsolut_split_seed,
     )
+
+    if only_generate_datasets:
+        return
 
     pipe.step_2_train_model(
         input_dim=get_input_dim_from_agpos(ag_pos),
@@ -229,6 +243,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 seed,
                                 None,
+                                arguments["--only_generate_datasets"],
                             )
                             for ags in datasets_batch
                         ],
@@ -248,6 +263,7 @@ if __name__ == "__main__":
                                 sample_train,
                                 0,
                                 load_from_miniabsolut_split_seed,
+                                arguments["--only_generate_datasets"],
                             )
                             for ags in datasets_batch
                         ],
