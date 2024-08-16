@@ -9,6 +9,9 @@
 - RUN TIME General
 - Systems on which was tested (LINUX)
 - ADD GNU AFFERO V3 LICENSE
+- Remove unnecessary files / comments in code.
+
+- generating the right attributions names throughout the notebooks and scripts, look into it.
 
 - Add Data without attributions, but with the precomputed files for generating everything (attributions weight a lot!)
 
@@ -58,7 +61,7 @@ python scripts/script_01_build_datasets.py miniabsolut 15000 5000
 python scripts/script_01c_build_experimental.py
 
 # Process the per-epitope datasets
-# TODO
+python scripts/script_01d_build_epitope_datasets.py
 ```
 
 TODO: ADD TEST/DEMO Instructions.
@@ -93,7 +96,9 @@ python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_Min
 python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --experimental
 
 # SN10: Per-epitope datasets
-# TODO
+python scripts/script_12a_train_SN10_clean.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
+python scripts/script_12c_train_SN10_clean_1v9.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
+python scripts/script_12d_train_SN10_clean_high_looser_95low.py "{ANALYSIS_NAME}" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
 
 ```
 
@@ -117,8 +122,9 @@ python scripts/script_14_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbs
 python scripts/script_14_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_experimental_data.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_experimental_data.tsv"
 
 # ID, OOD: Per-epitope datasets
-# TODO
-
+python scripts/script_14b_frozen_transfer_performance.py 1 0 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_epitopes_pos.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_epitopes_pos.tsv"
+python scripts/script_14b_frozen_transfer_performance.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_epitopes_pos.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_epitopes_pos.tsv"
+python scripts/script_14c_epi_frozen_transfer_jsd.py
 ```
 
 4. Run the interpretability pipeline.
@@ -132,7 +138,7 @@ export ABSOLUTNOLIB_PATH=$PWD/AbsolutNoLib
 python scripts/script_16_compute_energy_contributions.py
 ```
 
-Note: if the latest Absolut! doesn't work below, reset to an earlier commit that was used by us by running: `git reset --hard 0f672a19c9fdec561e4d6d2470471ea016f949ad`.
+Note: if the latest Absolut! doesn't work below, reset to an earlier commit that was used in this work by running: `git reset --hard 0f672a19c9fdec561e4d6d2470471ea016f949ad`.
 
 Next: compute the attributions.
 
@@ -144,12 +150,13 @@ python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut
 python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut_ML_shuffled"
 
 # Interpretability: Logistic Regression: No need to run DeepLift, it's based on the model weights (done in Analyses).
+python scripts/script_01_build_datasets.py adapt_attributions_for_linear
 
 # Interpretability: Experimental Dataset
 python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut_ML" --experimental
 
 # Interpretability: Per-epitope datasets
-# TODO
+python scripts/script_15_compute_attributions.py "Test" "data/Frozen_MiniAbsolut_ML" --epitopes_only "PositiveSet_Epitope"
 ```
 
 ## Analyse
@@ -166,13 +173,11 @@ Section 2: Training dataset composition determines the accuracy of biological ru
 
 Supplementary Materials
 - Negative control: shuffled positive and negative in training sets labels: `0a2_Section_1_shuffled.ipynb`, `0b2_Section_2_shuffled.ipynb`
-- Logistic models
-  - Correlations between ground truth energy per sequence and per amino acid and logits / attributions: TODO
-  - Negative control (correlations with logits after shuffling the weights): TODO
+- Logistic models: `0a4_Section_1_logistic.ipynb`, `0b4_Section_2_logistic.ipynb`
 
 Supplementary Text 1: Evaluation of the impact of sequence and label similarity between train and test on prediction accuracy 
 - TODO
 
-Supplementary Text 2: Antigen versus epitope-based analysis: ID, OOD, rule discovery
-- TODO
+Supplementary Text 2: Epitope-based analysis: ID, OOD, rule discovery
+- `0s2_Epitope-based_Section_1_and_2.ipynb`
 

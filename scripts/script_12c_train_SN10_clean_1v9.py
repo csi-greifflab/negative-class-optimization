@@ -27,6 +27,7 @@ Usage:
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
     script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
+    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
 
 Options:
     -h --help   Show help.
@@ -45,7 +46,11 @@ num_processes = 10
 swa = True
 
 
-EPITOPE_BASED = False
+if arguments["--epitopes"]:
+    EPITOPE_BASED = True
+else:
+    EPITOPE_BASED = False
+
 run_name =  arguments["<run_name>"]
 local_dir_base = arguments["<out_dir>"]
 # local_dir_base = "data/Frozen_MiniAbsolut_ML"

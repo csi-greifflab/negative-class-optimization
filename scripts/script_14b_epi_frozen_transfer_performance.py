@@ -16,13 +16,35 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from docopt import docopt
+
 from NegativeClassOptimization import (config, datasets, ml, pipelines,
                                        preprocessing, utils)
 
-SKIP_LOADING_ERRORS = True
+
+docopt_doc = """Compute metrics and save in convenient form.
+
+Usage:
+    script_14b_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
+
+Options:
+    -h --help   Show help.
+"""
+
+arguments = docopt(docopt_doc, version="NCO")
+
+
+SKIP_LOADING_ERRORS = False
 SKIP_COMPUTED_TASKS = True
-COMPUTE_CLOSEDSET_PERFORMANCE = False  # True > closedset, False > openset
-COMPUTE_OPENSET_FROM_CLOSEDSET = True  # True > openset from closedset
+COMPUTE_CLOSEDSET_PERFORMANCE = bool(arguments["<closed>"] == "1")  # True > closedset, False > openset
+COMPUTE_OPENSET_FROM_CLOSEDSET = bool(arguments["<open>"] == "1")  # True > openset from closedset
+
+fp_loader = Path(arguments["<input_dir>"])
+
+
+fp_results_closed = Path(arguments["<closed_out>"])
+fp_results_open = Path(arguments["<open_out>"])
+
 
 ## TESTSET Choice
 # "NonEpitope": Non-epitope specific sequences in positive and negative set, like the one used usually.
@@ -32,14 +54,14 @@ TESTSET = "Positive_and_NegativeSet_Epitope"
 
 num_processes = 10
 
-fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
+# fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
 
 # fp_results_closed = Path("data/closed_performance_epitopes.tsv")  # epitopes
 # fp_results_open = Path("data/openset_performance_epitopes.tsv")  # epitopes
 # fp_results_closed = Path("data/closed_performance_epitopes_pos.tsv")  # epitopes
 # fp_results_open = Path("data/openset_performance_epitopes_pos.tsv")  # epitopes
-fp_results_closed = Path("data/closed_performance_epitopes_pos_and_neg.tsv")  # epitopes
-fp_results_open = Path("data/openset_performance_epitopes_pos_and_neg.tsv")  # epitopes
+# fp_results_closed = Path("data/closed_performance_epitopes_pos_and_neg.tsv")  # epitopes
+# fp_results_open = Path("data/openset_performance_epitopes_pos_and_neg.tsv")  # epitopes
 
 
 antigens = config.ANTIGEN_EPITOPES

@@ -50,7 +50,10 @@ if arguments["--experimental"]:
 else:
     EXPERIMENTAL_DATA_ONLY = False
 
-EPITOPES_ONLY = False
+if arguments["--epitopes_only"]:
+    EPITOPES_ONLY = True
+else:
+    EPITOPES_ONLY = False
 # EPITOPES_ONLY = True
 # EPITOPES_TEST_SET = "PositiveSet_Epitope"  # see script_14b for meaning
 EPITOPES_TEST_SET = arguments["<epitopes_test_set>"]

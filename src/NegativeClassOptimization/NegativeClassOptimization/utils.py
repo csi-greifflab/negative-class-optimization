@@ -1000,3 +1000,100 @@ class MLFlowTaskAPI(MlflowAPI):
             else:
                 raise ValueError(f"Experiment {exp} not recognized.")
         return tasks
+
+
+
+def load_trainrest_from_miniabsolut(ag, base_path = None):
+
+    def mask_sample_size_in_filename(fn: str) -> str:
+        spl = fn.split("_")
+        if all(i.isdigit() for i in spl[2]):
+            fn_new_rgx = "_".join(spl[:2] + ["[0-9]*"] + spl[3:])
+            return fn_new_rgx
+        else:
+            return fn
+
+    if base_path is None:
+        base_path = config.DATA_MINIABSOLUT / f"{ag}/energy_contributions"
+
+    fp = list(base_path.glob(mask_sample_size_in_filename("high_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_high_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("high_rest_absolut_energy_contributions.tsv")))[0]
+    df_high_rest = pd.read_csv(fp, sep='\t', header=1)
+
+    fp = list(base_path.glob(mask_sample_size_in_filename("looserX_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_weak_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("looserX_rest_absolut_energy_contributions.tsv")))[0]
+    df_weak_rest = pd.read_csv(fp, sep='\t', header=1)
+
+    fp = list(base_path.glob(mask_sample_size_in_filename("95low_train_15000_absolut_energy_contributions.tsv")))[0]
+    df_nonb_train = pd.read_csv(fp, sep='\t', header=1)
+    fp = list(base_path.glob(mask_sample_size_in_filename("95low_rest_absolut_energy_contributions.tsv")))[0]
+    df_nonb_rest = pd.read_csv(fp, sep='\t', header=1)
+
+    df_high_train["binder_type"] = f"{ag}_high"
+    df_high_rest["binder_type"] = f"{ag}_high"
+
+    df_weak_train["binder_type"] = f"{ag}_looserX"
+    df_weak_rest["binder_type"] = f"{ag}_looserX"
+
+    df_nonb_train["binder_type"] = f"{ag}_95low"
+    df_nonb_rest["binder_type"] = f"{ag}_95low"
+
+    # Concatenate all
+    df = pd.concat(
+        [
+            df_high_train,
+            df_high_rest,
+            df_weak_train,
+            df_weak_rest,
+            df_nonb_train,
+            df_nonb_rest,
+        ]
+    )
+    
+    return df
+
+
+def load_testrest_from_miniabsolut(ag, base_path = None):
+
+    if base_path is None:
+        base_path = config.DATA_MINIABSOLUT / f"{ag}/energy_contributions"
+
+    df_high_test = pd.read_csv(base_path / "high_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_high_rest = pd.read_csv(base_path / "high_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_weak_test = pd.read_csv(base_path / "looserX_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_weak_rest = pd.read_csv(base_path / "looserX_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_nonb_test = pd.read_csv(base_path / "95low_test_5000_absolut_energy_contributions.tsv", sep='\t', header=1)
+    df_nonb_rest = pd.read_csv(base_path / "95low_rest_absolut_energy_contributions.tsv", sep='\t', header=1)
+
+    df_high_test["binder_type"] = f"{ag}_high"
+    df_high_test["origin"] = "test"
+    df_high_rest["binder_type"] = f"{ag}_high"
+    df_high_rest["origin"] = "rest"
+
+    df_weak_test["binder_type"] = f"{ag}_looserX"
+    df_weak_test["origin"] = "test"
+    df_weak_rest["binder_type"] = f"{ag}_looserX"
+    df_weak_rest["origin"] = "rest"
+
+    df_nonb_test["binder_type"] = f"{ag}_95low"
+    df_nonb_test["origin"] = "test"
+    df_nonb_rest["binder_type"] = f"{ag}_95low"
+    df_nonb_rest["origin"] = "rest"
+
+    # Concatenate all
+    df = pd.concat(
+        [
+            df_high_test,
+            df_high_rest,
+            df_weak_test,
+            df_weak_rest,
+            df_nonb_test,
+            df_nonb_rest,
+        ]
+    )
+    
+    return df

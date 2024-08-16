@@ -30,6 +30,7 @@ Usage:
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
     script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
+    script_12a_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
 
 Options:
     -h --help   Show help.
@@ -38,7 +39,7 @@ Options:
 
 arguments = docopt(docopt_doc, version="NCO")
 
-if arguments["--experimental"]:
+if arguments["--experimental"] or arguments["--epitopes"]:
     RESTRICTED_AG_COMBINATIONS = True
 
 TEST = False
@@ -170,7 +171,12 @@ if __name__ == "__main__":
 
         # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
         
-        # Using epitopes only
+        if arguments["--epitopes"]:
+            antigens: List[str] = config.ANTIGENS + config.ANTIGEN_EPITOPES
+            ag_perms = list(itertools.permutations(antigens, 2))
+            ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+
+        # [OLD] Using epitopes only
         # 1) most
         # ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
         # 2) 1v1 within epitopes

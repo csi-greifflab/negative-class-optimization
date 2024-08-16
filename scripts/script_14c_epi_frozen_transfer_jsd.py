@@ -26,13 +26,13 @@ SKIP_COMPUTED_TASKS = True
 # "NonEpitope": Non-epitope specific sequences in positive and negative set, like the one used usually.
 # "PositiveSet_Epitope", use only epitope specific sequences in positive set.
 # "Positive_and_NegativeSet_Epitope", use epitope specific sequences in positive and negative set.
-TESTSET = "NonEpitope"
+TESTSET = "PositiveSet_Epitope"
 
 num_processes = 10
 
 fp_loader = Path("data/Frozen_MiniAbsolut_ML/")
 
-fp_results = Path("data/jsd_epitopes.tsv")  # epitopes
+fp_results = Path("data/Frozen_MiniAbsolut_ML/jsd_epitopes.tsv")  # epitopes
 
 
 antigens = config.ANTIGEN_EPITOPES

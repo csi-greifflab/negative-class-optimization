@@ -29,6 +29,8 @@ Usage:
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
     script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
+    script_12d_train_SN10_clean_high_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
+
         
 Options:
     -h --help   Show help.
@@ -69,7 +71,8 @@ model_type = "SNN" if arguments["--logistic_regression"] == False else "Logistic
 
 
 antigens = None  # None for the default 10 antigens from Absolut
-
+if arguments["--epitopes"]:
+    antigens = config.ANTIGEN_EPITOPES
 if arguments["--experimental"]:
     antigens = ["HR2P"]
 
