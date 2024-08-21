@@ -1,6 +1,7 @@
 """Clean SN10 training.
 """
 
+
 import itertools
 import math
 import multiprocessing
@@ -15,19 +16,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from docopt import docopt
+from script_utils import get_input_dim_from_agpos
 
-# import mlflow
+import mlflow
 from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
                                        utils)
 
-docopt_doc = """Run 1v9 training.
+docopt_doc = """Run 1v1 training.
 
 Usage:
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids>
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
-    script_12c_train_SN10_clean.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids>
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels 
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
+    script_02a_train_1v1.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
 
 Options:
     -h --help   Show help.
@@ -36,39 +39,39 @@ Options:
 
 arguments = docopt(docopt_doc, version="NCO")
 
+if arguments["--experimental"] or arguments["--epitopes"]:
+    RESTRICTED_AG_COMBINATIONS = True
 
 TEST = False
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 load_from_miniabsolut = True
-experiment_id = 13
-num_processes = 10
+experiment_id = 11
+num_processes = 20
 swa = True
 
+antigens: List[str] = config.ANTIGENS  # + config.ANTIGEN_EPITOPES
 
-if arguments["--epitopes"]:
-    EPITOPE_BASED = True
-else:
-    EPITOPE_BASED = False
-
-run_name =  arguments["<run_name>"]
+run_name =  arguments["<run_name>"]  # "dev-v0.2.1-epitopes" "dev-v0.2.1-shuffled" "dev-v0.2-shuffled" "dev-v0.1.3-expdata" "dev-v0.1.2-3-with-replicates"
 local_dir_base = arguments["<out_dir>"]
 # local_dir_base = "data/Frozen_MiniAbsolut_ML"
 # local_dir_base = "data/Frozen_MiniAbsolut_ML_shuffled"
 
 shuffle_antigen_labels = arguments["--shuffle_labels"]  # False
 
-# seed_id = [0, 1, 2, 3]  # default was 0
 seed_id = [int(i) for i in arguments["<seed_ids>"].split(",")]
 
-# load_from_miniabsolut_split_seeds = [0, 1, 2, 3, 4]  # default None --(internally)--> 42
 if len(arguments["<split_ids>"]) > 0:
     load_from_miniabsolut_split_seeds = [int(i) for i in arguments["<split_ids>"].split(",")]
 else:
     load_from_miniabsolut_split_seeds = []
 
-model_type = "SNN" if arguments["--logistic_regression"] == False else "LogisticRegression"
+# seed_id = [0]  # default was 0. # [0, 1, 2, 3]
+# load_from_miniabsolut_split_seeds = [] # default None --(internally)--> 42. # [0, 1, 2, 3, 4]
+# seed_id = [0]
+# load_from_miniabsolut_split_seeds = []
 
+model_type = "SNN" if arguments["--logistic_regression"] == False else "LogisticRegression"
 
 # Standard parameters
 epochs = 50
@@ -81,7 +84,7 @@ batch_size = 64
 sample_train = None
 
 
-def multiprocessing_wrapper_script_12c(
+def multiprocessing_wrapper_script_12a(
     experiment_id,
     run_name,
     ag_pos,
@@ -97,16 +100,16 @@ def multiprocessing_wrapper_script_12c(
     #     description=f"{ag_pos} vs {ag_neg}",
     #     tags={"mlflow.runName": run_name},
     # ):
-
+    
     # Adjust the load_from_miniabsolut_split_seed
     if load_from_miniabsolut_split_seed is None:
         split_seed = 42
     else:
         split_seed = load_from_miniabsolut_split_seed
-        
+
     local_dir = Path(
-        f"{local_dir_base}/1v9/seed_{seed_id}/split_{split_seed}/"
-        f"{ag_pos}__vs__9/"
+        f"{local_dir_base}/1v1/seed_{seed_id}/split_{split_seed}/"
+        f"{ag_pos}__vs__{ag_neg}/"
     )
 
     if local_dir.exists():
@@ -136,6 +139,7 @@ def multiprocessing_wrapper_script_12c(
         return
 
     pipe.step_2_train_model(
+        input_dim=get_input_dim_from_agpos(ag_pos),
         epochs=epochs,
         learning_rate=learning_rate,
         optimizer_type=optimizer_type,
@@ -147,45 +151,65 @@ def multiprocessing_wrapper_script_12c(
     )
 
     pipe.step_3_evaluate_model()
-    # except:
-        # pass  # Generate all 1 vs 9 antigens combinations
 
 
 if __name__ == "__main__":
     utils.nco_seed()
+    
     # mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
-    # experiment = mlflow.set_experiment(experiment_id=experiment_id)
-    experiment = None  # dummy
+    # experiment = mlflow.set_experiment(experiment_id=experiment_id)  # type: ignore
+    experiment = ""  # dummy
 
-    antigens: List[str] = config.ANTIGENS
-    # Generate all 1 vs 9 antigens combinations
-    ags_1_vs_9 = []
-    for ag in antigens:
-        if EPITOPE_BASED:
-            if ag in config.ANTIGEN_TO_ANTIGEN_EPITOPES.keys():
-                ag_epitope = config.ANTIGEN_TO_ANTIGEN_EPITOPES[ag]
-                ags_1_vs_9.append((ag_epitope, tuple(ag_i for ag_i in antigens if ag_i != ag)))    
-                continue
-            else:
-                pass
-        ags_1_vs_9.append((ag, tuple(ag_i for ag_i in antigens if ag_i != ag)))
+    ag_perms = list(itertools.permutations(antigens, 2))
+
+    if RESTRICTED_AG_COMBINATIONS:
+        if arguments["--experimental"]:
+            ag_perms = [
+                ("HR2P", "HR2PSR"),
+                ("HR2P", "HR2PIR"),
+            ]
+
+        # ag_perms = list(filter(lambda x: x[0] == "1ADQ", ag_perms))
+        
+        if arguments["--epitopes"]:
+            antigens: List[str] = config.ANTIGENS + config.ANTIGEN_EPITOPES
+            ag_perms = list(itertools.permutations(antigens, 2))
+            ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+
+        # [OLD] Using epitopes only
+        # 1) most
+        # ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES, ag_perms))
+        # 2) 1v1 within epitopes
+        # ag_perms = list(filter(lambda x: x[0] in config.ANTIGEN_EPITOPES and x[1] in config.ANTIGEN_EPITOPES, ag_perms))
+
+        # ag_perms = [
+        #     ("1H0D", "1NSN"),
+        #     ("3RAJ", "1OB1"),
+        #     ("1H0D", "3VRL"),
+        #     ("5E94", "1NSN"),
+        #     ("5E94", "1OB1"),
+        #     ("5E94", "1ADQ"),
+        #     ("5E94", "1FBI"),
+        #     ("3RAJ", "1FBI"),
+        #     ("3RAJ", "1H0D"),
+        #     ("3RAJ", "5E94"),
+        #     ("3RAJ", "1WEJ"),
+        # ]
 
     if TEST:
-        epochs = 3 
+        epochs = 3
         learning_rate = 0.001
         optimizer_type = "Adam"
         momentum = 0.9
         weight_decay = 0
         batch_size = 64
-        # Select 3VRL vs 9
-        ags_1_vs_9_test = list(filter(lambda x: x[0] == "3VRL", ags_1_vs_9))
 
-        multiprocessing_wrapper_script_12c(
+        multiprocessing_wrapper_script_12a(
             experiment_id,
             "test",
-            ags_1_vs_9_test[0][0],
-            ags_1_vs_9_test[0][1],
-            None,  # sample_train
+            "3VRL",  # ag_perms[0][0],
+            "1NSN",  # ag_perms[0][1],
+            None,
             0,
             None,
         )
@@ -193,11 +217,12 @@ if __name__ == "__main__":
     else:
         # Run batched multiprocessing
         for seed in seed_id:
-            for i in range(0, len(ags_1_vs_9), num_processes):
-                ags_1_vs_9_batch = ags_1_vs_9[i : i + num_processes]
+            for i in range(0, len(ag_perms), num_processes):
+                print(f"Batch {i} of {len(ag_perms) / num_processes}")
+                ag_perms_batch = ag_perms[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
-                        multiprocessing_wrapper_script_12c,
+                        multiprocessing_wrapper_script_12a,
                         [
                             (
                                 experiment_id,
@@ -209,15 +234,16 @@ if __name__ == "__main__":
                                 None,
                                 arguments["--only_generate_datasets"],
                             )
-                            for ag_perm in ags_1_vs_9_batch
+                            for ag_perm in ag_perms_batch
                         ],
                     )
         for load_from_miniabsolut_split_seed in load_from_miniabsolut_split_seeds:
-            for i in range(0, len(ags_1_vs_9), num_processes):
-                ags_1_vs_9_batch = ags_1_vs_9[i : i + num_processes]
+            for i in range(0, len(ag_perms), num_processes):
+                print(f"Batch {i} of {len(ag_perms) / num_processes}")
+                ag_perms_batch = ag_perms[i : i + num_processes]
                 with multiprocessing.Pool(processes=num_processes) as pool:
                     pool.starmap(
-                        multiprocessing_wrapper_script_12c,
+                        multiprocessing_wrapper_script_12a,
                         [
                             (
                                 experiment_id,
@@ -229,6 +255,6 @@ if __name__ == "__main__":
                                 load_from_miniabsolut_split_seed,
                                 arguments["--only_generate_datasets"],
                             )
-                            for ag_perm in ags_1_vs_9_batch
+                            for ag_perm in ag_perms_batch
                         ],
                     )

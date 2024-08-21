@@ -961,11 +961,6 @@ def compute_metrics_open_testset(model, x_open, x_test) -> dict:
     ## TODO: wrong computation
     # fpr_abs_logit_model = y_open_pred.sum() / y_open_pred.shape[0]
 
-    # TODO: refactor, document
-    # TODO: wrong computation for fpr_naive_model
-    # naive_closedset_prediction = model.forward(x_open).detach().numpy().reshape(-1).round()
-    # fpr_naive_model = naive_closedset_prediction.sum() / naive_closedset_prediction.shape[0]  # ideally everything is zero here
-
     metrics_open = {
         "y_open_abs_logits": y_open_abs_logits,
         "y_open_true": y_open_true,

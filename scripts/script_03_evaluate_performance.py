@@ -20,8 +20,8 @@ from NegativeClassOptimization import (config, datasets, ml, preprocessing,
 docopt_doc = """Compute metrics and save in convenient form.
 
 Usage:
-    script_14_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
-    script_14_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental
 
 Options:
     -h --help   Show help.

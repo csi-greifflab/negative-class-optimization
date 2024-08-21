@@ -25,7 +25,7 @@ from NegativeClassOptimization import (config, datasets, ml, pipelines,
 docopt_doc = """Compute metrics and save in convenient form.
 
 Usage:
-    script_14b_frozen_transfer_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
+    script_03b_evaluate_performance_epitopes.py <closed> <open> <input_dir> <closed_out> <open_out>
 
 Options:
     -h --help   Show help.

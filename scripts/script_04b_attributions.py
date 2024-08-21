@@ -28,9 +28,9 @@ from NegativeClassOptimization.ml import load_model_from_state_dict
 docopt_doc = """Compute attributions.
 
 Usage:
-    script_15_compute_attributions.py <analysis_name> <input_dir>
-    script_15_compute_attributions.py <analysis_name> <input_dir> --experimental
-    script_15_compute_attributions.py <analysis_name> <input_dir> --epitopes_only <epitopes_test_set>
+    script_04b_attributions.py <analysis_name> <input_dir>
+    script_04b_attributions.py <analysis_name> <input_dir> --experimental
+    script_04b_attributions.py <analysis_name> <input_dir> --epitopes_only <epitopes_test_set>
 
 Options:
     -h --help   Show help.
