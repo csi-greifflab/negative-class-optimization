@@ -1,6 +1,5 @@
 setup.py
 NegativeClassOptimization/__init__.py
-NegativeClassOptimization/ait.py
 NegativeClassOptimization/config.py
 NegativeClassOptimization/datasets.py
 NegativeClassOptimization/decision_boundaries.py

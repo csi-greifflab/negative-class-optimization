@@ -14,7 +14,7 @@ dependencies:
   # - torchvision 
   - torchaudio 
   - captum
-  - cudatoolkit=10.2
+  # - cudatoolkit=10.2
   - optuna
   - sphinx
   - jsonnet

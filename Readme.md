@@ -86,6 +86,9 @@ python scripts/script_02a_train_1v1.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,
 python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
 python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
 
+# Transformer: Experiemntal Dataset
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --experimental --transformer
+# TODO: with hyperparameter optimization 
 ```
 
 3. Compute the ID and OOD performances.

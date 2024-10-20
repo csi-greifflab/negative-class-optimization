@@ -2,3 +2,4 @@ data/Absolut
 data/Experimental_Datasets
 notebooks/figures
 data/Frozen_MiniAbsolut_ML/*/
+*pycache*

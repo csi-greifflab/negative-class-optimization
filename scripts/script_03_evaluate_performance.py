@@ -196,7 +196,10 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                     # not the model. We adjust it here.
                     if task.model is None:
                         assert task.state_dict is not None  # type: ignore
-                        model = ml.load_model_from_state_dict(task.state_dict)  # type: ignore
+                        if "module.conv1.weight" in task.state_dict.keys() and arguments["--experimental"]:
+                            model = ml.load_model_from_state_dict(task.state_dict, input_dim=20*21)
+                        else:
+                            model = ml.load_model_from_state_dict(task.state_dict)  # type: ignore
                         task.model = model  # type: ignore
                     else:
                         model: nn.Module = task.model  # type: ignore

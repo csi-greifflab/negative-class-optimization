@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.optimize import curve_fit
 
-import farmhash
+# import farmhash
 import multiprocessing
 
 import NegativeClassOptimization.utils as utils
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
 
     ag = "HR2P"  # Her2 from Porebski dataset
-    df_kd = df_kd.copy(Path(config.))
+    df_kd = df_kd.copy()
 
     #(from Aygul to Eugen;) As df_kd matching Absolut columns is used by me in 01s_*_experimetal.ipynb let's save it in data folder
     df_kd.to_csv(config.Path(config.DATA_BASE_PATH) / "01b_df_kd_absolut_format.csv")

@@ -28,6 +28,10 @@ Usage:
     script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --only_generate_datasets
     script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --shuffle_labels
     script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --logistic_regression
+    script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --cnn
+    script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --transformer
+    script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental --cnn
+    script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental --transformer
     script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --experimental
     script_02c_train_high_vs_looser_95low.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
 
@@ -36,11 +40,9 @@ Options:
     -h --help   Show help.
 """
 
-
 arguments = docopt(docopt_doc, version="NCO")
 
-
-TEST = False
+TEST = True
 LOG_ARTIFACTS = False
 SAVE_LOCAL = True
 experiment_id = 14
@@ -67,7 +69,16 @@ else:
 # load_from_miniabsolut_split_seeds = []
 # load_from_miniabsolut_split_seeds = []  # default None --(internally)--> 42  [0, 1, 2, 3, 4]
 
-model_type = "SNN" if arguments["--logistic_regression"] == False else "LogisticRegression"
+model = None
+
+if arguments["--logistic_regression"]:
+    model_type = "LogisticRegression"
+elif arguments["--cnn"]:
+    model_type = "CNN"
+elif arguments["--transformer"]:
+    model_type = "Transformer"
+else:
+    model_type = "SNN"
 
 
 antigens = None  # None for the default 10 antigens from Absolut
@@ -101,6 +112,8 @@ def multiprocessing_wrapper_script_12d(
     seed_id,
     load_from_miniabsolut_split_seed,
     only_generate_datasets=False,
+    model_type=model_type,
+    model=model,
 ):
     # with mlflow.start_run(
     #     experiment_id=experiment_id,
@@ -163,6 +176,7 @@ def multiprocessing_wrapper_script_12d(
         swa=swa,
         seed_id=seed_id,
         model_type=model_type,
+        model=model,
     )
 
     pipe.step_3_evaluate_model()
@@ -210,15 +224,15 @@ if __name__ == "__main__":
         #     0,
         #     None,
         # )
-        multiprocessing_wrapper_script_12d(
-            experiment_id,
-            "test",
-            "HR2B_high",
-            "HR2B_95low",
-            None,  # sample_train
-            0,
-            None,
-        )
+        # multiprocessing_wrapper_script_12d(
+        #     experiment_id,
+        #     "test",
+        #     "HR2B_high",
+        #     "HR2B_95low",
+        #     None,  # sample_train
+        #     0,
+        #     None,
+        # )
         multiprocessing_wrapper_script_12d(
             experiment_id,
             "test",

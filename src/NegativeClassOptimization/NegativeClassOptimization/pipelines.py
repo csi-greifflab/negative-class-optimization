@@ -334,6 +334,7 @@ class BinaryclassPipeline(DataPipeline):
         weight_decay=0,
         swa: bool = False,
         model_type: str = "SNN",
+        model: Optional[torch.nn.Module] = None,
     ):
         """Train model for binary classification."""
         # torch.manual_seed(seed_id)
@@ -344,6 +345,17 @@ class BinaryclassPipeline(DataPipeline):
         elif model_type == "LogisticRegression":
             model = ml.LogisticRegression(input_dim)
             num_hidden_units = 0
+        elif model_type == "CNN":
+            model = ml.CNN(input_dim)
+        elif model_type == "Transformer":
+            model = ml.Transformer(
+                d_model=64,
+                vocab_size=21,  # minimal vocab_size, related to sequence size.
+                nhead=4,
+                dim_feedforward=128,
+                num_layers=3,
+                dropout=0.1,
+            )
         else:
             raise ValueError(f"{model_type=} must be 'SNN' or 'LogisticRegression'.")
 

@@ -284,9 +284,11 @@ class MultilabelSNN(MulticlassSNN):
         }
 
 
-class CNN(nn.Module):
+# class CNN(nn.Module):
+class CNN(NCOModel):
     def __init__(
         self,
+        input_dim: int = 11 * 20,
         conv1_num_filters=5,
         conv1_filter_size=3,
         conv2_num_filters=3,
@@ -299,13 +301,16 @@ class CNN(nn.Module):
 
         # input: 11(W) x 20(H) x 1(#C)
 
+        self.input_dim = input_dim
+        self.input_len = int(input_dim // 20)
+
         self.conv1 = nn.Conv2d(
             in_channels=1,
             out_channels=conv1_num_filters,  # filter count
             kernel_size=conv1_filter_size,  # filter size
         )
-        conv1_out_w = math.floor((11 - conv1_filter_size) / 1 + 1)
-        conv1_out_h = math.floor((20 - conv1_filter_size) / 1 + 1)
+        conv1_out_w = math.floor( (self.input_len - conv1_filter_size) / 1 + 1 )
+        conv1_out_h = math.floor( (20 - conv1_filter_size) / 1 + 1 )
 
         self.pool = nn.MaxPool2d(
             kernel_size=2,  # filter size
@@ -348,22 +353,23 @@ class CNN(nn.Module):
         return self.forward(x, forward_logits=True)
 
     def compute_metrics_closed_testset(self, x_test, y_test):
-        x_test_cnn = x_test.reshape((-1, 1, 11, 20))
+        x_test_cnn = x_test.reshape((-1, 1, self.input_len, 20))
         return SN10.compute_metrics_closed_testset_static(self, x_test_cnn, y_test)
 
 
-class Transformer(nn.Module):
+# class Transformer(nn.Module):
+class Transformer(NCOModel):
     """
     Text classifier based on a pytorch TransformerEncoder.
     """
 
     def __init__(
         self,
-        vocab_size,
         d_model,
-        nhead=8,
-        dim_feedforward=2048,
-        num_layers=6,
+        vocab_size=5000,
+        nhead=6,
+        dim_feedforward=128,
+        num_layers=3,
         dropout=0.1,
         activation="relu",
         classifier_dropout=0.1,
@@ -372,7 +378,14 @@ class Transformer(nn.Module):
 
         assert d_model % nhead == 0, "nheads must divide evenly into d_model"
 
-        self.emb = nn.Embedding(vocab_size, d_model)
+        self.d_model = d_model
+
+        # https://discuss.pytorch.org/t/how-does-nn-embedding-work/88518/2
+        # see vdw Chris' answer to understand how the layer functions.
+        self.emb = nn.Embedding(
+            num_embeddings=vocab_size,  # size of the dictionary of embeddings
+            embedding_dim=d_model,  # the size of each embedding vector
+            )
 
         self.pos_encoder = PositionalEncoding(
             d_model=d_model,
@@ -399,6 +412,8 @@ class Transformer(nn.Module):
         Args:
             x (nn.Tensor): Input tensor of shape (batch_size, seq_len, vocab_size)
         """
+        # TODO: check dimensions. Not clear what works and how.
+        # We need to make sure that the batched inputs work properly.
         x = self.emb(x) * math.sqrt(self.d_model)
         x = self.pos_encoder(x)
         x = self.transformer_encoder(x)
@@ -419,7 +434,8 @@ class Transformer(nn.Module):
         #  but is manually applied in loss computation and here. This is
         #  not ideal, but it works for now. Will have to be redesigned.
         #  Same for CNN.
-        x_test_transformer = x_test.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11)
+        # x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
+        x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
         return SN10.compute_metrics_closed_testset_static(
             self, x_test_transformer, y_test
         )
@@ -729,11 +745,16 @@ def compute_loss(model, loss_fn, X, y):
 
             if hasattr(model, "conv1"):
                 # hack for CNN
-                X_pred = model(X.reshape(-1, 1, 11, 20))
+                X_pred = model(X.reshape(-1, 1, model.input_len, 20))
                 loss = loss_fn(X_pred, y)
             elif hasattr(model, "transformer_encoder"):
                 # hack for Transformer
-                X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))
+                # import pdb; pdb.set_trace()
+                # Explanation for the transformation below:
+                #  Check ml.py Transformer. Input has to be not one-hot encoded,
+                #  but rather the index of the one-hot encoding. This is how
+                #  nn.Embedding works.
+                X_pred = model(X.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21))  # use real size dimension, not padded
                 loss = loss_fn(X_pred, y)
             elif model_class_name == "LogisticRegression":
                 loss = loss_fn(
@@ -1236,7 +1257,7 @@ def get_logits_on_slide(slide: str, model: nn.Module):
     return x
 
 
-def load_model_from_state_dict(state_dict):
+def load_model_from_state_dict(state_dict, input_dim = None):
     """
     For the experimental data, the state dict is loaded (through torch.save -> torch.load),
     not the model, as through mlflow.
@@ -1256,6 +1277,9 @@ def load_model_from_state_dict(state_dict):
         model = optim.swa_utils.AveragedModel(
             LogisticRegression(input_dim=input_dim)
         )
+        model.load_state_dict(state_dict)
+    elif "module.conv1.weight" in state_dict.keys():
+        model = optim.swa_utils.AveragedModel(CNN(input_dim=input_dim,))
         model.load_state_dict(state_dict)
     else:
         raise Exception("Unrecognized state dict / model.")
