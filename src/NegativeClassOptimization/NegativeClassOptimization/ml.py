@@ -373,6 +373,7 @@ class Transformer(NCOModel):
         dropout=0.1,
         activation="relu",
         classifier_dropout=0.1,
+        transformer_type=None,
     ):
         super().__init__()
 
@@ -405,6 +406,15 @@ class Transformer(NCOModel):
         )
         self.classifier = nn.Linear(d_model, 1)
         self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.nhead = nhead
+        self.dim_feedforward = dim_feedforward
+        self.num_layers = num_layers
+        self.dropout = dropout
+        self.activation = activation
+        self.classifier_dropout = classifier_dropout
+
+        self.transformer_type = transformer_type
 
     def forward(self, x, return_logits=False):
         """Forward loop.
@@ -429,13 +439,23 @@ class Transformer(NCOModel):
     def forward_logits(self, x):
         return self.forward(x, return_logits=True)
 
+    def adapt_input(self, x):
+        if self.transformer_type == "experimental_dataset":
+            x = x.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
+        elif self.transformer_type == "absolut_dataset" or None:
+            x = x.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11)
+        return x
+
     def compute_metrics_closed_testset(self, x_test, y_test):
         # The transformation below is specific for the transformer
         #  but is manually applied in loss computation and here. This is
         #  not ideal, but it works for now. Will have to be redesigned.
         #  Same for CNN.
         # x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
-        x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
+        
+        # Experimental
+        x_test_transformer = self.adapt_input(x_test)
+
         return SN10.compute_metrics_closed_testset_static(
             self, x_test_transformer, y_test
         )
@@ -754,7 +774,13 @@ def compute_loss(model, loss_fn, X, y):
                 #  Check ml.py Transformer. Input has to be not one-hot encoded,
                 #  but rather the index of the one-hot encoding. This is how
                 #  nn.Embedding works.
-                X_pred = model(X.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21))  # use real size dimension, not padded
+
+                if model.transformer_type == "experimental_dataset":
+                    X_pred = model(X.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21))  # use real size dimension, not padded
+                elif model.transformer_type == "absolut_dataset" or None:
+                    X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))  # use real size dimension, not padded
+                else:
+                    raise ValueError(f"Unknown transformer type {model.transformer_type}")
                 loss = loss_fn(X_pred, y)
             elif model_class_name == "LogisticRegression":
                 loss = loss_fn(
@@ -1257,7 +1283,7 @@ def get_logits_on_slide(slide: str, model: nn.Module):
     return x
 
 
-def load_model_from_state_dict(state_dict, input_dim = None):
+def load_model_from_state_dict(state_dict, input_dim = None, params_dict = None):
     """
     For the experimental data, the state dict is loaded (through torch.save -> torch.load),
     not the model, as through mlflow.
@@ -1281,7 +1307,20 @@ def load_model_from_state_dict(state_dict, input_dim = None):
     elif "module.conv1.weight" in state_dict.keys():
         model = optim.swa_utils.AveragedModel(CNN(input_dim=input_dim,))
         model.load_state_dict(state_dict)
+    elif params_dict is not None:
+            model = optim.swa_utils.AveragedModel(Transformer(
+                d_model=params_dict["d_model"],
+                vocab_size=params_dict["vocab_size"],
+                nhead=params_dict["nhead"],
+                dim_feedforward=params_dict["dim_feedforward"],
+                num_layers=params_dict["num_layers"],
+                dropout=params_dict["dropout"],
+                transformer_type=params_dict["transformer_type"],
+            ))
+            model.load_state_dict(state_dict)
     else:
+        # import pdb
+        # pdb.set_trace()
         raise Exception("Unrecognized state dict / model.")
 
     return model

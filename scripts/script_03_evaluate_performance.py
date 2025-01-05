@@ -22,6 +22,9 @@ docopt_doc = """Compute metrics and save in convenient form.
 Usage:
     script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out>
     script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --transformer
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental --transformer
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --esm2b
 
 Options:
     -h --help   Show help.
@@ -31,7 +34,8 @@ Options:
 arguments = docopt(docopt_doc, version="NCO")
 
 
-SKIP_LOADING_ERRORS = False
+run_parallel = False
+SKIP_LOADING_ERRORS = True
 SKIP_COMPUTED_TASKS = True
 num_processes = 10
 
@@ -83,8 +87,14 @@ fp_results_open = Path(arguments["<open_out>"])
 antigens = config.ANTIGENS
 # antigens = ["HR2B", "HR2P", "HR2PSR", "HR2PIR"]  # Experimental dataset
 
-if arguments["--experimental"]:
+if arguments["--experimental"] and not arguments["--transformer"]:
     antigens = ["HR2P", "HR2PSR", "HR2PIR"]
+
+if arguments["--transformer"] and arguments["--experimental"]:
+    antigens = ["HR2P"]
+
+if arguments["--transformer"] and not arguments["--experimental"]:
+    antigens = ["3VRL", "1ADQ", "3RAJ", "1WEJ"]
 
 antigens_2 = antigens[:]  # in most cases, exception for epitope-based analysis
 ## Epitope-based
@@ -105,34 +115,83 @@ def evaluate_model(
     Evaluates a model on a test dataset.
     """
     with torch.no_grad():
-        test_dataset = preprocessing.onehot_encode_df(test_dataset)
-        X = np.stack(test_dataset["Slide_onehot"])  # type: ignore
-        X = torch.from_numpy(X).float()
+        
+        if arguments["--esm2b"]:
+            X = np.stack(test_dataset["X"].str[1:-1].str.split(", ")).astype(float)  # type: ignore
+            X = torch.from_numpy(X)
+            X = X.float()
+        else:
+            test_dataset = preprocessing.onehot_encode_df(test_dataset)
+            X = np.stack(test_dataset["Slide_onehot"])  # type: ignore
+            X = torch.from_numpy(X).float()
+
+        # For transformer models, we need to adapt the input
+        if arguments["--transformer"]:
+            X = model.module.adapt_input(X)
+            # Torch type Long Int
+            X = X.long()
+
         y_pred = model(X).round().detach().numpy().reshape(-1)
         y_true = test_dataset["binds_a_pos_ag"].values
         metrics = ml.compute_binary_metrics(y_pred, y_true)
     return metrics
+
+def load_transformer(state_dict, is_experimental=False):
+    import json
+    with open(Path(arguments["<input_dir>"]) / "parameter_set.json", "r") as f:
+        parameters = json.load(f)
+        if is_experimental:
+            parameters["transformer_type"] = "experimental_dataset"
+        else:
+            parameters["transformer_type"] = "absolut_dataset"
+    model = ml.load_model_from_state_dict(state_dict, params_dict=parameters)
+    return model
 
 
 ## Generate valid seed_id and split_id combinations
 ## According to hard-coded logic in script_12*.py
 seed_split_ids = datasets.FrozenMiniAbsolutMLLoader.generate_seed_split_ids()
 
+if arguments["--experimental"] and arguments["--transformer"]:
+    seed_split_ids = [
+        (0, 1),
+        (0, 2),
+        (0, 3),
+        (0, 4),
+        (0, 42),
+    ]
+elif arguments["--transformer"] and not arguments["--experimental"]:
+    seed_split_ids = [
+        (0, 0),
+        (0, 1),
+        (0, 42),
+    ]
+
 ## Generate valid task pairings
 
-task_types_for_closedset = [
-    datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
-    datasets.ClassificationTaskType.ONE_VS_NINE,
-    datasets.ClassificationTaskType.ONE_VS_ONE,
-]
+if arguments["--experimental"] and arguments["--transformer"]:
+    task_types_for_closedset = [
+        datasets.ClassificationTaskType.HIGH_VS_95LOW,
+        datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    ]
+    task_types_for_openset = [
+        datasets.ClassificationTaskType.HIGH_VS_95LOW,
+        datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    ]
+else:
+    task_types_for_closedset = [
+        datasets.ClassificationTaskType.HIGH_VS_95LOW,
+        datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+        datasets.ClassificationTaskType.ONE_VS_NINE,
+        datasets.ClassificationTaskType.ONE_VS_ONE,
+    ]
+    task_types_for_openset = [
+        datasets.ClassificationTaskType.ONE_VS_ONE,
+        datasets.ClassificationTaskType.ONE_VS_NINE,
+        datasets.ClassificationTaskType.HIGH_VS_95LOW,
+        datasets.ClassificationTaskType.HIGH_VS_LOOSER,
+    ]
 
-task_types_for_openset = [
-    datasets.ClassificationTaskType.ONE_VS_ONE,
-    datasets.ClassificationTaskType.ONE_VS_NINE,
-    datasets.ClassificationTaskType.HIGH_VS_95LOW,
-    datasets.ClassificationTaskType.HIGH_VS_LOOSER,
-]
 task_type_combinations = list(product(task_types_for_openset, task_types_for_openset))
 
 ## Load data
@@ -198,6 +257,10 @@ if COMPUTE_CLOSEDSET_PERFORMANCE:
                         assert task.state_dict is not None  # type: ignore
                         if "module.conv1.weight" in task.state_dict.keys() and arguments["--experimental"]:
                             model = ml.load_model_from_state_dict(task.state_dict, input_dim=20*21)
+                        elif arguments["--transformer"] and arguments["--experimental"]:
+                            model = load_transformer(task.state_dict, is_experimental=True)
+                        elif arguments["--transformer"] and not arguments["--experimental"]:
+                            model = load_transformer(task.state_dict, is_experimental=False)
                         else:
                             model = ml.load_model_from_state_dict(task.state_dict)  # type: ignore
                         task.model = model  # type: ignore
@@ -283,7 +346,12 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
         # not the model. We adjust it here.
         if task_1.model is None:
             assert task_1.state_dict is not None  # type: ignore
-            model = ml.load_model_from_state_dict(task_1.state_dict)  # type: ignore
+            if arguments["--transformer"] and arguments["--experimental"]:
+                model = load_transformer(task_1.state_dict, is_experimental=True)
+            elif arguments["--transformer"] and not arguments["--experimental"]:
+                model = load_transformer(task_1.state_dict, is_experimental=False)
+            else:
+                model = ml.load_model_from_state_dict(task_1.state_dict)  # type: ignore
             task_1.model = model  # type: ignore
         else:
             model = task_1.model  # type: ignore
@@ -309,14 +377,20 @@ elif COMPUTE_OPENSET_FROM_CLOSEDSET:
 
     records = []
     for i in range(0, len(pairs), num_processes):
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            for record in pool.starmap(
-                compute_openset_on_task_pair,
-                [(task_pair,) for task_pair in pairs[i : i + num_processes]],
-            ):
+        if run_parallel:
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                for record in pool.starmap(
+                    compute_openset_on_task_pair,
+                    [(task_pair,) for task_pair in pairs[i : i + num_processes]],
+                ):
+                    if record is not None:
+                        records.append(record)
+        else:
+            for task_pair in pairs[i : i + num_processes]:
+                record = compute_openset_on_task_pair(task_pair)
                 if record is not None:
                     records.append(record)
-    
+
         df_open = pd.DataFrame(records)
         df_open.to_csv(fp_results_open, sep="\t", index=False)
 

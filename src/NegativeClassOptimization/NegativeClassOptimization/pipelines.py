@@ -15,6 +15,14 @@ from NegativeClassOptimization import (config, datasets, ml, preprocessing,
                                        utils, visualisations)
 
 
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
 class DataPipeline:
     """Fetch, process and handle data for ML tasks."""
 
@@ -25,6 +33,7 @@ class DataPipeline:
         save_model_mlflow: bool = False,
         save_local: bool = False,
         local_dir: Optional[str] = None,
+        subsample_size: Optional[float] = None,
     ):
         self.is_step_1_complete = False
         self.is_step_2_complete = False
@@ -35,6 +44,7 @@ class DataPipeline:
         self.save_model_mlflow = save_model_mlflow
         self.save_local = save_local
         self.local_dir = Path(local_dir)
+        self.subsample_size = subsample_size
 
     @staticmethod
     def load_processed_dataframes(
@@ -74,6 +84,94 @@ class BinaryclassPipeline(DataPipeline):
         )
         return df
 
+
+    def _load_from_miniabsolut(self, ag_pos, ag_neg, split_seed=None, load_embeddings=False):
+        """
+        Loads data from MiniAbsolut or MiniAbsolut_Splits
+
+        Args:
+            ag_pos (_type_): _description_
+            ag_neg (_type_): _description_
+            split_seed (_type_, optional): _description_. Defaults to None.
+            load_embeddings (_type_, optional): _description_. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
+        # Load positive data
+        df_train_val_pos = self._miniabsolut_reader(
+            ag_pos, "high_train_15000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
+        )
+        df_test_closed_pos = self._miniabsolut_reader(
+            ag_pos, "high_test_5000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
+        )
+
+        # Load negative data
+        if isinstance(ag_neg, str):
+            ag_neg = [ag_neg]
+
+        # Check that ag_neg is a list of length 1 with a string
+        if isinstance(ag_neg, tuple):
+            ag_neg = list(ag_neg)
+        assert (
+            isinstance(ag_neg, list) and isinstance(ag_neg[0], str)
+        ), "ag_neg must be a string or a list of length 1 with a string."
+
+        N_neg = len(ag_neg)
+        train_samples_per_ag_neg = 15000 // N_neg
+        test_samples_per_ag_neg = 5000 // N_neg
+
+        train_neg_dfs = []
+        test_neg_dfs = []
+        for ag_neg_i in ag_neg:
+            df_train_val_neg_i = self._miniabsolut_reader(
+                ag_neg_i, f"high_train_15000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
+            )
+            df_train_val_neg_i = df_train_val_neg_i.iloc[
+                :train_samples_per_ag_neg
+            ].copy()
+            df_test_closed_neg_i = self._miniabsolut_reader(
+                ag_neg_i, f"high_test_5000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
+            )
+            df_test_closed_neg_i = df_test_closed_neg_i.iloc[
+                :test_samples_per_ag_neg
+            ].copy()
+
+            train_neg_dfs.append(df_train_val_neg_i)
+            test_neg_dfs.append(df_test_closed_neg_i)
+
+        df_train_val_neg = (
+            pd.concat(train_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
+        )
+        df_test_closed_neg = (
+            pd.concat(test_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
+        )
+
+        # Balance to the dataset that has less samples
+        # (relevant) for some of the exp. datasets
+        balance_to_smaller = True
+        if balance_to_smaller:
+            nrow_train = min(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
+            nrow_test = min(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+        else:
+            nrow_train = max(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
+            nrow_test = max(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+
+        # Aggregate positive and negative dataframes and shuffle
+        df_train_val = (
+            pd.concat([df_train_val_pos.iloc[:nrow_train, :], df_train_val_neg.iloc[:nrow_train, :]], axis=0)
+            .sample(frac=1)
+            .reset_index(drop=True)
+        )
+        df_test_closed = (
+            pd.concat([df_test_closed_pos.iloc[:nrow_test, :], df_test_closed_neg.iloc[:nrow_test, :]], axis=0)
+            .sample(frac=1)
+            .reset_index(drop=True)
+        )
+
+        return df_train_val, df_test_closed
+
+
     def step_1_process_data(
         self,
         ag_pos: str,
@@ -85,15 +183,22 @@ class BinaryclassPipeline(DataPipeline):
         shuffle_antigen_labels: bool = False,
         load_from_miniabsolut: bool = False,
         load_from_miniabsolut_split_seed: Optional[int] = None,
+        use_embeddings = False,
     ):
         """Process data for binary classification."""
 
         if load_from_miniabsolut:
             df_train_val, df_test_closed = self._load_from_miniabsolut(
-                ag_pos, ag_neg, split_seed=load_from_miniabsolut_split_seed
+                ag_pos,
+                ag_neg, 
+                split_seed=load_from_miniabsolut_split_seed,
+                load_embeddings=use_embeddings,
             )
 
         else:
+            if use_embeddings:
+                raise NotImplementedError("Embeddings loadable only from MiniAbsolut.")
+            
             df = self.loader(ag_pos, ag_neg, N)
 
             if "Slide_farmhash_mod_10" not in df.columns:
@@ -109,6 +214,10 @@ class BinaryclassPipeline(DataPipeline):
             df_train_val["Antigen"] = df_train_val["Antigen"].sample(frac=1).values
             df_test_closed["Antigen"] = df_test_closed["Antigen"].sample(frac=1).values
 
+        if self.subsample_size is not None:
+            df_train_val = df_train_val.sample(frac=self.subsample_size)
+            df_test_closed = df_test_closed.sample(frac=self.subsample_size)
+
         (
             train_data,
             test_data,
@@ -121,6 +230,7 @@ class BinaryclassPipeline(DataPipeline):
             batch_size=batch_size,
             scale_X=False,
             sample_train=sample_train,
+            use_embeddings=use_embeddings,
         )
 
         if self.log_mlflow:
@@ -194,7 +304,7 @@ class BinaryclassPipeline(DataPipeline):
 
         self.is_step_1_complete = True
 
-    def _miniabsolut_reader(self, ag, name, split_seed=None):
+    def _miniabsolut_reader(self, ag, name, split_seed=None, load_embeddings=False):
         
 
         # The extra code is required to adapt to cases
@@ -235,92 +345,18 @@ class BinaryclassPipeline(DataPipeline):
                 / name 
             )
 
-        return pd.read_csv(path, sep="\t", dtype={"Antigen": str})
-
-    def _load_from_miniabsolut(self, ag_pos, ag_neg, split_seed=None):
-        """
-        Loads data from MiniAbsolut or MiniAbsolut_Splits
-
-        Args:
-            ag_pos (_type_): _description_
-            ag_neg (_type_): _description_
-            split_seed (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
-        # Load positive data
-        df_train_val_pos = self._miniabsolut_reader(
-            ag_pos, "high_train_15000.tsv", split_seed=split_seed
-        )
-        df_test_closed_pos = self._miniabsolut_reader(
-            ag_pos, "high_test_5000.tsv", split_seed=split_seed
-        )
-
-        # Load negative data
-        if isinstance(ag_neg, str):
-            ag_neg = [ag_neg]
-
-        # Check that ag_neg is a list of length 1 with a string
-        if isinstance(ag_neg, tuple):
-            ag_neg = list(ag_neg)
-        assert (
-            isinstance(ag_neg, list) and isinstance(ag_neg[0], str)
-        ), "ag_neg must be a string or a list of length 1 with a string."
-
-        N_neg = len(ag_neg)
-        train_samples_per_ag_neg = 15000 // N_neg
-        test_samples_per_ag_neg = 5000 // N_neg
-
-        train_neg_dfs = []
-        test_neg_dfs = []
-        for ag_neg_i in ag_neg:
-            df_train_val_neg_i = self._miniabsolut_reader(
-                ag_neg_i, f"high_train_15000.tsv", split_seed=split_seed
-            )
-            df_train_val_neg_i = df_train_val_neg_i.iloc[
-                :train_samples_per_ag_neg
-            ].copy()
-            df_test_closed_neg_i = self._miniabsolut_reader(
-                ag_neg_i, f"high_test_5000.tsv", split_seed=split_seed
-            )
-            df_test_closed_neg_i = df_test_closed_neg_i.iloc[
-                :test_samples_per_ag_neg
-            ].copy()
-
-            train_neg_dfs.append(df_train_val_neg_i)
-            test_neg_dfs.append(df_test_closed_neg_i)
-
-        df_train_val_neg = (
-            pd.concat(train_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
-        )
-        df_test_closed_neg = (
-            pd.concat(test_neg_dfs, axis=0).sample(frac=1).reset_index(drop=True)
-        )
-
-        # Balance to the dataset that has less samples
-        # (relevant) for some of the exp. datasets
-        balance_to_smaller = True
-        if balance_to_smaller:
-            nrow_train = min(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
-            nrow_test = min(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+        if not load_embeddings:
+            return pd.read_csv(path, sep="\t", dtype={"Antigen": str})
         else:
-            nrow_train = max(df_train_val_pos.shape[0], df_train_val_neg.shape[0])
-            nrow_test = max(df_test_closed_pos.shape[0], df_test_closed_neg.shape[0])
+            df = pd.read_csv(path, sep="\t", dtype={"Antigen": str})
 
-        # Aggregate positive and negative dataframes and shuffle
-        df_train_val = (
-            pd.concat([df_train_val_pos.iloc[:nrow_train, :], df_train_val_neg.iloc[:nrow_train, :]], axis=0)
-            .sample(frac=1)
-            .reset_index(drop=True)
-        )
-        df_test_closed = (
-            pd.concat([df_test_closed_pos.iloc[:nrow_test, :], df_test_closed_neg.iloc[:nrow_test, :]], axis=0)
-            .sample(frac=1)
-            .reset_index(drop=True)
-        )
+            name = path.name.split(".")[0]
+            emb_p = path.parent / f"embeddings/esm2/embeddings/{name}_esm2_embeddings_layer_33.pt"
 
-        return df_train_val, df_test_closed
+            emb = torch.load(emb_p)
+            emb = emb.detach().numpy()
+            df["embeddings"] = emb.tolist()  # tolist() to make it as 1 column
+            return df
 
     def step_2_train_model(
         self,
@@ -348,14 +384,15 @@ class BinaryclassPipeline(DataPipeline):
         elif model_type == "CNN":
             model = ml.CNN(input_dim)
         elif model_type == "Transformer":
-            model = ml.Transformer(
-                d_model=64,
-                vocab_size=21,  # minimal vocab_size, related to sequence size.
-                nhead=4,
-                dim_feedforward=128,
-                num_layers=3,
-                dropout=0.1,
-            )
+            if model is None:
+                model = ml.Transformer(
+                    d_model=64,
+                    vocab_size=21,  # minimal vocab_size, related to sequence size.
+                    nhead=4,
+                    dim_feedforward=128,
+                    num_layers=3,
+                    dropout=0.1,
+                )
         else:
             raise ValueError(f"{model_type=} must be 'SNN' or 'LogisticRegression'.")
 
@@ -410,10 +447,15 @@ class BinaryclassPipeline(DataPipeline):
         if self.save_local:
             assert self.local_dir is not None
             trained_model_dir = self.local_dir / "trained_model"
-            trained_model_dir.mkdir(parents=True, exist_ok=True)
+            trained_model_dir.mkdir(exist_ok=True)
             torch.save(model.state_dict(), trained_model_dir / "trained_model.pt")
             swa_model_dir = self.local_dir / "swa_model"
-            swa_model_dir.mkdir(parents=True, exist_ok=True)
+            swa_model_dir.mkdir(exist_ok=True)
+            epochs_dir = self.local_dir / "epochs"
+            epochs_dir.mkdir(exist_ok=True)
+            # Save dictionary as json
+            with open(epochs_dir / "online_metrics.json", "w+") as f:
+                json.dump(online_metrics, f, cls=NumpyEncoder)
             torch.save(swa_model.state_dict(), swa_model_dir / "swa_model.pt")
 
         self.input_dim = input_dim
@@ -496,6 +538,7 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         ag_pos,
         ag_neg,
         split_seed=None,
+        load_embeddings=False,
     ):
         """Load data for binary classification."""
         ag = ag_pos.split("_")[0]  # antigen name
@@ -503,29 +546,29 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
 
         # Load positive samples
         df_train_val_pos = self._miniabsolut_reader(
-            ag, "high_train_15000.tsv", split_seed=split_seed
+            ag, "high_train_15000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
         )
         df_train_val_pos["Antigen"] = ag_pos
         df_test_closed_pos = self._miniabsolut_reader(
-            ag, "high_test_5000.tsv", split_seed=split_seed
+            ag, "high_test_5000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
         )
         df_test_closed_pos["Antigen"] = ag_pos
 
         # Load negative samples
         if dataset_type == "high_looser":
             df_train_val_neg = self._miniabsolut_reader(
-                ag, "looserX_train_15000.tsv", split_seed=split_seed
+                ag, "looserX_train_15000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
             )
             df_test_closed_neg = self._miniabsolut_reader(
-                ag, "looserX_test_5000.tsv", split_seed=split_seed
+                ag, "looserX_test_5000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
             )
 
         elif dataset_type == "high_95low":
             df_train_val_neg = self._miniabsolut_reader(
-                ag, "95low_train_15000.tsv", split_seed=split_seed
+                ag, "95low_train_15000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
             )
             df_test_closed_neg = self._miniabsolut_reader(
-                ag, "95low_test_5000.tsv", split_seed=split_seed
+                ag, "95low_test_5000.tsv", split_seed=split_seed, load_embeddings=load_embeddings,
             )
 
         df_train_val_neg["Antigen"] = ag_neg

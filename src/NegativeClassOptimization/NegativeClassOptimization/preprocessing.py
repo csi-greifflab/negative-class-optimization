@@ -225,14 +225,15 @@ def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.Data
                 return 1
         return 0
 
-    df = df.groupby("Slide").apply(
+    df_f = df.groupby("Slide").apply(
         lambda df_: infer_antigen_from_duplicate_list(
             df_["Antigen"].unique().tolist(), pos_antigens=ag_pos
         )
     )
-    df = pd.DataFrame(data=df, columns=["binds_a_pos_ag"])
-    df = df.reset_index()
-    return df
+    df_f = pd.DataFrame(data=df_f, columns=["binds_a_pos_ag"])
+    df_f = df_f.reset_index()
+
+    return df_f.merge(df[["Slide", "embeddings"]], on=["Slide"], how="left")
 
 
 def remove_duplicates_for_multiclass(df: pd.DataFrame) -> pd.DataFrame:
@@ -259,6 +260,7 @@ def preprocess_data_for_pytorch_binary(
     encoder_type: str = "onehot",
     df_test_open=None,
     sample_train=None,
+    use_embeddings=False,
 ):
     """Get train, test and openset pytorch Datasets and DataLoaders.
 
@@ -300,23 +302,28 @@ def preprocess_data_for_pytorch_binary(
 
     df_train_val = remove_duplicates_for_binary(df_train_val, ag_pos)
     df_test_closed = remove_duplicates_for_binary(df_test_closed, ag_pos)
+
     if sample_train is not None:
         df_train_val = sample_train_val(df_train_val, sample_train)
 
-    if encoder_type == "onehot":
-        encoder_func = onehot_encode_df
-        encoder_colname = "Slide_onehot"
-    elif encoder_type == "ProtTransT5XLU50":
-        raise NotImplementedError()
-    elif encoder_type == "ESM1b":
-        raise NotImplementedError()
+    if use_embeddings:
+        df_train_val["X"] = df_train_val["embeddings"]
+        df_test_closed["X"] = df_test_closed["embeddings"]
     else:
-        raise ValueError(f"encoder_type {encoder_type} not recognized.")
+        if encoder_type == "onehot":
+            encoder_func = onehot_encode_df
+            encoder_colname = "Slide_onehot"
+        elif encoder_type == "ProtTransT5XLU50":
+            raise NotImplementedError()
+        elif encoder_type == "ESM1b":
+            raise NotImplementedError()
+        else:
+            raise ValueError(f"encoder_type {encoder_type} not recognized.")
 
-    df_train_val = encoder_func(df_train_val)
-    df_train_val["X"] = df_train_val[encoder_colname]
-    df_test_closed = encoder_func(df_test_closed)
-    df_test_closed["X"] = df_test_closed[encoder_colname]
+        df_train_val = encoder_func(df_train_val)
+        df_train_val["X"] = df_train_val[encoder_colname]
+        df_test_closed = encoder_func(df_test_closed)
+        df_test_closed["X"] = df_test_closed[encoder_colname]
 
     df_train_val["y"] = df_train_val["binds_a_pos_ag"]
     df_test_closed["y"] = df_test_closed["binds_a_pos_ag"]

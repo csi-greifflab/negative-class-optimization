@@ -86,9 +86,27 @@ python scripts/script_02a_train_1v1.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,
 python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
 python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --epitopes
 
-# Transformer: Experiemntal Dataset
-python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML" "0,1,2,3" "0,1,2,3,4" --experimental --transformer
-# TODO: with hyperparameter optimization 
+# SN10: Absolut Synthetic Dataset: x10 less data
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_x10under" "0,1,2,3" "0,1,2,3,4" --x10under
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_x10under" "0,1,2,3" "0,1,2,3,4" --x10under
+
+# Transformer - Parameter search: Experimental Dataset
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental" "0" "1,2" --experimental --transformer
+
+# Transformer - Parameter search: Absolut Dataset
+python scripts/script_02a_train_1v1.py "main" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut" "0" "0,1" --transformer
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut" "0" "1,2" --transformer
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut" "0" "1,2" --transformer
+
+# SN10: Absolut Dataset - with Epochs to reevaluate overfitting
+python scripts/script_02a_train_1v1.py "main" "data/Frozen_MiniAbsolut_ML_Fitcheck" "0" "0,1,2" --overfitting_check
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_Fitcheck" "0" "0,1,2" --overfitting_check
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_Fitcheck" "0" "0,1,2" --overfitting_check
+
+# SN10: Embeddings
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_esm2b" "0" "" --esm2b
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_esm2b" "0" "" --esm2b
+
 ```
 
 3. Compute the ID and OOD performances.
@@ -114,6 +132,23 @@ python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML
 python scripts/script_03b_evaluate_performance_epitopes.py 1 0 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_epitopes_pos.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_epitopes_pos.tsv"
 python scripts/script_03b_evaluate_performance_epitopes.py 0 1 "data/Frozen_MiniAbsolut_ML" "data/Frozen_MiniAbsolut_ML/closed_performance_epitopes_pos.tsv" "data/Frozen_MiniAbsolut_ML/openset_performance_epitopes_pos.tsv"
 python scripts/script_03c_jsd_epitopes.py
+
+# ID, OOD: Transformer - Experimental Dataset
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71/openset_performance.tsv" --experimental --transformer
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental/transformer_parameterset_085feb71/openset_performance.tsv"  --experimental --transformer
+
+# ID, OOD: Transformer - Absolut Dataset
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7/openset_performance.tsv" --transformer
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Absolut/transformer_parameterset_a764f9c7/openset_performance.tsv" --transformer
+
+# ID, OOD: x10 less data Absolut SN10
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_x10under" "data/Frozen_MiniAbsolut_ML_x10under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x10under/openset_performance.tsv"
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_x10under" "data/Frozen_MiniAbsolut_ML_x10under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x10under/openset_performance.tsv"
+
+# ID, OOD: SN10 with PLM Embeddings
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_esm2b" "data/Frozen_MiniAbsolut_ML_esm2b/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b/openset_performance.tsv" --esm2b
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_esm2b" "data/Frozen_MiniAbsolut_ML_esm2b/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b/openset_performance.tsv" --esm2b
+
 ```
 
 4. Run the interpretability pipeline.
