@@ -21,6 +21,9 @@ from docopt import docopt
 from NegativeClassOptimization import (config, ml, pipelines, preprocessing,
                                        utils)
 
+from script_utils import get_input_dim_from_agpos
+
+
 docopt_doc = """Run 1v9 training.
 
 Usage:
@@ -31,8 +34,11 @@ Usage:
     script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --epitopes
     script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --transformer
     script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --x10under
+    script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --x50under
     script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --overfitting_check
     script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --esm2b
+    script_02b_train_1v9.py <run_name> <out_dir> <seed_ids> <split_ids> --antiberta2
+
 
 
 Options:
@@ -199,14 +205,26 @@ def multiprocessing_wrapper_script_12c(
     else:
         local_dir.mkdir(parents=True)
 
+    subsample_size = None
+    if arguments["--x10under"]:
+        subsample_size = 0.1
+    elif arguments["--x50under"]:
+        subsample_size = 0.02
+
     pipe = pipelines.BinaryclassPipeline(
         log_mlflow=False,
         save_model_mlflow=False,
         log_artifacts=LOG_ARTIFACTS,
         save_local=SAVE_LOCAL,
         local_dir=local_dir,
-        subsample_size=0.1 if arguments["--x10under"] else None,
+        subsample_size=subsample_size,
     )
+
+    use_embeddings = None
+    if arguments["--esm2b"]:
+        use_embeddings = "esm2b"
+    elif arguments["--antiberta2"]:
+        use_embeddings = "antiberta2"
 
     pipe.step_1_process_data(
         ag_pos=ag_pos,
@@ -216,14 +234,21 @@ def multiprocessing_wrapper_script_12c(
         shuffle_antigen_labels=shuffle_antigen_labels,
         load_from_miniabsolut=load_from_miniabsolut,
         load_from_miniabsolut_split_seed=load_from_miniabsolut_split_seed,
-        use_embeddings=True if arguments["--esm2b"] else False,
+        use_embeddings=use_embeddings,
     )
 
     if only_generate_datasets:
         return
 
+    if arguments["--esm2b"]:
+        input_dim = 1280
+    elif arguments["--antiberta2"]:
+        input_dim = 1024
+    else:
+        input_dim = get_input_dim_from_agpos(ag_pos)
+
     pipe.step_2_train_model(
-        input_dim=get_input_dim_from_agpos(ag_pos) if not arguments["--esm2b"] else 1280,
+        input_dim=input_dim,
         epochs=epochs,
         learning_rate=learning_rate,
         optimizer_type=optimizer_type,

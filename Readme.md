@@ -90,6 +90,10 @@ python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_Mini
 python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_x10under" "0,1,2,3" "0,1,2,3,4" --x10under
 python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_x10under" "0,1,2,3" "0,1,2,3,4" --x10under
 
+# SN10: Absolut Synthetic Dataset: x50 less data
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_x50under" "0,1,2,3" "0,1,2,3,4" --x50under
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_x50under" "0,1,2,3" "0,1,2,3,4" --x50under
+
 # Transformer - Parameter search: Experimental Dataset
 python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_Transformer_Parameters_Experimental" "0" "1,2" --experimental --transformer
 
@@ -106,7 +110,14 @@ python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_Mini
 # SN10: Embeddings
 python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_esm2b" "0" "" --esm2b
 python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_esm2b" "0" "" --esm2b
+python scripts/script_02b_train_1v9.py "main" "data/Frozen_MiniAbsolut_ML_antiberta2" "0" "" --antiberta2
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_antiberta2" "0" "" --antiberta2
 
+# SN10: Embeddings - Experimental Dataset
+### Generate fastas: python scripts/script_01_build_datasets.py make_fasta_porbebski
+### Run the embeddings generator (from embedairr)
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_esm2b_experimental" "0" "" --experimental --esm2b
+python scripts/script_02c_train_high_vs_looser_95low.py "main" "data/Frozen_MiniAbsolut_ML_antiberta2_experimental" "0" "" --experimental --antiberta2
 ```
 
 3. Compute the ID and OOD performances.
@@ -145,9 +156,21 @@ python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML
 python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_x10under" "data/Frozen_MiniAbsolut_ML_x10under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x10under/openset_performance.tsv"
 python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_x10under" "data/Frozen_MiniAbsolut_ML_x10under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x10under/openset_performance.tsv"
 
-# ID, OOD: SN10 with PLM Embeddings
+# ID, OOD: x50 less data Absolut SN10
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_x50under" "data/Frozen_MiniAbsolut_ML_x50under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x50under/openset_performance.tsv"
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_x50under" "data/Frozen_MiniAbsolut_ML_x50under/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_x50under/openset_performance.tsv"
+
+# ID, OOD: SN10 with PLM Embeddings - Absolut Dataset
 python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_esm2b" "data/Frozen_MiniAbsolut_ML_esm2b/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b/openset_performance.tsv" --esm2b
 python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_esm2b" "data/Frozen_MiniAbsolut_ML_esm2b/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b/openset_performance.tsv" --esm2b
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_antiberta2" "data/Frozen_MiniAbsolut_ML_antiberta2/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_antiberta2/openset_performance.tsv" --antiberta2
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_antiberta2" "data/Frozen_MiniAbsolut_ML_antiberta2/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_antiberta2/openset_performance.tsv" --antiberta2
+
+# ID, OOD: SN10 with PLM Embeddings - Experimental Dataset
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_esm2b_experimental" "data/Frozen_MiniAbsolut_ML_esm2b_experimental/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b_experimental/openset_performance.tsv" --experimental --esm2b
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_esm2b_experimental" "data/Frozen_MiniAbsolut_ML_esm2b_experimental/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_esm2b_experimental/openset_performance.tsv" --experimental --esm2b
+python scripts/script_03_evaluate_performance.py 1 0 "data/Frozen_MiniAbsolut_ML_antiberta2_experimental" "data/Frozen_MiniAbsolut_ML_antiberta2_experimental/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_antiberta2_experimental/openset_performance.tsv" --experimental --antiberta2
+python scripts/script_03_evaluate_performance.py 0 1 "data/Frozen_MiniAbsolut_ML_antiberta2_experimental" "data/Frozen_MiniAbsolut_ML_antiberta2_experimental/closed_performance.tsv" "data/Frozen_MiniAbsolut_ML_antiberta2_experimental/openset_performance.tsv" --experimental --antiberta2
 
 ```
 

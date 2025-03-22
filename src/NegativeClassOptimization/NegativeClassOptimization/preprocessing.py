@@ -233,7 +233,10 @@ def remove_duplicates_for_binary(df: pd.DataFrame, ag_pos: List[str]) -> pd.Data
     df_f = pd.DataFrame(data=df_f, columns=["binds_a_pos_ag"])
     df_f = df_f.reset_index()
 
-    return df_f.merge(df[["Slide", "embeddings"]], on=["Slide"], how="left")
+    if "embeddings" in df.columns:
+        return df_f.merge(df[["Slide", "embeddings"]], on=["Slide"], how="left")
+    else:
+        return df_f
 
 
 def remove_duplicates_for_multiclass(df: pd.DataFrame) -> pd.DataFrame:

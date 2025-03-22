@@ -31,7 +31,8 @@ Usage:
     script_01_build_datasets.py frozen_results
     script_01_build_datasets.py adapt_attributions_for_linear
     script_01_build_datasets.py add_freq_based_attributions
-
+    script_01_build_datasets.py make_fasta
+    script_01_build_datasets.py make_fasta_porbebski
 
 Options:
     -h --help   Show help.
@@ -370,3 +371,19 @@ if __name__ == "__main__":
                         augmented_path = attributions_dir / "attribution_records_augmented.json"
                         with open(augmented_path, "w") as f:
                             json.dump(attr_records, f)
+
+    elif arguments["make_fasta"]:
+        raise NotImplementedError()
+    
+    elif arguments["make_fasta_porbebski"]:
+        
+        base_p = Path(config.DATA_BASE_PATH)
+        for filename in ["high_train_15000", "high_test_5000", "looserX_train_15000", "looserX_test_5000", "95low_train_15000", "95low_test_5000"]:
+            tsv_path = base_p / f"MiniAbsolut/HR2P/{filename}.tsv"
+            fasta_path = base_p / f"MiniAbsolut/HR2P/fasta/{filename}.fasta"
+            
+            df = pd.read_csv(tsv_path, sep="\t")
+            
+            with open(fasta_path, "w") as fh:
+                for i, row in df.iterrows():
+                    fh.write(f">{row['Slide']}\n{row['Slide']}\n")

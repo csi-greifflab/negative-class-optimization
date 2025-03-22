@@ -25,6 +25,9 @@ Usage:
     script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --transformer
     script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental --transformer
     script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --esm2b
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --antiberta2
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental --esm2b
+    script_03_evaluate_performance.py <closed> <open> <input_dir> <closed_out> <open_out> --experimental --antiberta2
 
 Options:
     -h --help   Show help.
@@ -116,7 +119,7 @@ def evaluate_model(
     """
     with torch.no_grad():
         
-        if arguments["--esm2b"]:
+        if arguments["--esm2b"] or arguments["--antiberta2"]:
             X = np.stack(test_dataset["X"].str[1:-1].str.split(", ")).astype(float)  # type: ignore
             X = torch.from_numpy(X)
             X = X.float()
@@ -202,7 +205,7 @@ loader = datasets.FrozenMiniAbsolutMLLoader(
 ## Compute
 try:
     df_closed = pd.read_csv(fp_results_closed, sep="\t")
-except FileNotFoundError:
+except FileNotFoundError or pd.errors.EmptyDataError:
     df_closed = pd.DataFrame()
 records = []
 if COMPUTE_CLOSEDSET_PERFORMANCE:

@@ -85,7 +85,7 @@ class BinaryclassPipeline(DataPipeline):
         return df
 
 
-    def _load_from_miniabsolut(self, ag_pos, ag_neg, split_seed=None, load_embeddings=False):
+    def _load_from_miniabsolut(self, ag_pos, ag_neg, split_seed=None, load_embeddings=None):
         """
         Loads data from MiniAbsolut or MiniAbsolut_Splits
 
@@ -183,7 +183,7 @@ class BinaryclassPipeline(DataPipeline):
         shuffle_antigen_labels: bool = False,
         load_from_miniabsolut: bool = False,
         load_from_miniabsolut_split_seed: Optional[int] = None,
-        use_embeddings = False,
+        use_embeddings = None,
     ):
         """Process data for binary classification."""
 
@@ -196,7 +196,7 @@ class BinaryclassPipeline(DataPipeline):
             )
 
         else:
-            if use_embeddings:
+            if use_embeddings is not None:
                 raise NotImplementedError("Embeddings loadable only from MiniAbsolut.")
             
             df = self.loader(ag_pos, ag_neg, N)
@@ -304,7 +304,7 @@ class BinaryclassPipeline(DataPipeline):
 
         self.is_step_1_complete = True
 
-    def _miniabsolut_reader(self, ag, name, split_seed=None, load_embeddings=False):
+    def _miniabsolut_reader(self, ag, name, split_seed=None, load_embeddings=None):
         
 
         # The extra code is required to adapt to cases
@@ -345,13 +345,28 @@ class BinaryclassPipeline(DataPipeline):
                 / name 
             )
 
-        if not load_embeddings:
+        if load_embeddings is None:
             return pd.read_csv(path, sep="\t", dtype={"Antigen": str})
         else:
             df = pd.read_csv(path, sep="\t", dtype={"Antigen": str})
 
             name = path.name.split(".")[0]
-            emb_p = path.parent / f"embeddings/esm2/embeddings/{name}_esm2_embeddings_layer_33.pt"
+
+            if load_embeddings == "esm2b":
+                try:
+                    emb_p = path.parent / f"embeddings/esm2/embeddings/{name}_esm2_embeddings_layer_33.pt"
+                    emb = torch.load(emb_p)
+                except FileNotFoundError:
+                    # Regex for first 2 words splitted by "_" and "esm2_embeddings_layer_33.pt"
+                    emb_p = list(path.parent.glob(f"embeddings/esm2/embeddings/*{'_'.join(name.split('_')[0:2])}*esm2_embeddings_layer_33.pt"))[0]
+                    emb = torch.load(emb_p)
+            else:
+                try:
+                    emb_p = path.parent / f'embeddings/ab2/ab2/embeddings/{name}_ab2_embeddings_layer_16.pt'
+                    emb = torch.load(emb_p)
+                except FileNotFoundError:
+                    emb_p = list(path.parent.glob(f"embeddings/ab2/ab2/embeddings/*{'_'.join(name.split('_')[0:2])}*ab2_embeddings_layer_16.pt"))[0]
+                    emb = torch.load(emb_p)
 
             emb = torch.load(emb_p)
             emb = emb.detach().numpy()
@@ -538,7 +553,7 @@ class BinaryclassBindersPipeline(BinaryclassPipeline):
         ag_pos,
         ag_neg,
         split_seed=None,
-        load_embeddings=False,
+        load_embeddings=None,
     ):
         """Load data for binary classification."""
         ag = ag_pos.split("_")[0]  # antigen name
