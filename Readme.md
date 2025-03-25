@@ -4,9 +4,10 @@
 
 [Preprint](https://www.biorxiv.org/content/10.1101/2024.06.17.599333v2.abstract)
 
-## Abstract
-Supervised machine learning models rely on training datasets with positive (target class) and negative examples. Therefore, the composition of the training dataset has a direct influence on model performance. Specifically, negative sample selection bias, concerning samples not representing the target class, presents challenges across a range of domains such as text classification and protein-protein interaction prediction. Machine-learning-based immunotherapeutics design is an increasingly important area of research, focusing on designing antibodies or T-cell receptors (TCRs) that can bind to their target molecules with high specificity and affinity. Given the biomedical importance of immunotherapeutics, there is a need to address the unresolved question of how negative training set composition impacts model generalization and biological rule discovery to enable rational and safe drug design. We set out to study this question in the context of the antibody-antigen binding prediction problem by varying the negative class, encompassing a binding affinity gradient. We based our investigation on large synthetic datasets that provide ground truth structure-based antibody-antigen binding data, allowing access to residue-wise binding energy on the binding interface. We found that both out-of-distribution generalization and binding rule discovery depended on the type of negative dataset used. Importantly, we discovered that a model's capacity to learn the binding rules of the positive dataset is not a trivial correlate of its classification accuracy. We confirmed our findings with real-world relevant experimental data. Our work highlights the importance of considering training dataset composition for achieving optimal out-of-distribution performance and rule learning in machine-learning-based research. 
+<img src="./Graph_abstract_all_sections.svg">
 
+## Abstract
+Supervised machine learning models depend on training datasets with positive and negative examples. Therefore, dataset composition directly impacts model performance and bias. Given the importance of machine learning for immunotherapeutic design, we examined how different negative class definitions affect model generalization and rule discovery for antibody-antigen binding. Using synthetic structure-based binding data, we evaluated models trained with various definitions of negative sets. Our findings reveal that high out-of-distribution performance can be achieved when the negative dataset contains more similar samples to the positive dataset despite a lower within-distribution performance. Furthermore, leveraging ground truth information, we show that binding rules discovered as associated with positive data change based on the negative data used. Validation on experimental data supported simulation-based observations. This work underscores the role of dataset composition, including negative data selection, in creating robust, generalizable, and biology-aware sequence-based ML models.
 
 ## Setup
 
@@ -226,7 +227,6 @@ Supplementary Materials
 - Logistic models: `0a4_Section_1_logistic.ipynb`, `0b4_Section_2_logistic.ipynb`
 
 Supplementary Text 1: Evaluation of the impact of sequence and label similarity between train and test on prediction accuracy 
-- TODO
 
 Supplementary Text 2: Epitope-based analysis: ID, OOD, rule discovery
 - `0s2_Epitope-based_Section_1_and_2.ipynb`
