@@ -1,5 +1,10 @@
-data/Absolut
-data/Experimental_Datasets
+#data/Absolut
+#data/Experimental_Datasets
+data/*
 notebooks/figures
 data/Frozen_MiniAbsolut_ML/*/
+<<<<<<< HEAD
 *pycache*
+=======
+notebooks/small_molecules/data
+>>>>>>> fe2426a (Add small molecules and epistasis code)

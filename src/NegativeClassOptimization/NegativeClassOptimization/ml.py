@@ -18,7 +18,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from captum.attr import DeepLift, IntegratedGradients
+#from captum.attr import DeepLift, IntegratedGradients
 from scipy.stats import rankdata
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.preprocessing import LabelEncoder
@@ -26,7 +26,7 @@ from sklearn import metrics
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-import mlflow
+#import mlflow
 import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing
@@ -452,10 +452,14 @@ class Transformer(NCOModel):
         #  not ideal, but it works for now. Will have to be redesigned.
         #  Same for CNN.
         # x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
+<<<<<<< HEAD
         
         # Experimental
         x_test_transformer = self.adapt_input(x_test)
 
+=======
+        x_test_transformer = x_test.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21)
+>>>>>>> fe2426a (Add small molecules and epistasis code)
         return SN10.compute_metrics_closed_testset_static(
             self, x_test_transformer, y_test
         )
@@ -774,6 +778,7 @@ def compute_loss(model, loss_fn, X, y):
                 #  Check ml.py Transformer. Input has to be not one-hot encoded,
                 #  but rather the index of the one-hot encoding. This is how
                 #  nn.Embedding works.
+<<<<<<< HEAD
 
                 if model.transformer_type == "experimental_dataset":
                     X_pred = model(X.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21))  # use real size dimension, not padded
@@ -781,6 +786,9 @@ def compute_loss(model, loss_fn, X, y):
                     X_pred = model(X.reshape(-1, 11, 20).argmax(axis=2).reshape(-1, 11))  # use real size dimension, not padded
                 else:
                     raise ValueError(f"Unknown transformer type {model.transformer_type}")
+=======
+                X_pred = model(X.reshape(-1, 21, 20).argmax(axis=2).reshape(-1, 21))  # use real size dimension, not padded
+>>>>>>> fe2426a (Add small molecules and epistasis code)
                 loss = loss_fn(X_pred, y)
             elif model_class_name == "LogisticRegression":
                 loss = loss_fn(
@@ -1283,7 +1291,11 @@ def get_logits_on_slide(slide: str, model: nn.Module):
     return x
 
 
+<<<<<<< HEAD
 def load_model_from_state_dict(state_dict, input_dim = None, params_dict = None):
+=======
+def load_model_from_state_dict(state_dict, input_dim = None):
+>>>>>>> fe2426a (Add small molecules and epistasis code)
     """
     For the experimental data, the state dict is loaded (through torch.save -> torch.load),
     not the model, as through mlflow.
@@ -1307,6 +1319,7 @@ def load_model_from_state_dict(state_dict, input_dim = None, params_dict = None)
     elif "module.conv1.weight" in state_dict.keys():
         model = optim.swa_utils.AveragedModel(CNN(input_dim=input_dim,))
         model.load_state_dict(state_dict)
+<<<<<<< HEAD
     elif params_dict is not None:
             model = optim.swa_utils.AveragedModel(Transformer(
                 d_model=params_dict["d_model"],
@@ -1318,6 +1331,8 @@ def load_model_from_state_dict(state_dict, input_dim = None, params_dict = None)
                 transformer_type=params_dict["transformer_type"],
             ))
             model.load_state_dict(state_dict)
+=======
+>>>>>>> fe2426a (Add small molecules and epistasis code)
     else:
         # import pdb
         # pdb.set_trace()
