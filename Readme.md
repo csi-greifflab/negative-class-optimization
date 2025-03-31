@@ -231,3 +231,10 @@ Supplementary Text 1: Evaluation of the impact of sequence and label similarity 
 Supplementary Text 2: Epitope-based analysis: ID, OOD, rule discovery
 - `0s2_Epitope-based_Section_1_and_2.ipynb`
 
+### Repeating our workflow with custom data
+
+We have created a [template code of the ID-OOD comparison workflow](https://github.com/csi-greifflab/negative-class-optimization/blob/smallmolecules/notebooks/small_molecules/00_general_approach_template.ipynb). We demonstrate its usage with small-molecule data.
+
+
+
+
