@@ -233,5 +233,5 @@ Supplementary Text 2: Epitope-based analysis: ID, OOD, rule discovery
 
 ### Repeating our workflow with custom data
 
-We have created a [template code of the ID-OOD comparison workflow]([https://www.biorxiv.org/content/10.1101/2024.06.17.599333v2.abstract](https://github.com/csi-greifflab/negative-class-optimization/blob/smallmolecules/notebooks/small_molecules/00_general_approach_template.ipynb). We demonstrate its usage with small-molecule data.
+We have created a [template code of the ID-OOD comparison workflow](https://github.com/csi-greifflab/negative-class-optimization/blob/smallmolecules/notebooks/small_molecules/00_general_approach_template.ipynb). We demonstrate its usage with small-molecule data.
 
