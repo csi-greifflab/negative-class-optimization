@@ -1,5 +1,5 @@
-data/Absolut
-data/Experimental_Datasets
+#data/Absolut
+#data/Experimental_Datasets
+data/*
 notebooks/figures
 data/Frozen_MiniAbsolut_ML/*/
-*pycache*

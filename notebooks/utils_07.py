@@ -326,7 +326,7 @@ def load_energy_contributions_from_task_linear_version(
         ).tolist()
 
     # Get attributions per amino acid
-    task = loader.load(task, attributions_toload=attributions_toload)
+    task = loader.load(task, attributions_toload=attributions_toload,load_model=False, load_test_dataset=True, load_train_dataset=False,) #
     attributor_name = "weights"
     attr_stack = get_attr_from_records(
         task.attributions, attributor_name, (0, 1)  # type: ignore
@@ -439,7 +439,7 @@ def load_energy_contributions_from_task_nonlinear_version(
     # Get energy contributions and attributions
 
     if not task_is_loaded:
-        task = loader.load(task, attributions_toload=attr_analysis_name, attribution_records_toload=attribution_records_toload)
+        task = loader.load(task, attributions_toload=attr_analysis_name, attribution_records_toload=attribution_records_toload, load_model=False)
     
     if load_miniabsolut_for_shuffled:
         df = get_miniabsolut_dataframes_for_shuffled(task, load_energy_contributions=True)

@@ -7,7 +7,7 @@ import string
 import warnings
 from typing import List, Optional, Tuple, Union
 
-import farmhash
+#import farmhash #temp fix
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import (LabelEncoder, MultiLabelBinarizer,
@@ -28,7 +28,7 @@ def get_one_hot_aa_encoder(aminoacids: List[str] = config.SLIDE_AMINOACIDS):
         OneHotEncoder: fitted, ready to transform sequences.
     """
     aa_as_array = np.array(aminoacids)
-    encoder = OneHotEncoder(sparse=False).fit(aa_as_array.reshape(-1, 1))
+    encoder = OneHotEncoder(sparse_output=False).fit(aa_as_array.reshape(-1, 1))
     return encoder
 
 

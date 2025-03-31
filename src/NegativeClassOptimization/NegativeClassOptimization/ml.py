@@ -18,7 +18,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from captum.attr import DeepLift, IntegratedGradients
+#from captum.attr import DeepLift, IntegratedGradients
 from scipy.stats import rankdata
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.preprocessing import LabelEncoder
@@ -26,7 +26,7 @@ from sklearn import metrics
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-import mlflow
+#import mlflow
 import NegativeClassOptimization.config as config
 import NegativeClassOptimization.datasets as datasets
 import NegativeClassOptimization.preprocessing as preprocessing

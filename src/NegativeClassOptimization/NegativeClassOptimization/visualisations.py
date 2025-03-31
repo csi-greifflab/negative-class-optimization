@@ -3,7 +3,7 @@ TODO: Move/add umap projections here.
 """
 from typing import Dict, List, Optional, Tuple
 
-import logomaker
+#import logomaker
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -430,6 +430,7 @@ def add_median_labels(
     y_level=None,
     y_offset=0.002,
     x_offset=0.0,
+    color="black",
 ):
     """Add labels to boxplot medians.
     https://stackoverflow.com/questions/38649501/labeling-boxplot-in-seaborn-with-median-value
@@ -450,14 +451,15 @@ def add_median_labels(
             ha="center",
             va="center",
             # fontweight="bold",
-            color="white",
+            color=color,
             fontsize=fontsize,
             rotation=90,  # vertical orientation
         )
-        # create median-colored border around white text for contrast
+"""        # create median-colored border around white text for contrast
         text.set_path_effects(
             [
                 path_effects.Stroke(linewidth=3, foreground=median.get_color()),
                 path_effects.Normal(),
             ]
         )
+"""

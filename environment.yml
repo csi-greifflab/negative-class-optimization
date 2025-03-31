@@ -4,43 +4,48 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - python=3.8
+  - python
   - pandas
   - seaborn
   - more-itertools
   - jupyterlab
-  - umap-learn
+  # - umap-learn
   - pytorch 
-  # - torchvision 
+  - torchvision 
   - torchaudio 
   - captum
+<<<<<<< HEAD
+=======
+  - pytdc
+  - rdkit=2023.03.1
+>>>>>>> fe2426a (Add small molecules and epistasis code)
   # - cudatoolkit=10.2
   - optuna
   - sphinx
   - jsonnet
   - pip
   - pip:
-      - dvc[gdrive]==2.10.2
+      #- dvc[gdrive]==2.10.2
       - dash==2.3.1
       - nptyping
-      - docopt
+      # - docopt
       - upsetplot
       - dask
       # - git+https://github.com/uio-bmi/immuneML.git
       - scikit-learn
-      - scikit-image
+      # - scikit-image
       - statsmodels
       - joypy
-      - networkx==2.6.3
+      - networkx
       - mlflow
-      - pyfarmhash
-      - pre-commit
+      #- pyfarmhashy
+      #- pre-commit
       - setuptools==57.5.0
       - joblib
       - dovpanda
       - nbconvert
       - nbdev
-      - bio-embeddings[all]
+      # - bio-embeddings[all]
       # - modisco
       # - tfmodisco-lite
       - logomaker
@@ -50,8 +55,8 @@ dependencies:
       - wget
       - Bio
       # - cmake
-      - tensorflow
+      # - tensorflow
       # - multicoretsne
       - tqdm
-      - img2pdf
+      # - img2pdf
       - black

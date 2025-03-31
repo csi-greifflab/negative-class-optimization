@@ -1,10 +1,12 @@
 setup.py
 NegativeClassOptimization/__init__.py
 NegativeClassOptimization/config.py
+NegativeClassOptimization/data_similarity.py
 NegativeClassOptimization/datasets.py
 NegativeClassOptimization/decision_boundaries.py
 NegativeClassOptimization/immuneml_utils.py
 NegativeClassOptimization/ml.py
+NegativeClassOptimization/ml_small_mol_adapted.py
 NegativeClassOptimization/pipelines.py
 NegativeClassOptimization/preprocessing.py
 NegativeClassOptimization/search.py
